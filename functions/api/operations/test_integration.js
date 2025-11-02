@@ -15,7 +15,7 @@ async function runMigrations(db) {
 }
 
 async function run() {
-  const conn = process.env.SUPABASE_DB_URL || process.env.POSTGRES_URL || `postgres://postgres:postgres@localhost:5432/postgres`;
+  const conn = process.env.DATABASE_URL || process.env.POSTGRES_URL || `postgres://postgres:postgres@localhost:5432/postgres`;
   const db = createDbFromConnectionString(conn);
   await db.connect();
   try {

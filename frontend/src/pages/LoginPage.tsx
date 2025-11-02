@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export function LoginPage() {
@@ -7,32 +8,48 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { signIn } = useAuth();
+  const navigate = useNavigate();
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError(error.message);
+    const { error: authError } = await signIn(email, password);
+    
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      navigate('/farms');
     }
-    setLoading(false);
   };
 
   return (
     <div className="auth-page">
       <div className="auth-container">
-        <h1>Login to Farmers Boot</h1>
-        <form onSubmit={handleSubmit} className="auth-form">
+        <h1 data-testid="login-title">Login to Farmers Boot</h1>
+        <form onSubmit={handleSubmit} className="auth-form" data-testid="login-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
+              placeholder="Enter your email"
               required
+              autoComplete="email"
+              disabled={loading}
+              data-testid="login-email"
             />
           </div>
           <div className="form-group">
@@ -41,17 +58,21 @@ export function LoginPage() {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
+              placeholder="Enter your password"
               required
+              autoComplete="current-password"
+              disabled={loading}
+              data-testid="login-password"
             />
           </div>
-          {error && <div className="error">{error}</div>}
-          <button type="submit" disabled={loading}>
+          {error && <div className="error" data-testid="login-error">{error}</div>}
+          <button type="submit" disabled={loading} data-testid="login-submit-button">
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
         <p>
-          Don't have an account? <a href="/signup">Sign up</a>
+          Don't have an account? <a href="/signup" data-testid="signup-link">Sign up</a>
         </p>
       </div>
     </div>

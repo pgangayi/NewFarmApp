@@ -2,7 +2,7 @@
 
 ## Overview
 
-Farmers Boot is a progressive web application (PWA) designed for small-to-medium farmers to manage farms, fields, livestock, tasks, inventory, and users. Built with React + TypeScript (Vite frontend), Supabase (backend/database), and Cloudflare Pages + Functions for deployment.
+Farmers Boot is a progressive web application (PWA) designed for small-to-medium farmers to manage farms, fields, livestock, tasks, inventory, and users. Built with React + TypeScript (Vite frontend), Cloudflare D1 (backend/database), R2 (storage), and Cloudflare Pages + Functions for deployment.
 
 ## Features
 
@@ -16,125 +16,145 @@ Farmers Boot is a progressive web application (PWA) designed for small-to-medium
 ## Architecture
 
 - **Frontend**: React + TypeScript, Vite build, PWA with service worker.
-- **Backend**: Supabase (Postgres + Auth + Storage + Realtime).
+- **Backend**: Cloudflare Pages Functions (Workers) with custom JWT authentication.
+- **Database**: Cloudflare D1 (SQLite) with custom REST API wrapper.
+- **Storage**: Cloudflare R2 for file uploads and management.
 - **Deployment**: Cloudflare Pages (frontend) + Pages Functions (API).
-- **Database**: Postgres with PostGIS for spatial data, RLS policies for security.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- Supabase account and project
 - Cloudflare account (for deployment)
+- Wrangler CLI (installed via npm)
 
 ### Local Development
 
-#### Option 1: Quick Setup (Recommended)
+Run the automated setup script:
 
-1. Run the automated setup:
+```powershell
+# Windows
+npm run setup:local:windows
+
+# Unix/Linux/macOS
+npm run setup:local:unix
+```
+
+Then:
+
+1. Edit `.env` with your `JWT_SECRET` and `DATABASE_URL` (optional for local D1).
+2. Start development:
    ```powershell
-   # Windows
-   npm run setup:local:windows
-   
-   # Unix/Linux/macOS
-   npm run setup:local:unix
-   ```
-
-2. Edit `.env` with your local Supabase values (uncomment the local section).
-
-3. Start development:
-   ```powershell
-   npm run dev:local  # Runs both frontend and functions locally
-   ```
-
-#### Option 2: Manual Setup
-
-1. Install Supabase CLI:
-   ```powershell
-   npm install -g supabase
-   ```
-
-2. Start local Supabase:
-   ```powershell
-   supabase start
-   ```
-
-3. Copy and configure environment:
-   ```powershell
-   cp .env.example .env
-   # Edit .env with local values
-   ```
-
-4. Run migrations:
-   ```powershell
-   supabase db reset
-   ```
-
-5. Start development servers:
-   ```powershell
-   # Terminal 1: Frontend + Functions
-   npm run dev:local
-   
-   # Or separate terminals:
-   # Terminal 1: Frontend only
    npm run dev
-   
-   # Terminal 2: Functions only
-   npm run dev:functions
    ```
+3. Visit: http://localhost:8788
 
-6. Visit: http://localhost:8788
+**Setup includes:**
+- Environment variable initialization from `.env.example`
+- Dependency installation for frontend and functions
+- Validation of required tools (Wrangler)
 
-#### Available Scripts
-
-- `npm run dev:local` — Start frontend + functions locally
-- `npm run dev:functions` — Start functions only
-- `npm run setup:local:windows` — Windows setup script
-- `npm run setup:local:unix` — Unix setup script
+**Useful Development Commands:**
+- `npm run dev` — Start frontend + functions locally  
+- `npm run build` — Build for production
+- `wrangler pages dev` — Test Pages Functions directly
+- `wrangler d1 execute <database_id> --remote "SELECT 1"` — Test D1 connection
 
 ### Deployment
 
-#### Local Development Deployment
-- Use `npm run dev:local` for full local development with functions
-- Uses `wrangler.toml` [env.local] configuration
-- Connects to local Supabase instance
-
 #### Production Deployment (Cloudflare Pages)
 
-1. Connect GitHub repo to Cloudflare Pages.
-2. Set build command: `npm run build` (output: `frontend/dist/`).
-3. Set environment variables in Cloudflare Pages dashboard:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_MAPBOX_TOKEN`
-   - `SENTRY_DSN` (optional)
-4. Deploy; API endpoints available at `/api/*`.
+1. **Connect GitHub repo to Cloudflare Pages:**
+   - Go to Cloudflare Dashboard → Pages
+   - Select "Connect to Git"
+   - Select your repository
+
+2. **Set build configuration:**
+   - Build command: `npm run build`
+   - Build output directory: `frontend/dist`
+
+3. **Set environment variables in Cloudflare Pages dashboard:**
+   - `JWT_SECRET` — Secret key for signing/verifying JWT tokens (required)
+   - `VITE_MAPBOX_TOKEN` — Mapbox access token for maps (optional)
+   - `SENTRY_DSN` — Sentry error tracking URL (optional)
+
+4. **Deploy:**
+   - Push to GitHub branch
+   - Cloudflare automatically builds and deploys
+   - Functions deployed with code from `functions/` folder
+
+#### Local Deployment Testing
+
+```powershell
+# Build production bundle
+npm run build
+
+# Test with Wrangler locally before deploying
+wrangler pages dev frontend/dist
+```
 
 #### Deployment Scripts
 
-- `npm run deploy` — Deploy to Cloudflare Pages (Unix)
-- `npm run deploy:windows` — Deploy to Cloudflare Pages (Windows)
-- `npm run build:ci` — Build with dummy env vars for CI testing
+- `npm run deploy` — Deploy to Cloudflare Pages (Unix/macOS)
+- `npm run deploy:windows` — Deploy to Cloudflare Pages (Windows PowerShell)
 
 ### API Usage
 
-Example: Apply treatment
+All API endpoints use JWT bearer token authentication. The token is automatically obtained via the `/api/auth/login` endpoint and stored in localStorage.
+
+#### Authentication
 
 ```powershell
+# Login to get JWT token
+curl -X POST https://your-site.pages.dev/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "password"}'
+
+# Response includes: { token: "jwt-token-here" }
+# Use token in subsequent requests as: Authorization: Bearer <token>
+```
+
+#### Example Endpoints
+
+```powershell
+# Get all farms for current user
+curl -X GET https://your-site.pages.dev/api/farms \
+  -H "Authorization: Bearer <user-jwt>"
+
+# Get fields for a farm
+curl -X GET https://your-site.pages.dev/api/fields?farmId=farm-123 \
+  -H "Authorization: Bearer <user-jwt>"
+
+# Apply treatment to animal (with idempotency key)
 curl -X POST https://your-site.pages.dev/api/operations/apply-treatment \
   -H "Authorization: Bearer <user-jwt>" \
   -H "Idempotency-Key: <uuid>" \
   -H "Content-Type: application/json" \
   -d '{
-    "farmId": "farm-uuid",
-    "targetType": "livestock",
-    "targetId": "animal-uuid",
-    "appliedAt": "2025-10-30T12:00:00Z",
-    "items": [{"inventoryItemId": "item-uuid", "qty": 2, "unit": "bottle"}]
+    "farmId": "farm-123",
+    "animalId": "animal-456",
+    "appliedAt": "2025-01-15T12:00:00Z",
+    "items": [{"inventoryItemId": "item-789", "qty": 2, "unit": "bottle"}]
   }'
+```
+
+#### Database Access (D1)
+
+D1 connections are handled through Cloudflare Pages Functions. To interact with D1 directly during development:
+
+```powershell
+# List D1 databases
+wrangler d1 list
+
+# Query remote D1 database
+wrangler d1 execute farming-db --remote "SELECT COUNT(*) FROM farms;"
+
+# Create local D1 database
+wrangler d1 create farming-db-local
+
+# Query local D1
+wrangler d1 execute farming-db-local --file ./migrations/0001_d1_complete_schema.sql
 ```
 
 ## Project Structure

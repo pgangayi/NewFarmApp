@@ -1,45 +1,61 @@
-import { createClient } from '@supabase/supabase-js';
+import { AuthUtils, createErrorResponse } from '../_auth.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const auth = new AuthUtils(env);
 
   try {
     const body = await request.json();
     const { email, password, name } = body;
 
     if (!email || !password || !name) {
-      return new Response(JSON.stringify({ error: 'Email, password, and name required' }), {
-        status: 400,
+      return createErrorResponse('Email, password, and name required', 400);
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return createErrorResponse('Invalid email format', 400);
+    }
+
+    // Check if user already exists
+    const { results: existingUsers } = await env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email).all();
+
+    if (existingUsers && existingUsers.length > 0) {
+      return new Response(JSON.stringify({ error: 'User already exists' }), {
+        status: 409,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    // Hash password
+    const passwordHash = await auth.hashPassword(password);
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    // Generate user ID
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    if (authError) {
-      return new Response(JSON.stringify({ error: authError.message }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    // Create user in database
+    await env.DB.prepare(
+      'INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)'
+    ).bind(userId, email, name, passwordHash).run();
 
-    // Mock user creation response
-    const mockUser = {
-      id: `user-${Date.now()}`,
+    // Generate JWT token
+    const token = auth.generateToken(userId, email);
+
+    // Return user data and token
+    const user = {
+      id: userId,
       email,
       name,
       created_at: new Date().toISOString()
     };
 
     return new Response(JSON.stringify({
-      user: mockUser,
-      message: 'User created successfully (mock response for testing)'
+      user,
+      token,
+      message: 'User created successfully'
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
@@ -47,9 +63,6 @@ export async function onRequestPost(context) {
 
   } catch (error) {
     console.error('Signup error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return createErrorResponse('Internal server error: ' + error.message, 500);
   }
 }

@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 interface InventoryItem {
-  id: string;
+  id: number;
   name: string;
-  category: string;
   sku?: string;
+  qty: number;
   unit: string;
-  quantity_on_hand: number;
-  reorder_threshold?: number;
-  unit_cost?: number;
-  supplier?: string;
-  notes?: string;
+  reorder_threshold: number;
+  created_at: string;
 }
 
 interface InventoryListProps {
@@ -21,17 +18,18 @@ interface InventoryListProps {
 export function InventoryList({ farmId }: InventoryListProps) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { getAuthHeaders } = useAuth();
 
   useEffect(() => {
-    loadInventory();
+    if (farmId) {
+      loadInventory();
+    }
   }, [farmId]);
 
   const loadInventory = async () => {
     try {
-      const response = await fetch(`/api/inventory/items?farm_id=${farmId}`, {
-        headers: {
-          'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
-        }
+      const response = await fetch(`/api/inventory?farm_id=${farmId}`, {
+        headers: getAuthHeaders()
       });
 
       if (response.ok) {
@@ -59,16 +57,15 @@ export function InventoryList({ farmId }: InventoryListProps) {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{item.name}</h3>
-                <p className="text-sm text-gray-600">{item.category}</p>
                 {item.sku && <p className="text-sm text-gray-500">SKU: {item.sku}</p>}
               </div>
               <div className="text-right">
                 <p className={`font-semibold ${
-                  item.reorder_threshold && item.quantity_on_hand <= item.reorder_threshold
+                  item.reorder_threshold && item.qty <= item.reorder_threshold
                     ? 'text-red-600'
                     : 'text-green-600'
                 }`}>
-                  {item.quantity_on_hand} {item.unit}
+                  {item.qty} {item.unit}
                 </p>
                 {item.reorder_threshold && (
                   <p className="text-sm text-gray-500">
@@ -77,14 +74,6 @@ export function InventoryList({ farmId }: InventoryListProps) {
                 )}
               </div>
             </div>
-
-            {item.supplier && (
-              <p className="text-sm text-gray-600 mt-2">Supplier: {item.supplier}</p>
-            )}
-
-            {item.notes && (
-              <p className="text-sm text-gray-600 mt-1">{item.notes}</p>
-            )}
           </div>
         ))}
       </div>

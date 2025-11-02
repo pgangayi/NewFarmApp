@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
 import Map from '../components/Map';
 
 interface Field {
@@ -15,13 +14,13 @@ export function FieldsPage() {
   const { data: fields, isLoading, error } = useQuery({
     queryKey: ['fields'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('fields')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Field[];
+      const response = await fetch('/api/fields', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch fields');
+      return response.json() as Promise<Field[]>;
     }
   });
 

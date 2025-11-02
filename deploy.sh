@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Farmers Boot Deployment Script
-# This script deploys the application to Cloudflare Pages
+# This script deploys the application to Cloudflare Pages and assumes Cloudflare D1 (no Supabase)
 
 set -e
 
@@ -15,12 +15,11 @@ if ! command -v wrangler &> /dev/null; then
 fi
 
 # Check if environment variables are set
-if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+if [ -z "$JWT_SECRET" ]; then
     echo "❌ Required environment variables not set. Please set:"
-    echo "  - SUPABASE_URL"
-    echo "  - SUPABASE_SERVICE_ROLE_KEY"
+    echo "  - JWT_SECRET (for authentication)"
+    echo "  - DATABASE_URL (optional, uses D1 in production)"
     echo "  - SENTRY_DSN (optional)"
-    echo "  - RATE_LIMIT_KV_ID (optional)"
     exit 1
 fi
 

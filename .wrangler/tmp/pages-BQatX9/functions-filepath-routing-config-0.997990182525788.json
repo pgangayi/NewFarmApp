@@ -1,0 +1,229 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/auth/login",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/login.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/auth/signup",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/signup.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/auth/validate",
+      "mountPath": "/api/auth",
+      "method": "GET",
+      "module": [
+        "api/auth/validate.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/auth/validate",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/validate.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/crops/irrigation",
+      "mountPath": "/api/crops",
+      "method": "",
+      "module": [
+        "api/crops/irrigation.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/crops/pests-diseases",
+      "mountPath": "/api/crops",
+      "method": "",
+      "module": [
+        "api/crops/pests-diseases.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/crops/rotation",
+      "mountPath": "/api/crops",
+      "method": "",
+      "module": [
+        "api/crops/rotation.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/crops/soil-health",
+      "mountPath": "/api/crops",
+      "method": "",
+      "module": [
+        "api/crops/soil-health.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/finance/entries",
+      "mountPath": "/api/finance",
+      "method": "",
+      "module": [
+        "api/finance/entries.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/operations/apply-treatment-cloudflare",
+      "mountPath": "/api/operations",
+      "method": "",
+      "module": [
+        "api/operations/apply-treatment-cloudflare.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/crops",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/crops.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/analytics-engine",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/analytics-engine.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/animals",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/animals.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/animals-enhanced",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/animals-enhanced.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/crops",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/crops.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/crops-main",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/crops-main.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/farms",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/farms.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/farms-enhanced",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/farms-enhanced.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/fields",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/fields.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/fields-enhanced",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/fields-enhanced.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/finance-enhanced",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/finance-enhanced.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/inventory",
+      "mountPath": "/api/inventory",
+      "method": "",
+      "module": [
+        "api/inventory/index.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/inventory-enhanced",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/inventory-enhanced.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/system-integration",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/system-integration.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/tasks",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/tasks.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/tasks-enhanced",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/tasks-enhanced.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/weather-location",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/weather-location.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/health",
+      "mountPath": "/",
+      "method": "",
+      "module": [
+        "health.js:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

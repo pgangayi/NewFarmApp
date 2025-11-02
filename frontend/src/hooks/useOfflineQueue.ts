@@ -104,12 +104,12 @@ export function useOfflineQueue() {
   };
 
   const processOperation = async (op: OfflineOperation) => {
-    const token = localStorage.getItem('supabase.auth.token');
+    const token = localStorage.getItem('authToken');
     if (!token) return { success: false, error: 'No auth token' };
 
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${JSON.parse(token).access_token}`
+      'Authorization': `Bearer ${token}`
     };
 
     try {

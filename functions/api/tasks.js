@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { AuthUtils, createUnauthorizedResponse, createErrorResponse, createSuccessResponse } from './_auth.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -6,98 +6,111 @@ export async function onRequest(context) {
   const method = request.method;
 
   try {
-    // Validate JWT
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    const token = authHeader.substring(7);
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Initialize AuthUtils
+    const auth = new AuthUtils(env);
+    
+    // Get user from token
+    const user = await auth.getUserFromToken(request);
+    if (!user) {
+      return createUnauthorizedResponse();
     }
 
     if (method === 'GET') {
-      // Return mock tasks data for testing
-      const mockTasks = [
-        {
-          id: 'task-1',
-          title: 'Plant corn seeds',
-          description: 'Plant corn seeds in North Field',
-          status: 'pending',
-          priority: 'high',
-          due_date: '2024-11-15T00:00:00Z',
-          created_at: '2024-10-30T10:00:00Z',
-          farm_name: 'Green Valley Farm',
-          assigned_to_name: 'John Farmer'
-        },
-        {
-          id: 'task-2',
-          title: 'Check irrigation system',
-          description: 'Inspect irrigation system in South Field',
-          status: 'in_progress',
-          priority: 'medium',
-          due_date: '2024-11-01T00:00:00Z',
-          created_at: '2024-10-28T14:30:00Z',
-          farm_name: 'Green Valley Farm',
-          assigned_to_name: null
-        }
-      ];
+      // List tasks for user's farms
+      const { results: tasks, error } = await env.DB.prepare(`
+        SELECT 
+          t.id,
+          t.title,
+          t.description,
+          t.status,
+          t.priority,
+          t.due_date,
+          t.created_at,
+          t.updated_at,
+          fa.name as farm_name,
+          assignee.name as assigned_to_name
+        FROM tasks t
+        JOIN farm_members fm ON t.farm_id = fm.farm_id
+        JOIN farms fa ON t.farm_id = fa.id
+        LEFT JOIN users assignee ON t.assigned_to = assignee.id
+        WHERE fm.user_id = ?
+        ORDER BY t.due_date ASC, t.created_at DESC
+      `).bind(user.id).all();
 
-      return new Response(JSON.stringify(mockTasks), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-    } else if (method === 'POST') {
-      // Mock task creation
-      const body = await request.json();
-      const { farm_id, title, description, priority, due_date } = body;
-
-      if (!farm_id || !title) {
-        return new Response(JSON.stringify({ error: 'Farm ID and title required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+      if (error) {
+        console.error('Database error:', error);
+        return createErrorResponse('Database error', 500);
       }
 
-      const mockTask = {
-        id: `task-${Date.now()}`,
-        title,
-        description: description || null,
-        status: 'pending',
-        priority: priority || 'medium',
-        due_date: due_date || null,
-        created_at: new Date().toISOString(),
-        farm_name: 'Mock Farm',
-        assigned_to_name: null
-      };
+      return createSuccessResponse(tasks || []);
 
-      return new Response(JSON.stringify(mockTask), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    } else if (method === 'POST') {
+      // Create task
+      const body = await request.json();
+      const { farm_id, title, description, status, priority, due_date, assigned_to } = body;
+
+      if (!farm_id || !title) {
+        return createErrorResponse('Farm ID and title required', 400);
+      }
+
+      // Check if user has access to this farm
+      if (!await auth.hasFarmAccess(user.id, farm_id)) {
+        return createErrorResponse('Farm not found or access denied', 404);
+      }
+
+      // If assigning to someone, verify they have access to the farm
+      if (assigned_to && !await auth.hasFarmAccess(assigned_to, farm_id)) {
+        return createErrorResponse('Assigned user does not have access to this farm', 400);
+      }
+
+      const { results, error: insertError } = await env.DB.prepare(`
+        INSERT INTO tasks (farm_id, title, description, status, priority, due_date, assigned_to, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        farm_id,
+        title,
+        description || null,
+        status || 'pending',
+        priority || 'medium',
+        due_date || null,
+        assigned_to || null,
+        user.id
+      ).run();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        return createErrorResponse('Failed to create task', 500);
+      }
+
+      // Get the created task with farm name and assignee name
+      const { results: taskResults } = await env.DB.prepare(`
+        SELECT 
+          t.id,
+          t.title,
+          t.description,
+          t.status,
+          t.priority,
+          t.due_date,
+          t.created_at,
+          t.updated_at,
+          fa.name as farm_name,
+          assignee.name as assigned_to_name
+        FROM tasks t
+        JOIN farms fa ON t.farm_id = fa.id
+        LEFT JOIN users assignee ON t.assigned_to = assignee.id
+        WHERE t.rowid = last_insert_rowid()
+      `).all();
+
+      const newTask = taskResults[0];
+
+      return createSuccessResponse(newTask);
 
     } else {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return createErrorResponse('Method not allowed', 405);
     }
 
   } catch (error) {
     console.error('Tasks API error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return createErrorResponse('Internal server error', 500);
   }
 }

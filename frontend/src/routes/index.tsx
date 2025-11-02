@@ -1,22 +1,6 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useAuth } from '../hooks/useAuth';
-
-function IndexComponent() {
-  const { user } = useAuth();
-
-  if (user) {
-    throw redirect({
-      to: '/farms',
-    });
-  } else {
-    throw redirect({
-      to: '/login',
-    });
-  }
-
-  return null;
-}
+import { createFileRoute } from '@tanstack/react-router';
+import { LandingPage } from '../pages/LandingPage';
 
 export const Route = createFileRoute('/')({
-  component: IndexComponent,
+  component: LandingPage,
 });

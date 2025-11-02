@@ -10,16 +10,19 @@ export async function onRequest(context) {
       checks: {}
     };
 
-    // Check Supabase connection
+    // Check D1 database connection
     try {
-      const response = await fetch(`${env.SUPABASE_URL}/rest/v1/`, {
-        headers: {
-          'apikey': env.SUPABASE_SERVICE_ROLE_KEY
-        }
-      });
-      checks.checks.supabase = response.ok ? 'healthy' : 'unhealthy';
+      const result = await env.DB.prepare('SELECT 1 as test').run();
+      checks.checks.d1_database = result.success ? 'healthy' : 'unhealthy';
     } catch (error) {
-      checks.checks.supabase = 'unhealthy';
+      checks.checks.d1_database = 'unhealthy';
+    }
+
+    // Check JWT_SECRET is configured
+    if (env.JWT_SECRET && env.JWT_SECRET !== 'your-jwt-secret-change-in-production') {
+      checks.checks.jwt_auth = 'configured';
+    } else {
+      checks.checks.jwt_auth = 'not_configured';
     }
 
     // Check KV (if configured)
@@ -32,13 +35,25 @@ export async function onRequest(context) {
       }
     }
 
+    // Check Workers environment
+    checks.checks.workers_environment = 'healthy';
+
     // Determine overall status
-    const allHealthy = Object.values(checks.checks).every(status => status === 'healthy');
-    checks.status = allHealthy ? 'healthy' : 'degraded';
+    const criticalServices = ['d1_database', 'jwt_auth'];
+    const criticalHealthy = criticalServices.every(service => 
+      checks.checks[service] === 'healthy' || checks.checks[service] === 'configured'
+    );
+    
+    const allServicesHealthy = Object.values(checks.checks).every(status => 
+      status === 'healthy' || status === 'configured'
+    );
+    
+    checks.status = criticalHealthy ? 
+      (allServicesHealthy ? 'healthy' : 'degraded') : 'unhealthy';
 
     return new Response(JSON.stringify(checks, null, 2), {
       headers: { 'Content-Type': 'application/json' },
-      status: allHealthy ? 200 : 503
+      status: checks.status === 'unhealthy' ? 503 : (checks.status === 'degraded' ? 200 : 200)
     });
 
   } catch (error) {
