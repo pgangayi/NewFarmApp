@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { Calendar, MapPin, Cloud, CloudRain, Sun, Wind } from 'lucide-react';
+import { Calendar, MapPin, Cloud, CloudRain, Sun, Wind, Loader2, AlertCircle } from 'lucide-react';
 
 interface WeatherDay {
   data_date: string;
@@ -26,7 +26,7 @@ interface WeatherCalendarProps {
 export function WeatherCalendar({ farmId, operations = [], onOperationClick }: WeatherCalendarProps) {
   const { getAuthHeaders } = useAuth();
 
-  const { data: weatherData, isLoading } = useQuery({
+  const { data: weatherData, isLoading, error } = useQuery({
     queryKey: ['weather-calendar', farmId],
     queryFn: async () => {
       const response = await fetch(`/api/weather/farm?farm_id=${farmId}&days=30`, {
@@ -55,12 +55,34 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
     }
   };
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="border rounded-lg p-6 bg-white shadow">
-        <div className="flex items-center justify-center">
-          <Calendar className="h-6 w-6 animate-spin mr-2" />
-          Loading weather calendar...
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-lg font-medium text-gray-700">Loading weather calendar...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Weather Calendar Unavailable</h2>
+          <p className="text-gray-600 mb-4">
+            We're having trouble loading the weather calendar. Please check your connection and try again.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -81,124 +103,168 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
   }
 
   return (
-    <div className="border rounded-lg p-6 bg-white shadow">
-      <div className="flex items-center gap-2 mb-6">
-        <Calendar className="h-5 w-5" />
-        <h3 className="text-lg font-semibold">Weather & Operations Calendar</h3>
-      </div>
-
-      <div className="space-y-6">
-        {weeklyData.map((week, weekIndex) => (
-          <div key={weekIndex} className="space-y-3">
-            <h4 className="font-medium text-gray-700">
-              Week of {new Date(week[0].data_date).toLocaleDateString()}
-            </h4>
-            
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: 7 }, (_, dayIndex) => {
-                const date = new Date(week[0].data_date);
-                date.setDate(date.getDate() + dayIndex);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                const weatherDay = week[dayIndex];
-                const dayOperations = operationsByDate[dateStr] || [];
-                
-                return (
-                  <div
-                    key={dayIndex}
-                    className={`border rounded p-2 min-h-[120px] ${
-                      date.getDay() === 0 || date.getDay() === 6 
-                        ? 'bg-gray-50' 
-                        : 'bg-white'
-                    }`}
-                  >
-                    <div className="text-center mb-2">
-                      <div className="text-xs text-gray-600">
-                        {date.toLocaleDateString('en', { weekday: 'short' })}
-                      </div>
-                      <div className="text-sm font-medium">
-                        {date.getDate()}
-                      </div>
-                    </div>
-
-                    {weatherDay && (
-                      <div className="space-y-1">
-                        <div className="flex justify-center">
-                          {getWeatherIcon(weatherDay.precipitation_sum)}
-                        </div>
-                        <div className="text-xs text-center">
-                          <div>{weatherDay.temperature_max}°/{weatherDay.temperature_min}°</div>
-                          <div className="text-blue-600">{weatherDay.precipitation_sum}mm</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {dayOperations.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {dayOperations.map((op) => (
-                          <div
-                            key={op.id}
-                            className={`${getOperationTypeColor(op.type)} text-white text-xs p-1 rounded cursor-pointer`}
-                            onClick={() => onOperationClick?.(op.id)}
-                          >
-                            <div className="truncate">{op.title}</div>
-                            <div className="text-xs opacity-80">
-                              {op.status}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-sm border border-white/20 p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <Calendar className="h-7 w-7 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Weather Calendar</h1>
+                  <p className="text-sm text-gray-600 mt-1">Weather patterns and farm operations timeline</p>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-
-        {weatherDays.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <MapPin className="h-8 w-8 mx-auto mb-2" />
-            <p>No weather data available</p>
-            <p className="text-sm">Set your farm location to see weather calendar</p>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6 pt-4 border-t">
-        <h4 className="font-medium mb-3">Legend</h4>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Sun className="h-4 w-4 text-yellow-500" />
-            <span>Sunny</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-gray-500" />
-            <span>Cloudy</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CloudRain className="h-4 w-4 text-blue-500" />
-            <span>Rainy</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Wind className="h-4 w-4 text-gray-500" />
-            <span>Windy</span>
-          </div>
         </div>
-        
-        <div className="mt-4 space-y-1 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span>Planting</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span>Fertilizing</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-500 rounded"></div>
-            <span>Harvest</span>
-          </div>
+
+        {/* Calendar Content */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          {weatherDays.length > 0 ? (
+            <div className="space-y-8">
+              {weeklyData.map((week, weekIndex) => (
+                <div key={weekIndex} className="space-y-4">
+                  <h4 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
+                    Week of {new Date(week[0].data_date).toLocaleDateString()}
+                  </h4>
+                  
+                  <div className="grid grid-cols-7 gap-3">
+                    {Array.from({ length: 7 }, (_, dayIndex) => {
+                      const date = new Date(week[0].data_date);
+                      date.setDate(date.getDate() + dayIndex);
+                      const dateStr = date.toISOString().split('T')[0];
+                      
+                      const weatherDay = week[dayIndex];
+                      const dayOperations = operationsByDate[dateStr] || [];
+                      
+                      return (
+                        <div
+                          key={dayIndex}
+                          className={`rounded-xl p-4 min-h-[140px] border transition-all hover:shadow-md ${
+                            date.getDay() === 0 || date.getDay() === 6 
+                              ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200' 
+                              : 'bg-gradient-to-br from-white to-blue-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="text-center mb-3">
+                            <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                              {date.toLocaleDateString('en', { weekday: 'short' })}
+                            </div>
+                            <div className="text-lg font-bold text-gray-900">
+                              {date.getDate()}
+                            </div>
+                          </div>
+
+                          {weatherDay && (
+                            <div className="space-y-2">
+                              <div className="flex justify-center">
+                                <div className="p-2 bg-white rounded-lg shadow-sm">
+                                  {getWeatherIcon(weatherDay.precipitation_sum)}
+                                </div>
+                              </div>
+                              <div className="text-xs text-center space-y-1">
+                                <div className="font-semibold text-gray-900">
+                                  {weatherDay.temperature_max}°/{weatherDay.temperature_min}°
+                                </div>
+                                <div className="text-blue-600 font-medium">
+                                  {weatherDay.precipitation_sum}mm
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {dayOperations.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              {dayOperations.map((op) => (
+                                <div
+                                  key={op.id}
+                                  className={`${getOperationTypeColor(op.type)} text-white text-xs p-2 rounded-lg cursor-pointer hover:opacity-80 transition-opacity`}
+                                  onClick={() => onOperationClick?.(op.id)}
+                                >
+                                  <div className="truncate font-medium">{op.title}</div>
+                                  <div className="text-xs opacity-90">
+                                    {op.status}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Legend */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h4 className="font-semibold mb-4 text-gray-900 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-gray-600" />
+                  Legend
+                </h4>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
+                    <Sun className="h-5 w-5 text-yellow-500" />
+                    <span className="text-sm font-medium text-gray-700">Sunny</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg">
+                    <Cloud className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">Cloudy</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg">
+                    <CloudRain className="h-5 w-5 text-blue-500" />
+                    <span className="text-sm font-medium text-gray-700">Rainy</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                    <Wind className="h-5 w-5 text-green-500" />
+                    <span className="text-sm font-medium text-gray-700">Windy</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span className="text-sm text-gray-700">Planting</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <span className="text-sm text-gray-700">Fertilizing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-cyan-500 rounded"></div>
+                    <span className="text-sm text-gray-700">Irrigation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                    <span className="text-sm text-gray-700">Harvest</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 rounded"></div>
+                    <span className="text-sm text-gray-700">Pest Control</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <MapPin className="h-10 w-10 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Weather Data Available</h3>
+              <p className="text-gray-600 mb-4">Set your farm location to see weather calendar and planning insights</p>
+              <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Configure Farm Location
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

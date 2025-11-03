@@ -118,7 +118,7 @@ jobs:
           --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
 
     env:
-      SUPABASE_DB_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
     steps:
       - uses: actions/checkout@v4
@@ -146,7 +146,7 @@ jobs:
 
       - name: Run integration tests
         env:
-          SUPABASE_DB_URL: ${{ env.SUPABASE_DB_URL }}
+          DATABASE_URL: ${{ env.DATABASE_URL }}
         run: |
           npm run test:integration
         shell: pwsh

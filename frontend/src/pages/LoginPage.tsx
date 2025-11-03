@@ -29,7 +29,7 @@ export function LoginPage() {
       setError(authError.message);
       setLoading(false);
     } else {
-      navigate('/farms');
+      navigate('/dashboard');
     }
   };
 
@@ -70,6 +70,11 @@ export function LoginPage() {
           <button type="submit" disabled={loading} data-testid="login-submit-button">
             {loading ? 'Logging in...' : 'Login'}
           </button>
+          <div className="form-links">
+            <a href="/forgot-password" data-testid="forgot-password-link">
+              Forgot your password?
+            </a>
+          </div>
         </form>
         <p>
           Don't have an account? <a href="/signup" data-testid="signup-link">Sign up</a>

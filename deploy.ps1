@@ -58,5 +58,5 @@ if (!$DryRun) {
     Write-Host "3. Test the application functionality" -ForegroundColor White
 } else {
     Write-Host "🔍 Dry run - would execute:" -ForegroundColor Yellow
-    Write-Host 'wrangler pages deploy frontend/dist --compatibility-date 2024-01-01' -ForegroundColor Gray
+    Write-Host "wrangler pages deploy frontend/dist --compatibility-date 2024-01-01" -ForegroundColor Gray
 }

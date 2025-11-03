@@ -1,4 +1,5 @@
 import { useOfflineQueue } from '../hooks/useOfflineQueue';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 
 export function QueuePage() {
   const { queueLength, isOnline, conflicts, resolveConflict } = useOfflineQueue();
@@ -8,7 +9,15 @@ export function QueuePage() {
   };
 
   return (
-    <div className="queue-page p-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Breadcrumbs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumbs className="mb-0" />
+        </div>
+      </div>
+
+      <div className="queue-page p-6">
       <h1 className="text-2xl font-bold mb-4">Offline Queue</h1>
 
       <div className="queue-status mb-6">
@@ -77,6 +86,7 @@ export function QueuePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

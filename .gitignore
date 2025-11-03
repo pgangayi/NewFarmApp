@@ -161,10 +161,8 @@ Thumbs.db
 functions/_headers
 functions/_redirects
 
-# Supabase
-.supabase/
-supabase/.branches
-supabase/.temp
+# Legacy build artifacts (cleaned)
+.wrangler/tmp/
 
 # Testing
 test-results/

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { Bell, CheckCircle, X, AlertTriangle, Info } from 'lucide-react';
+import { Bell, CheckCircle, X, AlertTriangle, Info, Settings, Loader2, AlertCircle, BellRing } from 'lucide-react';
 
 interface WeatherNotification {
   id: string;
@@ -43,7 +43,7 @@ export function WeatherNotifications({
     }
   };
 
-  const { data: notifications, refetch } = useQuery({
+  const { data: notifications, isLoading, error, refetch } = useQuery({
     queryKey: ['weather-notifications', farmId],
     queryFn: async () => {
       const response = await fetch('/api/weather/recommendations', {
@@ -137,147 +137,197 @@ export function WeatherNotifications({
 
   const getSeverityColor = (severity?: string) => {
     switch (severity) {
-      case 'critical': return 'border-red-500 bg-red-50';
-      case 'high': return 'border-orange-500 bg-orange-50';
-      case 'medium': return 'border-yellow-500 bg-yellow-50';
-      default: return 'border-gray-200 bg-white';
+      case 'critical': return 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50';
+      case 'high': return 'border-orange-500 bg-gradient-to-r from-orange-50 to-yellow-50';
+      case 'medium': return 'border-yellow-500 bg-gradient-to-r from-yellow-50 to-amber-50';
+      default: return 'border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50';
     }
   };
 
-  if (!notifications) {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="border rounded-lg p-4 bg-white shadow">
-        <div className="flex items-center justify-center">
-          <Bell className="h-5 w-5 animate-pulse mr-2" />
-          <span className="text-gray-600">Loading notifications...</span>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-lg font-medium text-gray-700">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Notifications Unavailable</h2>
+          <p className="text-gray-600 mb-4">
+            We're having trouble loading weather notifications. Please check your connection and try again.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Weather Notifications</h3>
-          {unacknowledgedNotifications.length > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-              {unacknowledgedNotifications.length}
-            </span>
-          )}
-        </div>
-        
-        {/* Notification Permission Button */}
-        {enablePush && permissionStatus === 'default' && (
-          <button
-            onClick={requestNotificationPermission}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            Enable Push Notifications
-          </button>
-        )}
-      </div>
-
-      {displayedNotifications.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-          <p>All caught up!</p>
-          <p className="text-sm">No pending weather notifications</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {displayedNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`border rounded p-3 cursor-pointer transition-all hover:shadow-md ${getSeverityColor(notification.severity)}`}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  {getNotificationIcon(notification.type, notification.severity)}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-sm border border-white/20 p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <BellRing className="h-7 w-7 text-blue-600" />
                 </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium text-sm truncate">{notification.title}</h4>
-                    <div className="flex items-center gap-2 ml-2">
-                      {notification.severity && (
-                        <span className={`text-xs px-1.5 py-0.5 rounded text-white ${
-                          notification.severity === 'critical' ? 'bg-red-600' :
-                          notification.severity === 'high' ? 'bg-orange-500' :
-                          notification.severity === 'medium' ? 'bg-yellow-500' : 'bg-gray-500'
-                        }`}>
-                          {notification.severity.toUpperCase()}
-                        </span>
-                      )}
-                      
-                      {!notification.acknowledged && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                  
-                  {notification.actions && notification.actions.length > 0 && (
-                    <div className="text-xs text-gray-500">
-                      <span className="font-medium">Actions: </span>
-                      {notification.actions.slice(0, 2).join(', ')}
-                      {notification.actions.length > 2 && '...'}
-                    </div>
-                  )}
-                  
-                  <div className="text-xs text-gray-400 mt-1">
-                    {new Date(notification.timestamp).toLocaleString()}
-                  </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Weather Notifications</h1>
+                  <p className="text-sm text-gray-600 mt-1">Stay informed about weather alerts and recommendations</p>
                 </div>
-                
-                {notification.acknowledged && (
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  </div>
-                )}
               </div>
             </div>
-          ))}
-          
-          {notifications.length > 5 && !showAll && (
-            <button
-              onClick={() => setShowAll(true)}
-              className="w-full text-center text-sm text-blue-600 hover:text-blue-800 py-2"
-            >
-              View all {notifications.length} notifications
-            </button>
-          )}
-          
-          {showAll && notifications.length > 5 && (
-            <button
-              onClick={() => setShowAll(false)}
-              className="w-full text-center text-sm text-gray-600 hover:text-gray-800 py-2"
-            >
-              Show less
-            </button>
-          )}
+            
+            {/* Notification Permission Button */}
+            {enablePush && permissionStatus === 'default' && (
+              <button
+                onClick={requestNotificationPermission}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <Bell className="h-4 w-4" />
+                Enable Push Notifications
+              </button>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Notification Settings */}
-      <div className="mt-4 pt-4 border-t">
-        <h4 className="font-medium mb-2">Notification Settings</h4>
-        <div className="space-y-2 text-sm">
-          <label className="flex items-center">
-            <input type="checkbox" defaultChecked className="mr-2" />
-            Weather alerts (critical & high priority)
-          </label>
-          <label className="flex items-center">
-            <input type="checkbox" defaultChecked className="mr-2" />
-            Farming recommendations
-          </label>
-          <label className="flex items-center">
-            <input type="checkbox" className="mr-2" />
-            Daily weather summary
-          </label>
+        {/* Notifications Content */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          {displayedNotifications.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="p-4 bg-green-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <CheckCircle className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">All Caught Up!</h3>
+              <p className="text-gray-600">No pending weather notifications at this time</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {displayedNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`border rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg ${getSeverityColor(notification.severity)}`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 mt-1 p-2 bg-white rounded-lg shadow-sm">
+                      {getNotificationIcon(notification.type, notification.severity)}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900 truncate">{notification.title}</h4>
+                        <div className="flex items-center gap-2 ml-3">
+                          {notification.severity && (
+                            <span className={`text-xs px-2 py-1 rounded-full text-white font-medium ${
+                              notification.severity === 'critical' ? 'bg-red-600' :
+                              notification.severity === 'high' ? 'bg-orange-500' :
+                              notification.severity === 'medium' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}>
+                              {notification.severity.toUpperCase()}
+                            </span>
+                          )}
+                          
+                          {!notification.acknowledged && (
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-gray-700 mb-3">{notification.message}</p>
+                      
+                      {notification.actions && notification.actions.length > 0 && (
+                        <div className="text-xs text-gray-600 mb-3">
+                          <span className="font-semibold">Recommended Actions: </span>
+                          {notification.actions.slice(0, 2).join(', ')}
+                          {notification.actions.length > 2 && '...'}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-500">
+                          {new Date(notification.timestamp).toLocaleString()}
+                        </div>
+                        
+                        {notification.acknowledged && (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="h-4 w-4" />
+                            <span className="text-xs font-medium">Acknowledged</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {notifications && notifications.length > 5 && !showAll && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="w-full text-center text-blue-600 hover:text-blue-800 py-3 text-sm font-medium transition-colors"
+                >
+                  View all {notifications.length} notifications
+                </button>
+              )}
+              
+              {showAll && notifications && notifications.length > 5 && (
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="w-full text-center text-gray-600 hover:text-gray-800 py-3 text-sm font-medium transition-colors"
+                >
+                  Show less
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Notification Settings */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h4 className="font-semibold mb-4 text-gray-900 flex items-center gap-2">
+              <Settings className="h-5 w-5 text-gray-600" />
+              Notification Settings
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <label className="flex items-center p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100">
+                <input type="checkbox" defaultChecked className="mr-3 text-red-500" />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Weather alerts</span>
+                  <p className="text-xs text-gray-600">Critical & high priority alerts</p>
+                </div>
+              </label>
+              <label className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                <input type="checkbox" defaultChecked className="mr-3 text-blue-500" />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Farming recommendations</span>
+                  <p className="text-xs text-gray-600">Weather-based farming tips</p>
+                </div>
+              </label>
+              <label className="flex items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+                <input type="checkbox" className="mr-3 text-green-500" />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Daily summary</span>
+                  <p className="text-xs text-gray-600">Daily weather summary</p>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>

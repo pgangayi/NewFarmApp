@@ -23,7 +23,7 @@ async function run() {
     await runMigrations(db);
 
     // Seed a farm and inventory item
-    const farmRes = await db.query('INSERT INTO farms (name) VALUES ($1) RETURNING id', ['test-farm']);
+    const farmRes = await db.query('INSERT INTO farms (name, owner_id) VALUES ($1, $2) RETURNING id', ['test-farm', 'test-user']);
     const farmId = farmRes.rows[0].id;
 
     const itemRes = await db.query('INSERT INTO inventory_items (farm_id, name, qty, unit) VALUES ($1,$2,$3,$4) RETURNING id', [farmId, 'Test Item', 10, 'unit']);

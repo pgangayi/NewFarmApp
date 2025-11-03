@@ -7,9 +7,10 @@ set -e
 
 echo "🚀 Setting up Farmers Boot for local development..."
 
-# Check if Supabase CLI is installed
-if ! command -v supabase &> /dev/null; then
-    echo "⚠️  Supabase CLI not found. For local development, use Cloudflare D1 with Wrangler."
+# Check if Wrangler CLI is installed (for Cloudflare D1)
+if ! command -v wrangler &> /dev/null; then
+    echo "⚠️  Wrangler CLI not found. Please install it:"
+    echo "npm install -g wrangler"
 fi
 
 # Check if .env file exists

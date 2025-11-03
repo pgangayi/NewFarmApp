@@ -4,6 +4,7 @@
 // Core components
 export { Map } from './Map';
 
+export { Header } from './Header';
 // Management components
 export { AIAnalyticsDashboard } from './AIAnalyticsDashboard';
 export { AnimalAnalyticsDashboard } from './AnimalAnalyticsDashboard';
@@ -21,6 +22,8 @@ export { SoilHealthMonitor } from './SoilHealthMonitor';
 
 // Crop management
 export { CropRotationPlanner } from './CropRotationPlanner';
+
+// Weather components
 
 // Weather components
 export { WeatherAnalytics } from './WeatherAnalytics';

@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 interface InventoryItem {
-  id: number;
+  id: string;
   name: string;
+  category: string;
   sku?: string;
-  qty: number;
   unit: string;
-  reorder_threshold: number;
-  created_at: string;
+  quantity_on_hand: number;
+  reorder_threshold?: number;
+  unit_cost?: number;
+  supplier?: string;
+  notes?: string;
 }
 
 interface InventoryListProps {
@@ -21,19 +24,16 @@ export function InventoryList({ farmId }: InventoryListProps) {
   const { getAuthHeaders } = useAuth();
 
   useEffect(() => {
-    if (farmId) {
-      loadInventory();
-    }
+    loadInventory();
   }, [farmId]);
 
   const loadInventory = async () => {
     try {
-      const response = await fetch(`/api/inventory?farm_id=${farmId}`, {
-        headers: getAuthHeaders()
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/inventory/items?farm_id=${farmId}`, {
+        headers
       });
 
-      if (response.ok) {
-        const data = await response.json();
         setItems(data);
       }
     } catch (error) {

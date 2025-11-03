@@ -1,411 +1,686 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Plus, TrendingUp, Users, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 
 interface Farm {
   id: number;
   name: string;
   location: string;
   area_hectares?: number;
+  farm_type?: string;
+  certification_status?: string;
+  environmental_compliance?: string;
+  total_acres?: number;
+  operational_start_date?: string;
+  management_structure?: string;
+  seasonal_staff?: number;
+  annual_budget?: number;
+  animal_count?: number;
+  field_count?: number;
+  pending_tasks?: number;
+  total_revenue?: number;
+  total_expenses?: number;
+  latest_productivity_score?: number;
   created_at: string;
   updated_at?: string;
-  farm_name?: string;
 }
 
-interface CreateFarmForm {
+interface FarmFormData {
   name: string;
   location: string;
-  area_hectares: string;
+  area_hectares?: number;
+  farm_type?: string;
+  certification_status?: string;
+  environmental_compliance?: string;
+  total_acres?: number;
+  operational_start_date?: string;
+  management_structure?: string;
+  seasonal_staff?: number;
+  annual_budget?: number;
 }
 
 export function FarmsPage() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState<CreateFarmForm>({
-    name: '',
-    location: '',
-    area_hectares: ''
-  });
+  const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'analytics'>('grid');
 
-  // Fetch farms query
-  const { data: farms, isLoading, error, refetch } = useQuery({
-    queryKey: ['farms'],
+  const { data: farms, isLoading, error } = useQuery({
+    queryKey: ['farms', 'enhanced'],
     queryFn: async () => {
       if (!isAuthenticated()) {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('/api/farms', {
+      const response = await fetch('/api/farms?analytics=true', {
         method: 'GET',
         headers: getAuthHeaders()
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
         throw new Error(`Failed to fetch farms: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      return data as Farm[];
+      return response.json() as Promise<Farm[]>;
     },
-    enabled: isAuthenticated(),
-    staleTime: 30000, // Cache for 30 seconds
-    retry: 2
+    enabled: isAuthenticated()
   });
 
-  // Create farm mutation
   const createFarmMutation = useMutation({
-    mutationFn: async (farmData: CreateFarmForm) => {
+    mutationFn: async (farmData: FarmFormData) => {
       const response = await fetch('/api/farms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders()
         },
-        body: JSON.stringify({
-          name: farmData.name.trim(),
-          location: farmData.location.trim(),
-          area_hectares: farmData.area_hectares ? parseFloat(farmData.area_hectares) : null
-        })
+        body: JSON.stringify(farmData)
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to create farm');
+        throw new Error('Failed to create farm');
       }
 
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
-      setFormData({ name: '', location: '', area_hectares: '' });
       setShowCreateForm(false);
+      // Redirect to dashboard after successful farm creation
+      navigate('/dashboard');
     }
   });
 
-  const handleCreateFarm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    createFarmMutation.mutate(formData);
+  const updateFarmMutation = useMutation({
+    mutationFn: async ({ id, ...farmData }: FarmFormData & { id: number }) => {
+      const response = await fetch('/api/farms', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ id, ...farmData })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update farm');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farms'] });
+      setEditingFarm(null);
+    }
+  });
+
+  const deleteFarmMutation = useMutation({
+    mutationFn: async (farmId: number) => {
+      const response = await fetch(`/api/farms?id=${farmId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete farm');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farms'] });
+    }
+  });
+
+  const handleCreateFarm = (farmData: FarmFormData) => {
+    createFarmMutation.mutate(farmData);
   };
 
-  // Filter farms based on search
-  const filteredFarms = farms?.filter(farm => 
-    farm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    farm.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleUpdateFarm = (farmData: FarmFormData) => {
+    if (editingFarm) {
+      updateFarmMutation.mutate({ id: editingFarm.id, ...farmData });
+    }
+  };
 
-  // Modal close handler with escape key
-  const handleCloseModal = () => {
-    if (!createFarmMutation.isPending) {
-      setShowCreateForm(false);
-      setFormData({ name: '', location: '', area_hectares: '' });
-      createFarmMutation.reset();
+  const handleDeleteFarm = (farmId: number) => {
+    if (confirm('Are you sure you want to delete this farm? This action cannot be undone.')) {
+      deleteFarmMutation.mutate(farmId);
     }
   };
 
   if (!isAuthenticated()) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center bg-white rounded-lg shadow-lg p-8 max-w-md">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600">Please log in to view and manage your farms.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your farms...</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
+          <p className="text-gray-600">You need to be logged in to view farms.</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center bg-white rounded-lg shadow-lg p-8 max-w-md">
-          <svg className="w-16 h-16 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Error Loading Farms</h2>
-          <p className="text-gray-600 mb-4">{error.message}</p>
-          <button 
-            onClick={() => refetch()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p>Loading farms...</p>
+    </div>
+  </div>;
+
+  if (error) return <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading farms</h2>
+      <p className="text-gray-600">{error.message}</p>
+    </div>
+  </div>;
+
+  const totalAnimals = farms?.reduce((sum, farm) => sum + (farm.animal_count || 0), 0) || 0;
+  const totalFields = farms?.reduce((sum, farm) => sum + (farm.field_count || 0), 0) || 0;
+  const totalRevenue = farms?.reduce((sum, farm) => sum + (farm.total_revenue || 0), 0) || 0;
+  const totalExpenses = farms?.reduce((sum, farm) => sum + (farm.total_expenses || 0), 0) || 0;
+  const avgProductivity = farms && farms.length > 0
+    ? farms.reduce((sum, farm) => sum + (farm.latest_productivity_score || 0), 0) / farms.length
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Farms</h1>
-              <p className="text-gray-600 mt-1">
-                {farms?.length === 0 ? 'No farms yet' : `${farms?.length} ${farms?.length === 1 ? 'farm' : 'farms'}`}
-              </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Farm Management</h1>
+            <p className="text-gray-600 mt-1">Manage and monitor your farm operations</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex rounded-md shadow-sm" role="group">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Grid View
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('analytics')}
+                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-r border-b ${
+                  viewMode === 'analytics'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Analytics
+              </button>
             </div>
-            <button 
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center justify-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+            <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
               Add New Farm
+            </Button>
+          </div>
+        </div>
+
+        {/* Analytics Overview */}
+        {farms && farms.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Farms</CardTitle>
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{farms.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Active farm operations
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Animals</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalAnimals}</div>
+                <p className="text-xs text-muted-foreground">
+                  Across all farms
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${(totalRevenue - totalExpenses).toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Revenue - Expenses
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Productivity</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{avgProductivity.toFixed(1)}%</div>
+                <p className="text-xs text-muted-foreground">
+                  Productivity score
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Content based on view mode */}
+        {viewMode === 'grid' ? (
+          /* Grid View */
+          farms && farms.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {farms.map((farm) => (
+                <Card key={farm.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl">{farm.name}</CardTitle>
+                        <CardDescription className="flex items-center mt-1">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {farm.location}
+                        </CardDescription>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingFarm(farm)}
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Farm Details */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {farm.farm_type && (
+                        <div>
+                          <span className="font-medium">Type:</span> {farm.farm_type}
+                        </div>
+                      )}
+                      {farm.area_hectares && (
+                        <div>
+                          <span className="font-medium">Area:</span> {farm.area_hectares} ha
+                        </div>
+                      )}
+                      {farm.certification_status && (
+                        <div>
+                          <span className="font-medium">Cert:</span> {farm.certification_status}
+                        </div>
+                      )}
+                      {farm.seasonal_staff && (
+                        <div>
+                          <span className="font-medium">Staff:</span> {farm.seasonal_staff}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Performance Metrics */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Animals</span>
+                        <Badge variant="secondary">{farm.animal_count || 0}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Fields</span>
+                        <Badge variant="secondary">{farm.field_count || 0}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Pending Tasks</span>
+                        <Badge variant={farm.pending_tasks && farm.pending_tasks > 0 ? "destructive" : "secondary"}>
+                          {farm.pending_tasks || 0}
+                        </Badge>
+                      </div>
+                      {farm.latest_productivity_score && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Productivity</span>
+                          <Badge variant={farm.latest_productivity_score > 70 ? "default" : "secondary"}>
+                            {farm.latest_productivity_score.toFixed(1)}%
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Financial Overview */}
+                    {(farm.total_revenue || 0) > 0 && (
+                      <div className="pt-2 border-t">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-600">Revenue:</span>
+                            <div className="font-medium text-green-600">
+                              ${(farm.total_revenue || 0).toLocaleString()}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Expenses:</span>
+                            <div className="font-medium text-red-600">
+                              ${(farm.total_expenses || 0).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex space-x-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigate('/dashboard')}
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setEditingFarm(farm)}
+                      >
+                        Manage Farm
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          if (confirm(`Delete farm "${farm.name}"?`)) {
+                            handleDeleteFarm(farm.id);
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+
+                    {/* Created Date */}
+                    <div className="text-xs text-gray-500 pt-2 border-t">
+                      Created: {new Date(farm.created_at).toLocaleDateString()}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-white rounded-lg shadow p-8">
+                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No farms yet</h3>
+                <p className="text-gray-600 mb-4">Get started by creating your first farm.</p>
+                <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                  Create Farm
+                </Button>
+              </div>
+            </div>
+          )
+        ) : (
+          /* Analytics View */
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Farm Performance Analytics</CardTitle>
+                <CardDescription>
+                  Comprehensive analysis of your farm operations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p>Advanced analytics dashboard coming soon...</p>
+                  <p className="text-sm">This will include detailed performance metrics, trend analysis, and optimization recommendations.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Create/Edit Farm Modal */}
+        {(showCreateForm || editingFarm) && (
+          <FarmFormModal
+            farm={editingFarm}
+            onSubmit={editingFarm ? handleUpdateFarm : handleCreateFarm}
+            onClose={() => {
+              setShowCreateForm(false);
+              setEditingFarm(null);
+            }}
+            isLoading={createFarmMutation.isPending || updateFarmMutation.isPending}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Farm Form Modal Component
+interface FarmFormModalProps {
+  farm?: Farm | null;
+  onSubmit: (data: FarmFormData) => void;
+  onClose: () => void;
+  isLoading: boolean;
+}
+
+function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProps) {
+  const [formData, setFormData] = useState<FarmFormData>({
+    name: farm?.name || '',
+    location: farm?.location || '',
+    area_hectares: farm?.area_hectares,
+    farm_type: farm?.farm_type || '',
+    certification_status: farm?.certification_status || '',
+    environmental_compliance: farm?.environmental_compliance || '',
+    total_acres: farm?.total_acres,
+    operational_start_date: farm?.operational_start_date || '',
+    management_structure: farm?.management_structure || '',
+    seasonal_staff: farm?.seasonal_staff,
+    annual_budget: farm?.annual_budget
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold">
+              {farm ? 'Edit Farm' : 'Create New Farm'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ×
             </button>
           </div>
 
-          {/* Search Bar */}
-          {farms && farms.length > 0 && (
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search farms by name or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Farm Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Area (Hectares)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.area_hectares || ''}
+                  onChange={(e) => setFormData({ ...formData, area_hectares: parseFloat(e.target.value) || undefined })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Farm Type
+                </label>
+                <select
+                  value={formData.farm_type || ''}
+                  onChange={(e) => setFormData({ ...formData, farm_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select type</option>
+                  <option value="livestock">Livestock</option>
+                  <option value="crop">Crop</option>
+                  <option value="mixed">Mixed Farming</option>
+                  <option value="organic">Organic</option>
+                  <option value="dairy">Dairy</option>
+                  <option value="poultry">Poultry</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Certification Status
+                </label>
+                <select
+                  value={formData.certification_status || ''}
+                  onChange={(e) => setFormData({ ...formData, certification_status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select status</option>
+                  <option value="certified_organic">Certified Organic</option>
+                  <option value="in_transition">In Transition</option>
+                  <option value="conventional">Conventional</option>
+                  <option value="gap_certified">GAP Certified</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seasonal Staff
+                </label>
+                <input
+                  type="number"
+                  value={formData.seasonal_staff || ''}
+                  onChange={(e) => setFormData({ ...formData, seasonal_staff: parseInt(e.target.value) || undefined })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Operational Start Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.operational_start_date || ''}
+                  onChange={(e) => setFormData({ ...formData, operational_start_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Annual Budget ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.annual_budget || ''}
+                  onChange={(e) => setFormData({ ...formData, annual_budget: parseFloat(e.target.value) || undefined })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Management Structure
+              </label>
+              <textarea
+                value={formData.management_structure || ''}
+                onChange={(e) => setFormData({ ...formData, management_structure: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Describe your farm management structure..."
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Clear search"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
             </div>
-          )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Environmental Compliance
+              </label>
+              <textarea
+                value={formData.environmental_compliance || ''}
+                onChange={(e) => setFormData({ ...formData, environmental_compliance: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Environmental compliance notes..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? 'Saving...' : (farm ? 'Update Farm' : 'Create Farm')}
+              </Button>
+            </div>
+          </form>
         </div>
-
-        {/* Farms Grid */}
-        {filteredFarms && filteredFarms.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFarms.map((farm) => (
-              <div key={farm.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-200">
-                <div className="flex items-start justify-between mb-3">
-                  <h2 className="text-xl font-semibold text-gray-900 flex-1 pr-2">{farm.name}</h2>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
-                  </span>
-                </div>
-                
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-start text-gray-600">
-                    <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="text-sm">{farm.location}</span>
-                  </div>
-                  
-                  {farm.area_hectares && (
-                    <div className="flex items-center text-gray-600">
-                      <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                      </svg>
-                      <span className="text-sm">{farm.area_hectares.toLocaleString()} hectares</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center text-gray-500 text-xs pt-2">
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Created {new Date(farm.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-4 border-t border-gray-100">
-                  <button className="flex-1 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    View Details
-                  </button>
-                  <button className="flex-1 text-green-600 hover:bg-green-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Manage
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : searchQuery && farms && farms.length > 0 ? (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No farms found</h3>
-              <p className="text-gray-600 mb-4">No farms match your search for "{searchQuery}"</p>
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Clear search
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-sm p-12 border border-gray-200">
-              <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No farms yet</h3>
-              <p className="text-gray-600 mb-6">Get started by creating your first farm and begin managing your agricultural operations.</p>
-              <button 
-                onClick={() => setShowCreateForm(true)}
-                className="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create Your First Farm
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Create Farm Modal */}
-      {showCreateForm && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={(e) => e.target === e.currentTarget && handleCloseModal()}
-        >
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fadeIn">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Create New Farm</h2>
-                <button
-                  onClick={handleCloseModal}
-                  disabled={createFarmMutation.isPending}
-                  className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-                  aria-label="Close modal"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleCreateFarm} className="p-6">
-              {createFarmMutation.isError && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-                  <svg className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-sm text-red-700">
-                    {createFarmMutation.error?.message || 'Failed to create farm. Please try again.'}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="farm-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Farm Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="farm-name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Green Valley Farm"
-                    disabled={createFarmMutation.isPending}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="farm-location" className="block text-sm font-medium text-gray-700 mb-1">
-                    Location <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="farm-location"
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Lancaster County, PA"
-                    disabled={createFarmMutation.isPending}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="farm-area" className="block text-sm font-medium text-gray-700 mb-1">
-                    Area (hectares)
-                  </label>
-                  <input
-                    id="farm-area"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.area_hectares}
-                    onChange={(e) => setFormData({ ...formData, area_hectares: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., 50.5"
-                    disabled={createFarmMutation.isPending}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">Optional: Enter the total area of your farm</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={createFarmMutation.isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createFarmMutation.isPending}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {createFarmMutation.isPending ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Farm'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useFarm } from '../hooks/useFarm';
 import { useCrops, useCropsStats } from '../hooks/useCrops';
 import { Button } from '../components/ui/button';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import { 
   Leaf, 
   Sprout,
@@ -26,7 +27,6 @@ import { CropRotationPlanner } from '../components/CropRotationPlanner';
 import { IrrigationOptimizer } from '../components/IrrigationOptimizer';
 import { PestDiseaseManager } from '../components/PestDiseaseManager';
 import { SoilHealthMonitor } from '../components/SoilHealthMonitor';
-import { CreateCropForm } from '../hooks/useCrops';
 
 export function CropsPage() {
   const { user, getAuthHeaders, isAuthenticated } = useAuth();
@@ -34,7 +34,16 @@ export function CropsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'rotation' | 'irrigation' | 'pests' | 'soil'>('overview');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState<CreateCropForm>({
+  const [formData, setFormData] = useState<{
+    name: string;
+    farm_id: string;
+    field_id: string;
+    crop_type: string;
+    variety: string;
+    planting_date: string;
+    expected_harvest_date: string;
+    status: 'planned' | 'active' | 'harvested' | 'failed';
+  }>({
     name: '',
     farm_id: currentFarm?.id || '',
     field_id: '',
@@ -102,6 +111,13 @@ export function CropsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Breadcrumbs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumbs className="mb-0" />
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -400,6 +416,106 @@ export function CropsPage() {
           <SoilHealthMonitor farmId={currentFarm.id} />
         )}
       </div>
+
+      {/* Create Crop Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Add New Crop
+              </h2>
+
+              <form onSubmit={handleCreateCrop} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Crop Type *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.crop_type}
+                      onChange={(e) => setFormData(prev => ({ ...prev, crop_type: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                    <input
+                      type="text"
+                      value={formData.variety}
+                      onChange={(e) => setFormData(prev => ({ ...prev, variety: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date</label>
+                    <input
+                      type="date"
+                      value={formData.planting_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, planting_date: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Expected Harvest Date</label>
+                    <input
+                      type="date"
+                      value={formData.expected_harvest_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, expected_harvest_date: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'planned' | 'active' | 'harvested' | 'failed' }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="planned">Planned</option>
+                      <option value="active">Active</option>
+                      <option value="harvested">Harvested</option>
+                      <option value="failed">Failed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isCreating ? 'Creating...' : 'Create Crop'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

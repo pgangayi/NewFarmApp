@@ -5,19 +5,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
 import './App.css';
 
-// Import components
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Import pages
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
-import { EnhancedFarmDashboard } from './pages/EnhancedFarmDashboard';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import Dashboard from './pages/Dashboard';
 import { FarmsPage } from './pages/FarmsPage';
 import { FieldsPage } from './pages/FieldsPage';
 import { AnimalsPage } from './pages/AnimalsPage';
 import { TasksPage } from './pages/TasksPage';
 import { CropsPage } from './pages/CropsPage';
+import { InventoryPage } from './pages/InventoryPage';
+import { FinancePage } from './pages/FinancePage';
+import { QueuePage } from './pages/QueuePage';
 import { useAuth } from './hooks/useAuth';
 
 // Create a client for React Query
@@ -62,7 +66,7 @@ function Home() {
   }
 
   if (user) {
-    return <Navigate to="/farms" replace />;
+    return <Navigate to="/dashboard" replace />;
   } else {
     return <LandingPage />;
   }
@@ -77,11 +81,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <EnhancedFarmDashboard />
+                  <Dashboard />
                 </ProtectedRoute>
               }
             />
@@ -126,10 +132,26 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               }
             />
             <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute>
+                  <InventoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/finance"
+              element={
+                <ProtectedRoute>
+                  <FinancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/queue"
               element={
                 <ProtectedRoute>
-                  <div>Queue Page</div>
+                  <QueuePage />
                 </ProtectedRoute>
               }
             />
