@@ -2,10 +2,24 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import * as Sentry from '@sentry/react';
 import './index.css';
 import './App.css';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Initialize Sentry
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN || '',
+  integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+  tracesSampleRate: 1.0,
+  tracePropagationTargets: ['localhost', /^https:\/\/yourserver\.io\/api/],
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  environment: import.meta.env.MODE,
+  enabled: import.meta.env.PROD,
+});
 
 // Import pages
 import { LandingPage } from './pages/LandingPage';
@@ -32,7 +46,7 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 // Protected Route component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -40,7 +54,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" data-testid="loading-spinner">
+      <div
+        className="min-h-screen bg-gray-50 flex items-center justify-center"
+        data-testid="loading-spinner"
+      >
         <div className="text-lg">Loading...</div>
       </div>
     );
@@ -55,27 +72,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Home component with automatic redirect based on auth status
 function Home() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" data-testid="loading-spinner">
-        <div className="text-lg" data-testid="loading-text">Loading...</div>
-      </div>
-    );
-  }
-
+  // If user is authenticated, redirect to dashboard
   if (user) {
     return <Navigate to="/dashboard" replace />;
-  } else {
-    return <LandingPage />;
   }
+
+  // Show landing page - even while loading to avoid blank screen
+  // The redirect will happen automatically if user becomes authenticated
+  return <LandingPage />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <ReactQueryDevtools initialIsOpen={false} />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -159,16 +172,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
+
+// Load console filter after React is initialized
+import('./lib/consoleFilter');
+
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then(registration => {
         console.log('SW registered: ', registration);
       })
-      .catch((registrationError) => {
+      .catch(registrationError => {
         console.log('SW registration failed: ', registrationError);
       });
   });

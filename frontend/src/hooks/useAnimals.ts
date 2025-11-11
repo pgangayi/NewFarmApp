@@ -26,7 +26,12 @@ export function useAnimals() {
   const apiClient = getApiClient();
 
   // Fetch all animals
-  const { data: animals, isLoading, error, refetch } = useQuery({
+  const {
+    data: animals,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['animals'],
     queryFn: async () => {
       const response = await apiClient.get<Animal[]>(apiEndpoints.animals.list);
@@ -38,12 +43,13 @@ export function useAnimals() {
   });
 
   // Create animal mutation
-  const { mutate: createAnimal, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createAnimal,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (animalData: CreateAnimalForm) => {
-      const response = await apiClient.post<Animal>(
-        apiEndpoints.animals.create,
-        animalData
-      );
+      const response = await apiClient.post<Animal>(apiEndpoints.animals.create, animalData);
       return response;
     },
     onSuccess: () => {
@@ -52,12 +58,13 @@ export function useAnimals() {
   });
 
   // Update animal mutation
-  const { mutate: updateAnimal, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateAnimal,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, ...animalData }: UpdateAnimalForm) => {
-      const response = await apiClient.put<Animal>(
-        apiEndpoints.animals.update(id),
-        animalData
-      );
+      const response = await apiClient.put<Animal>(apiEndpoints.animals.update(id), animalData);
       return response;
     },
     onSuccess: () => {
@@ -66,7 +73,11 @@ export function useAnimals() {
   });
 
   // Delete animal mutation
-  const { mutate: deleteAnimal, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteAnimal,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
       await apiClient.delete(apiEndpoints.animals.delete(id));
     },
@@ -98,7 +109,12 @@ export function useAnimals() {
 export function useAnimalsByFarm(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: animals, isLoading, error, refetch } = useQuery({
+  const {
+    data: animals,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['animals', 'farm', farmId],
     queryFn: async () => {
       const response = await apiClient.get<Animal[]>(
@@ -121,7 +137,12 @@ export function useAnimalsByFarm(farmId: string) {
 export function useAnimalHealth(animalId: string) {
   const apiClient = getApiClient();
 
-  const { data: health, isLoading, error, refetch } = useQuery({
+  const {
+    data: health,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['animals', 'health', animalId],
     queryFn: async () => {
       const response = await apiClient.get<AnimalHealth>(
@@ -147,11 +168,11 @@ export function useAnimalsStats() {
   const stats = {
     total: animals.length,
     byStatus: {
-      active: animals.filter((a) => a.status === 'active').length,
-      sold: animals.filter((a) => a.status === 'sold').length,
-      deceased: animals.filter((a) => a.status === 'deceased').length,
+      active: animals.filter(a => a.status === 'active').length,
+      sold: animals.filter(a => a.status === 'sold').length,
+      deceased: animals.filter(a => a.status === 'deceased').length,
     },
-    activeCount: animals.filter((a) => a.status === 'active').length,
+    activeCount: animals.filter(a => a.status === 'active').length,
     byType: animals.reduce(
       (acc, animal) => {
         acc[animal.animal_type] = (acc[animal.animal_type] || 0) + 1;

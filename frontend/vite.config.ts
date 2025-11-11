@@ -1,11 +1,14 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic',
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -49,9 +52,16 @@ export default defineConfig({
         ],
       },
     }),
+    visualizer({
+      filename: './dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+    }),
   ],
   build: {
     outDir: 'dist',
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -64,6 +74,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    fs: {
+      strict: true,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8787',
@@ -79,4 +92,4 @@ export default defineConfig({
       'Cache-Control': 'public, max-age=0, must-revalidate',
     },
   },
-})
+});

@@ -23,14 +23,22 @@ interface WeatherCalendarProps {
   onOperationClick?: (operationId: string) => void;
 }
 
-export function WeatherCalendar({ farmId, operations = [], onOperationClick }: WeatherCalendarProps) {
+export function WeatherCalendar({
+  farmId,
+  operations = [],
+  onOperationClick,
+}: WeatherCalendarProps) {
   const { getAuthHeaders } = useAuth();
 
-  const { data: weatherData, isLoading, error } = useQuery({
+  const {
+    data: weatherData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['weather-calendar', farmId],
     queryFn: async () => {
       const response = await fetch(`/api/weather/farm?farm_id=${farmId}&days=30`, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch weather data');
       return response.json();
@@ -46,12 +54,18 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
 
   const getOperationTypeColor = (type: string) => {
     switch (type) {
-      case 'planting': return 'bg-green-500';
-      case 'fertilizing': return 'bg-blue-500';
-      case 'irrigation': return 'bg-cyan-500';
-      case 'harvest': return 'bg-orange-500';
-      case 'pest_control': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'planting':
+        return 'bg-green-500';
+      case 'fertilizing':
+        return 'bg-blue-500';
+      case 'irrigation':
+        return 'bg-cyan-500';
+      case 'harvest':
+        return 'bg-orange-500';
+      case 'pest_control':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
     }
   };
 
@@ -75,10 +89,11 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Weather Calendar Unavailable</h2>
           <p className="text-gray-600 mb-4">
-            We're having trouble loading the weather calendar. Please check your connection and try again.
+            We&apos;re having trouble loading the weather calendar. Please check your connection and
+            try again.
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry
@@ -89,12 +104,15 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
   }
 
   const weatherDays: WeatherDay[] = weatherData?.weather || [];
-  const operationsByDate = operations.reduce((acc, op) => {
-    const date = op.scheduled_date.split('T')[0];
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(op);
-    return acc;
-  }, {} as Record<string, typeof operations>);
+  const operationsByDate = operations.reduce(
+    (acc, op) => {
+      const date = op.scheduled_date.split('T')[0];
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(op);
+      return acc;
+    },
+    {} as Record<string, typeof operations>
+  );
 
   // Group weather data by week
   const weeklyData = [];
@@ -115,7 +133,9 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">Weather Calendar</h1>
-                  <p className="text-sm text-gray-600 mt-1">Weather patterns and farm operations timeline</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Weather patterns and farm operations timeline
+                  </p>
                 </div>
               </div>
             </div>
@@ -134,22 +154,22 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
                     </div>
                     Week of {new Date(week[0].data_date).toLocaleDateString()}
                   </h4>
-                  
+
                   <div className="grid grid-cols-7 gap-3">
                     {Array.from({ length: 7 }, (_, dayIndex) => {
                       const date = new Date(week[0].data_date);
                       date.setDate(date.getDate() + dayIndex);
                       const dateStr = date.toISOString().split('T')[0];
-                      
+
                       const weatherDay = week[dayIndex];
                       const dayOperations = operationsByDate[dateStr] || [];
-                      
+
                       return (
                         <div
                           key={dayIndex}
                           className={`rounded-xl p-4 min-h-[140px] border transition-all hover:shadow-md ${
-                            date.getDay() === 0 || date.getDay() === 6 
-                              ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200' 
+                            date.getDay() === 0 || date.getDay() === 6
+                              ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
                               : 'bg-gradient-to-br from-white to-blue-50 border-gray-200'
                           }`}
                         >
@@ -157,9 +177,7 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
                             <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                               {date.toLocaleDateString('en', { weekday: 'short' })}
                             </div>
-                            <div className="text-lg font-bold text-gray-900">
-                              {date.getDate()}
-                            </div>
+                            <div className="text-lg font-bold text-gray-900">{date.getDate()}</div>
                           </div>
 
                           {weatherDay && (
@@ -182,16 +200,14 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
 
                           {dayOperations.length > 0 && (
                             <div className="mt-3 space-y-2">
-                              {dayOperations.map((op) => (
+                              {dayOperations.map(op => (
                                 <div
                                   key={op.id}
                                   className={`${getOperationTypeColor(op.type)} text-white text-xs p-2 rounded-lg cursor-pointer hover:opacity-80 transition-opacity`}
                                   onClick={() => onOperationClick?.(op.id)}
                                 >
                                   <div className="truncate font-medium">{op.title}</div>
-                                  <div className="text-xs opacity-90">
-                                    {op.status}
-                                  </div>
+                                  <div className="text-xs opacity-90">{op.status}</div>
                                 </div>
                               ))}
                             </div>
@@ -209,7 +225,7 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
                   <MapPin className="h-5 w-5 text-gray-600" />
                   Legend
                 </h4>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
                     <Sun className="h-5 w-5 text-yellow-500" />
@@ -228,7 +244,7 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
                     <span className="text-sm font-medium text-gray-700">Windy</span>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-green-500 rounded"></div>
@@ -258,8 +274,12 @@ export function WeatherCalendar({ farmId, operations = [], onOperationClick }: W
               <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
                 <MapPin className="h-10 w-10 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Weather Data Available</h3>
-              <p className="text-gray-600 mb-4">Set your farm location to see weather calendar and planning insights</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No Weather Data Available
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Set your farm location to see weather calendar and planning insights
+              </p>
               <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 Configure Farm Location
               </button>

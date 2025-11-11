@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  Package, 
-  AlertTriangle, 
-  TrendingUp, 
-  Users, 
-  Plus, 
+import {
+  Package,
+  AlertTriangle,
+  TrendingUp,
+  Users,
+  Plus,
   Search,
   Filter,
   DollarSign,
@@ -19,7 +19,7 @@ import {
   Eye,
   Edit,
   Trash2,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -125,7 +125,9 @@ interface InventoryFormData {
 export function InventoryPage() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState<'overview' | 'items' | 'alerts' | 'suppliers' | 'analytics'>('overview');
+  const [viewMode, setViewMode] = useState<
+    'overview' | 'items' | 'alerts' | 'suppliers' | 'analytics'
+  >('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -138,21 +140,25 @@ export function InventoryPage() {
     queryFn: async () => {
       const response = await fetch('/api/farms', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch farms');
       return response.json();
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get enhanced inventory items
-  const { data: inventoryItems, isLoading, error } = useQuery({
+  const {
+    data: inventoryItems,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['inventory', 'enhanced'],
     queryFn: async () => {
       const response = await fetch('/api/inventory?analytics=true', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -161,7 +167,7 @@ export function InventoryPage() {
 
       return response.json() as Promise<InventoryItem[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get inventory alerts
@@ -170,7 +176,7 @@ export function InventoryPage() {
     queryFn: async () => {
       const response = await fetch('/api/inventory/alerts', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -179,7 +185,7 @@ export function InventoryPage() {
 
       return response.json() as Promise<InventoryAlert[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get suppliers
@@ -188,7 +194,7 @@ export function InventoryPage() {
     queryFn: async () => {
       const response = await fetch('/api/inventory/suppliers', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -197,7 +203,7 @@ export function InventoryPage() {
 
       return response.json() as Promise<Supplier[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get low stock items
@@ -206,7 +212,7 @@ export function InventoryPage() {
     queryFn: async () => {
       const response = await fetch('/api/inventory?low_stock=true', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -215,7 +221,7 @@ export function InventoryPage() {
 
       return response.json() as Promise<InventoryItem[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   const createItemMutation = useMutation({
@@ -224,9 +230,9 @@ export function InventoryPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify(itemData)
+        body: JSON.stringify(itemData),
       });
 
       if (!response.ok) {
@@ -238,7 +244,7 @@ export function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       setShowCreateForm(false);
-    }
+    },
   });
 
   const updateItemMutation = useMutation({
@@ -247,9 +253,9 @@ export function InventoryPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ id, ...itemData })
+        body: JSON.stringify({ id, ...itemData }),
       });
 
       if (!response.ok) {
@@ -261,18 +267,26 @@ export function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       setEditingItem(null);
-    }
+    },
   });
 
   const resolveAlertMutation = useMutation({
-    mutationFn: async ({ alert_id, resolved, notes }: { alert_id: number; resolved: boolean; notes?: string }) => {
+    mutationFn: async ({
+      alert_id,
+      resolved,
+      notes,
+    }: {
+      alert_id: number;
+      resolved: boolean;
+      notes?: string;
+    }) => {
       const response = await fetch('/api/inventory/alerts', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ alert_id, resolved, notes })
+        body: JSON.stringify({ alert_id, resolved, notes }),
       });
 
       if (!response.ok) {
@@ -284,7 +298,7 @@ export function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', 'alerts'] });
       setSelectedAlert(null);
-    }
+    },
   });
 
   const handleCreateItem = (itemData: InventoryFormData) => {
@@ -298,10 +312,10 @@ export function InventoryPage() {
   };
 
   const handleResolveAlert = (alert: InventoryAlert, resolved: boolean, notes?: string) => {
-    resolveAlertMutation.mutate({ 
-      alert_id: alert.id, 
-      resolved, 
-      notes: notes || `Alert ${resolved ? 'resolved' : 'reopened'} by user` 
+    resolveAlertMutation.mutate({
+      alert_id: alert.id,
+      resolved,
+      notes: notes || `Alert ${resolved ? 'resolved' : 'reopened'} by user`,
     });
   };
 
@@ -316,35 +330,46 @@ export function InventoryPage() {
     );
   }
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p>Loading inventory...</p>
-    </div>
-  </div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading inventory...</p>
+        </div>
+      </div>
+    );
 
-  if (error) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading inventory</h2>
-      <p className="text-gray-600">{error.message}</p>
-    </div>
-  </div>;
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading inventory</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
 
   // Calculate summary statistics
   const totalItems = inventoryItems?.length || 0;
-  const totalValue = inventoryItems?.reduce((sum, item) => 
-    sum + (item.qty * (item.current_cost_per_unit || 0)), 0) || 0;
-  const criticalItems = inventoryItems?.filter(item => item.stock_status === 'critical').length || 0;
-  const lowStockItemsCount = inventoryItems?.filter(item => item.stock_status === 'low').length || 0;
+  const totalValue =
+    inventoryItems?.reduce((sum, item) => sum + item.qty * (item.current_cost_per_unit || 0), 0) ||
+    0;
+  const criticalItems =
+    inventoryItems?.filter(item => item.stock_status === 'critical').length || 0;
+  const lowStockItemsCount =
+    inventoryItems?.filter(item => item.stock_status === 'low').length || 0;
   const unresolvedAlerts = alerts?.filter(alert => !alert.resolved).length || 0;
 
   // Filter items based on search and category
-  const filteredItems = inventoryItems?.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = !selectedCategory || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const filteredItems =
+    inventoryItems?.filter(item => {
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory = !selectedCategory || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }) || [];
 
   // Get unique categories for filter dropdown
   const categories = [...new Set(inventoryItems?.map(item => item.category).filter(Boolean) || [])];
@@ -359,7 +384,9 @@ export function InventoryPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-            <p className="text-gray-600 mt-1">Manage your farm supplies, track stock levels, and optimize procurement</p>
+            <p className="text-gray-600 mt-1">
+              Manage your farm supplies, track stock levels, and optimize procurement
+            </p>
           </div>
           <div className="flex items-center space-x-4">
             <Button
@@ -387,11 +414,11 @@ export function InventoryPage() {
               { key: 'overview', label: 'Overview', icon: Package },
               { key: 'items', label: 'Items', icon: Warehouse },
               { key: 'alerts', label: 'Alerts', icon: Bell },
-              { key: 'suppliers', label: 'Suppliers', icon: Truck }
+              { key: 'suppliers', label: 'Suppliers', icon: Truck },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as any)}
+                onClick={() => setViewMode(key as unknown)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-blue-500 text-blue-600'
@@ -401,9 +428,7 @@ export function InventoryPage() {
                 <Icon className="h-4 w-4" />
                 {label}
                 {key === 'alerts' && unresolvedAlerts > 0 && (
-                  <Badge className="bg-red-100 text-red-800">
-                    {unresolvedAlerts}
-                  </Badge>
+                  <Badge className="bg-red-100 text-red-800">{unresolvedAlerts}</Badge>
                 )}
               </button>
             ))}
@@ -422,9 +447,7 @@ export function InventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{totalItems}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Across all farms
-                  </p>
+                  <p className="text-xs text-muted-foreground">Across all farms</p>
                 </CardContent>
               </Card>
 
@@ -435,9 +458,7 @@ export function InventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">${totalValue.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Current inventory value
-                  </p>
+                  <p className="text-xs text-muted-foreground">Current inventory value</p>
                 </CardContent>
               </Card>
 
@@ -448,9 +469,7 @@ export function InventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">{criticalItems}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Low stock items
-                  </p>
+                  <p className="text-xs text-muted-foreground">Low stock items</p>
                 </CardContent>
               </Card>
 
@@ -461,9 +480,7 @@ export function InventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-600">{unresolvedAlerts}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Need attention
-                  </p>
+                  <p className="text-xs text-muted-foreground">Need attention</p>
                 </CardContent>
               </Card>
             </div>
@@ -476,40 +493,49 @@ export function InventoryPage() {
                     <AlertTriangle className="h-5 w-5 text-red-500" />
                     Active Alerts ({unresolvedAlerts})
                   </CardTitle>
-                  <CardDescription>
-                    Items requiring immediate attention
-                  </CardDescription>
+                  <CardDescription>Items requiring immediate attention</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {alerts?.filter(alert => !alert.resolved).slice(0, 5).map((alert) => (
-                      <div key={alert.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <AlertTriangle className={`h-4 w-4 ${
-                            alert.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
-                          }`} />
-                          <div>
-                            <p className="text-sm font-medium">{alert.item_name}</p>
-                            <p className="text-xs text-gray-600">
-                              {alert.alert_type === 'low_stock' ? 'Low stock' : alert.alert_type} - 
-                              Qty: {alert.current_quantity} / Threshold: {alert.threshold_quantity}
-                            </p>
+                    {alerts
+                      ?.filter(alert => !alert.resolved)
+                      .slice(0, 5)
+                      .map(alert => (
+                        <div
+                          key={alert.id}
+                          className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <AlertTriangle
+                              className={`h-4 w-4 ${
+                                alert.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
+                              }`}
+                            />
+                            <div>
+                              <p className="text-sm font-medium">{alert.item_name}</p>
+                              <p className="text-xs text-gray-600">
+                                {alert.alert_type === 'low_stock' ? 'Low stock' : alert.alert_type}{' '}
+                                - Qty: {alert.current_quantity} / Threshold:{' '}
+                                {alert.threshold_quantity}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                            >
+                              {alert.severity}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleResolveAlert(alert, true)}
+                            >
+                              Resolve
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}>
-                            {alert.severity}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleResolveAlert(alert, true)}
-                          >
-                            Resolve
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </CardContent>
               </Card>
@@ -523,17 +549,17 @@ export function InventoryPage() {
                     <Package className="h-5 w-5 text-blue-500" />
                     Low Stock Items ({lowStockItems.length})
                   </CardTitle>
-                  <CardDescription>
-                    Items below reorder threshold
-                  </CardDescription>
+                  <CardDescription>Items below reorder threshold</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {lowStockItems.slice(0, 6).map((item) => (
+                    {lowStockItems.slice(0, 6).map(item => (
                       <div key={item.id} className="p-3 border rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-sm">{item.name}</h4>
-                          <Badge variant={item.stock_status === 'critical' ? 'destructive' : 'secondary'}>
+                          <Badge
+                            variant={item.stock_status === 'critical' ? 'destructive' : 'secondary'}
+                          >
                             {item.stock_status}
                           </Badge>
                         </div>
@@ -563,9 +589,7 @@ export function InventoryPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  Latest inventory transactions and updates
-                </CardDescription>
+                <CardDescription>Latest inventory transactions and updates</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
@@ -589,18 +613,20 @@ export function InventoryPage() {
                   type="text"
                   placeholder="Search items..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={e => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
                 ))}
               </select>
             </div>
@@ -632,7 +658,7 @@ export function InventoryPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredItems.map((item) => (
+                    {filteredItems.map(item => (
                       <tr key={item.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -643,7 +669,9 @@ export function InventoryPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">{item.category || 'Uncategorized'}</span>
+                          <span className="text-sm text-gray-900">
+                            {item.category || 'Uncategorized'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -664,10 +692,13 @@ export function InventoryPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge 
+                          <Badge
                             variant={
-                              item.stock_status === 'critical' ? 'destructive' :
-                              item.stock_status === 'low' ? 'secondary' : 'default'
+                              item.stock_status === 'critical'
+                                ? 'destructive'
+                                : item.stock_status === 'low'
+                                  ? 'secondary'
+                                  : 'default'
                             }
                           >
                             {item.stock_status}
@@ -702,10 +733,9 @@ export function InventoryPage() {
                   <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No items found</h4>
                   <p className="text-gray-600 mb-4">
-                    {searchTerm || selectedCategory 
-                      ? 'Try adjusting your search or filter criteria' 
-                      : 'Start by adding your first inventory item'
-                    }
+                    {searchTerm || selectedCategory
+                      ? 'Try adjusting your search or filter criteria'
+                      : 'Start by adding your first inventory item'}
                   </p>
                   <Button onClick={() => setShowCreateForm(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -728,49 +758,52 @@ export function InventoryPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {alerts?.map((alert) => (
-                <Card key={alert.id} className={`${
-                  alert.resolved ? 'opacity-60' : ''
-                } ${alert.severity === 'critical' ? 'border-red-200' : 'border-yellow-200'}`}>
+              {alerts?.map(alert => (
+                <Card
+                  key={alert.id}
+                  className={`${
+                    alert.resolved ? 'opacity-60' : ''
+                  } ${alert.severity === 'critical' ? 'border-red-200' : 'border-yellow-200'}`}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <AlertTriangle className={`h-5 w-5 ${
-                          alert.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
-                        }`} />
+                        <AlertTriangle
+                          className={`h-5 w-5 ${
+                            alert.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
+                          }`}
+                        />
                         <div>
                           <h4 className="font-medium">{alert.item_name}</h4>
                           <p className="text-sm text-gray-600">
-                            {alert.alert_type === 'low_stock' ? 'Low Stock Alert' : alert.alert_type}
+                            {alert.alert_type === 'low_stock'
+                              ? 'Low Stock Alert'
+                              : alert.alert_type}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Current: {alert.current_quantity} / Threshold: {alert.threshold_quantity}
+                            Current: {alert.current_quantity} / Threshold:{' '}
+                            {alert.threshold_quantity}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}>
+                        <Badge
+                          variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                        >
                           {alert.severity}
                         </Badge>
                         <Badge variant={alert.resolved ? 'default' : 'outline'}>
                           {alert.resolved ? 'Resolved' : 'Active'}
                         </Badge>
                         {!alert.resolved && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleResolveAlert(alert, true)}
-                          >
+                          <Button size="sm" onClick={() => handleResolveAlert(alert, true)}>
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Resolve
                           </Button>
                         )}
                       </div>
                     </div>
-                    {alert.notes && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        {alert.notes}
-                      </div>
-                    )}
+                    {alert.notes && <div className="mt-2 text-sm text-gray-600">{alert.notes}</div>}
                   </CardContent>
                 </Card>
               ))}
@@ -798,7 +831,7 @@ export function InventoryPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {suppliers?.map((supplier) => (
+              {suppliers?.map(supplier => (
                 <Card key={supplier.id}>
                   <CardHeader>
                     <CardTitle className="text-lg">{supplier.supplier_name}</CardTitle>
@@ -809,14 +842,10 @@ export function InventoryPage() {
                   <CardContent>
                     <div className="space-y-2">
                       {supplier.contact_phone && (
-                        <p className="text-sm text-gray-600">
-                          📞 {supplier.contact_phone}
-                        </p>
+                        <p className="text-sm text-gray-600">📞 {supplier.contact_phone}</p>
                       )}
                       {supplier.contact_email && (
-                        <p className="text-sm text-gray-600">
-                          📧 {supplier.contact_email}
-                        </p>
+                        <p className="text-sm text-gray-600">📧 {supplier.contact_email}</p>
                       )}
                       {supplier.lead_time_days && (
                         <p className="text-sm text-gray-600">
@@ -830,7 +859,8 @@ export function InventoryPage() {
                       )}
                       {supplier.total_orders !== undefined && (
                         <p className="text-sm text-gray-600">
-                          📦 Orders: {supplier.completed_orders || 0}/{supplier.total_orders} completed
+                          📦 Orders: {supplier.completed_orders || 0}/{supplier.total_orders}{' '}
+                          completed
                         </p>
                       )}
                     </div>
@@ -850,7 +880,9 @@ export function InventoryPage() {
                 <div className="col-span-full text-center py-8">
                   <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No suppliers</h4>
-                  <p className="text-gray-600 mb-4">Add suppliers to manage your procurement relationships</p>
+                  <p className="text-gray-600 mb-4">
+                    Add suppliers to manage your procurement relationships
+                  </p>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Supplier
@@ -865,7 +897,7 @@ export function InventoryPage() {
         {viewMode === 'analytics' && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">Inventory Analytics</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -877,9 +909,9 @@ export function InventoryPage() {
                       <span className="text-sm">Critical Stock</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-red-600 h-2 rounded-full" 
-                            style={{width: `${(criticalItems / totalItems) * 100}%`}}
+                          <div
+                            className="bg-red-600 h-2 rounded-full"
+                            style={{ width: `${(criticalItems / totalItems) * 100}%` }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium">{criticalItems}</span>
@@ -889,9 +921,9 @@ export function InventoryPage() {
                       <span className="text-sm">Low Stock</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-yellow-600 h-2 rounded-full" 
-                            style={{width: `${(lowStockItemsCount / totalItems) * 100}%`}}
+                          <div
+                            className="bg-yellow-600 h-2 rounded-full"
+                            style={{ width: `${(lowStockItemsCount / totalItems) * 100}%` }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium">{lowStockItemsCount}</span>
@@ -901,12 +933,16 @@ export function InventoryPage() {
                       <span className="text-sm">Normal Stock</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
-                            style={{width: `${((totalItems - criticalItems - lowStockItemsCount) / totalItems) * 100}%`}}
+                          <div
+                            className="bg-green-600 h-2 rounded-full"
+                            style={{
+                              width: `${((totalItems - criticalItems - lowStockItemsCount) / totalItems) * 100}%`,
+                            }}
                           ></div>
                         </div>
-                        <span className="text-sm font-medium">{totalItems - criticalItems - lowStockItemsCount}</span>
+                        <span className="text-sm font-medium">
+                          {totalItems - criticalItems - lowStockItemsCount}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -919,14 +955,19 @@ export function InventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {categories.slice(0, 5).map((category) => {
-                      const categoryItems = inventoryItems?.filter(item => item.category === category) || [];
-                      const categoryValue = categoryItems.reduce((sum, item) => 
-                        sum + (item.qty * (item.current_cost_per_unit || 0)), 0);
+                    {categories.slice(0, 5).map(category => {
+                      const categoryItems =
+                        inventoryItems?.filter(item => item.category === category) || [];
+                      const categoryValue = categoryItems.reduce(
+                        (sum, item) => sum + item.qty * (item.current_cost_per_unit || 0),
+                        0
+                      );
                       return (
                         <div key={category} className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">{category}</span>
-                          <span className="text-sm font-medium">${categoryValue.toLocaleString()}</span>
+                          <span className="text-sm font-medium">
+                            ${categoryValue.toLocaleString()}
+                          </span>
                         </div>
                       );
                     })}
@@ -958,14 +999,21 @@ export function InventoryPage() {
 
 interface InventoryItemModalProps {
   item?: InventoryItem | null;
-  farms: any[];
+  farms: unknown[];
   suppliers: Supplier[];
   onSave: (data: InventoryFormData) => void;
   onClose: () => void;
   isLoading: boolean;
 }
 
-function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading }: InventoryItemModalProps) {
+function InventoryItemModal({
+  item,
+  farms,
+  suppliers,
+  onSave,
+  onClose,
+  isLoading,
+}: InventoryItemModalProps) {
   const [formData, setFormData] = useState<InventoryFormData>({
     farm_id: item?.farm_id || farms[0]?.id || 1,
     name: item?.name || '',
@@ -981,7 +1029,7 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
     minimum_order_quantity: item?.minimum_order_quantity || undefined,
     maximum_order_quantity: item?.maximum_order_quantity || undefined,
     current_cost_per_unit: item?.current_cost_per_unit || undefined,
-    preferred_supplier_id: item?.preferred_supplier_id || undefined
+    preferred_supplier_id: item?.preferred_supplier_id || undefined,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1000,53 +1048,47 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Farm *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm *</label>
                 <select
                   value={formData.farm_id}
-                  onChange={(e) => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
+                  onChange={e => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  {farms.map((farm) => (
-                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                  {farms.map(farm => (
+                    <option key={farm.id} value={farm.id}>
+                      {farm.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Item Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SKU
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
                 <input
                   type="text"
                   value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  onChange={e => setFormData({ ...formData, sku: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={e => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select category</option>
@@ -1062,27 +1104,23 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantity *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.qty}
-                  onChange={(e) => setFormData({ ...formData, qty: parseFloat(e.target.value) || 0 })}
+                  onChange={e => setFormData({ ...formData, qty: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Unit *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
                 <input
                   type="text"
                   value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  onChange={e => setFormData({ ...formData, unit: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -1096,7 +1134,9 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
                   type="number"
                   step="0.01"
                   value={formData.reorder_threshold}
-                  onChange={(e) => setFormData({ ...formData, reorder_threshold: parseFloat(e.target.value) || 0 })}
+                  onChange={e =>
+                    setFormData({ ...formData, reorder_threshold: parseFloat(e.target.value) || 0 })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1109,7 +1149,12 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
                   type="number"
                   step="0.01"
                   value={formData.current_cost_per_unit}
-                  onChange={(e) => setFormData({ ...formData, current_cost_per_unit: parseFloat(e.target.value) || undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      current_cost_per_unit: parseFloat(e.target.value) || undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1120,7 +1165,7 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
                 </label>
                 <select
                   value={formData.quality_grade}
-                  onChange={(e) => setFormData({ ...formData, quality_grade: e.target.value })}
+                  onChange={e => setFormData({ ...formData, quality_grade: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select grade</option>
@@ -1138,11 +1183,16 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
                 </label>
                 <select
                   value={formData.preferred_supplier_id}
-                  onChange={(e) => setFormData({ ...formData, preferred_supplier_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      preferred_supplier_id: e.target.value ? parseInt(e.target.value) : undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select supplier</option>
-                  {suppliers.map((supplier) => (
+                  {suppliers.map(supplier => (
                     <option key={supplier.id} value={supplier.id}>
                       {supplier.supplier_name}
                     </option>
@@ -1157,7 +1207,7 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
               </label>
               <textarea
                 value={formData.storage_requirements}
-                onChange={(e) => setFormData({ ...formData, storage_requirements: e.target.value })}
+                onChange={e => setFormData({ ...formData, storage_requirements: e.target.value })}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Temperature, humidity, special handling requirements..."
@@ -1165,20 +1215,11 @@ function InventoryItemModal({ item, farms, suppliers, onSave, onClose, isLoading
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isLoading ? 'Saving...' : (item ? 'Update Item' : 'Create Item')}
+              <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+                {isLoading ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
               </Button>
             </div>
           </form>

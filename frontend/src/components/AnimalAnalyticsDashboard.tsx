@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { BarChart, TrendingUp, TrendingDown, DollarSign, Heart, Baby, Activity } from 'lucide-react';
+import { BarChart, TrendingUp, DollarSign, Heart, Baby, Activity } from 'lucide-react';
 
 interface AnalyticsData {
   totalAnimals: number;
@@ -12,11 +12,11 @@ interface AnalyticsData {
   avgProductionPerAnimal: number;
   breedingSuccessRate: number;
   vaccinationCompliance: number;
-  topPerformingAnimals: any[];
-  productionTrends: any[];
-  healthOverview: any;
-  speciesBreakdown: any[];
-  upcomingEvents: any[];
+  topPerformingAnimals: unknown[];
+  productionTrends: unknown[];
+  healthOverview: unknown;
+  speciesBreakdown: unknown[];
+  upcomingEvents: unknown[];
 }
 
 interface AnimalAnalyticsDashboardProps {
@@ -34,7 +34,11 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
   });
 
   // Fetch analytics data
-  const { data: analyticsData, isLoading, error } = useQuery({
+  const {
+    data: analyticsData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['animal-analytics', queryParams.toString()],
     queryFn: async () => {
       const response = await fetch(`/api/animals/analytics?${queryParams.toString()}`, {
@@ -60,9 +64,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
 
   if (error) {
     return (
-      <div className="text-red-600 text-center py-8">
-        Error loading analytics: {error.message}
-      </div>
+      <div className="text-red-600 text-center py-8">Error loading analytics: {error.message}</div>
     );
   }
 
@@ -90,7 +92,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
         <div className="flex items-center gap-4">
           <select
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
+            onChange={e => setTimeRange(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="7d">Last 7 days</option>
@@ -100,7 +102,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
           </select>
           <select
             value={selectedMetric}
-            onChange={(e) => setSelectedMetric(e.target.value)}
+            onChange={e => setSelectedMetric(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="production">Production</option>
@@ -134,7 +136,8 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
                 {data.totalProduction ? data.totalProduction.toFixed(1) : '0'} units
               </p>
               <p className="text-sm text-green-600">
-                Avg: {data.avgProductionPerAnimal ? data.avgProductionPerAnimal.toFixed(1) : '0'} per animal
+                Avg: {data.avgProductionPerAnimal ? data.avgProductionPerAnimal.toFixed(1) : '0'}{' '}
+                per animal
               </p>
             </div>
             <TrendingUp className="h-10 w-10 text-green-600" />
@@ -180,9 +183,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <div className="text-center">
               <BarChart className="mx-auto h-12 w-12 text-gray-400 mb-2" />
               <p className="text-gray-500">Production trend chart</p>
-              <p className="text-sm text-gray-400">
-                Integration with charting library needed
-              </p>
+              <p className="text-sm text-gray-400">Integration with charting library needed</p>
             </div>
           </div>
         </div>
@@ -194,15 +195,20 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <Activity className="h-5 w-5 text-blue-600" />
           </div>
           <div className="space-y-3">
-            {data.speciesBreakdown?.map((species: any, index: number) => (
+            {data.speciesBreakdown?.map((species: unknown, index: number) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    index === 0 ? 'bg-blue-500' :
-                    index === 1 ? 'bg-green-500' :
-                    index === 2 ? 'bg-yellow-500' :
-                    'bg-purple-500'
-                  }`}></div>
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      index === 0
+                        ? 'bg-blue-500'
+                        : index === 1
+                          ? 'bg-green-500'
+                          : index === 2
+                            ? 'bg-yellow-500'
+                            : 'bg-purple-500'
+                    }`}
+                  ></div>
                   <span className="text-gray-700 capitalize">{species.species}</span>
                 </div>
                 <div className="text-right">
@@ -212,11 +218,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
                   </span>
                 </div>
               </div>
-            )) || (
-              <div className="text-center py-8 text-gray-500">
-                No species data available
-              </div>
-            )}
+            )) || <div className="text-center py-8 text-gray-500">No species data available</div>}
           </div>
         </div>
       </div>
@@ -230,11 +232,13 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <TrendingUp className="h-5 w-5 text-green-600" />
           </div>
           <div className="space-y-3">
-            {data.topPerformingAnimals?.map((animal: any, index: number) => (
+            {data.topPerformingAnimals?.map((animal: unknown, index: number) => (
               <div key={index} className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">{animal.name}</p>
-                  <p className="text-sm text-gray-500">{animal.species} • {animal.breed}</p>
+                  <p className="text-sm text-gray-500">
+                    {animal.species} • {animal.breed}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-green-600">
@@ -244,9 +248,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
                 </div>
               </div>
             )) || (
-              <div className="text-center py-4 text-gray-500">
-                No performance data available
-              </div>
+              <div className="text-center py-4 text-gray-500">No performance data available</div>
             )}
           </div>
         </div>
@@ -271,13 +273,13 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <div className="flex items-center justify-between">
               <span className="text-gray-700">Upcoming Vet Visits</span>
               <span className="font-medium text-blue-600">
-                {data.upcomingEvents?.filter((e: any) => e.type === 'vet_visit').length || 0}
+                {data.upcomingEvents?.filter((e: unknown) => e.type === 'vet_visit').length || 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-700">Vaccinations Due</span>
               <span className="font-medium text-orange-600">
-                {data.upcomingEvents?.filter((e: any) => e.type === 'vaccination').length || 0}
+                {data.upcomingEvents?.filter((e: unknown) => e.type === 'vaccination').length || 0}
               </span>
             </div>
           </div>
@@ -301,7 +303,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
                 <Activity className="h-5 w-5 text-blue-600" />
                 <div>
                   <p className="font-medium text-gray-900">Record Production</p>
-                  <p className="text-sm text-gray-500">Enter today's production data</p>
+                  <p className="text-sm text-gray-500">Enter today&apos;s production data</p>
                 </div>
               </div>
             </button>
@@ -332,8 +334,11 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
           <div className="space-y-3">
-            {data.upcomingEvents.slice(0, 5).map((event: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+            {data.upcomingEvents.slice(0, 5).map((event: unknown, index: number) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border border-yellow-200"
+              >
                 <div className="flex items-center gap-3">
                   {event.type === 'vet_visit' && <Heart className="h-5 w-5 text-red-600" />}
                   {event.type === 'vaccination' && <Activity className="h-5 w-5 text-blue-600" />}

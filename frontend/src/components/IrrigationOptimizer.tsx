@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useIrrigation } from '../hooks/useIrrigation';
 import { useFarm } from '../hooks/useFarm';
 import { Button } from './ui/button';
-import { 
-  Droplets, 
-  Calendar, 
-  TrendingUp, 
+import {
+  Droplets,
+  Calendar,
+  TrendingUp,
   Clock,
   MapPin,
   Settings,
@@ -16,7 +16,7 @@ import {
   CheckCircle,
   Loader2,
   Play,
-  Pause
+  Pause,
 } from 'lucide-react';
 
 interface IrrigationOptimizerProps {
@@ -24,42 +24,44 @@ interface IrrigationOptimizerProps {
 }
 
 const IRRIGATION_TYPES = {
-  'drip': { name: 'Drip Irrigation', efficiency: 0.95, water_per_liter: 1.0 },
-  'sprinkler': { name: 'Sprinkler System', efficiency: 0.80, water_per_liter: 1.25 },
-  'flood': { name: 'Flood Irrigation', efficiency: 0.60, water_per_liter: 2.0 },
-  'manual': { name: 'Manual Watering', efficiency: 0.70, water_per_liter: 1.5 }
+  drip: { name: 'Drip Irrigation', efficiency: 0.95, water_per_liter: 1.0 },
+  sprinkler: { name: 'Sprinkler System', efficiency: 0.8, water_per_liter: 1.25 },
+  flood: { name: 'Flood Irrigation', efficiency: 0.6, water_per_liter: 2.0 },
+  manual: { name: 'Manual Watering', efficiency: 0.7, water_per_liter: 1.5 },
 };
 
 const CROP_WATER_REQUIREMENTS = {
-  'corn': { peak_daily: 6, growth_stages: { seedling: 3, vegetative: 7, reproductive: 8 } },
-  'wheat': { peak_daily: 5, growth_stages: { seedling: 3, vegetative: 6, reproductive: 5 } },
-  'soybeans': { peak_daily: 7, growth_stages: { seedling: 4, vegetative: 8, reproductive: 7 } },
-  'tomato': { peak_daily: 8, growth_stages: { seedling: 4, vegetative: 9, reproductive: 10 } },
-  'potato': { peak_daily: 6, growth_stages: { seedling: 3, vegetative: 7, reproductive: 6 } },
-  'lettuce': { peak_daily: 4, growth_stages: { seedling: 3, vegetative: 5, reproductive: 4 } },
-  'cabbage': { peak_daily: 5, growth_stages: { seedling: 3, vegetative: 6, reproductive: 5 } }
+  corn: { peak_daily: 6, growth_stages: { seedling: 3, vegetative: 7, reproductive: 8 } },
+  wheat: { peak_daily: 5, growth_stages: { seedling: 3, vegetative: 6, reproductive: 5 } },
+  soybeans: { peak_daily: 7, growth_stages: { seedling: 4, vegetative: 8, reproductive: 7 } },
+  tomato: { peak_daily: 8, growth_stages: { seedling: 4, vegetative: 9, reproductive: 10 } },
+  potato: { peak_daily: 6, growth_stages: { seedling: 3, vegetative: 7, reproductive: 6 } },
+  lettuce: { peak_daily: 4, growth_stages: { seedling: 3, vegetative: 5, reproductive: 4 } },
+  cabbage: { peak_daily: 5, growth_stages: { seedling: 3, vegetative: 6, reproductive: 5 } },
 };
 
 export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   const { currentFarm } = useFarm();
-  const [activeTab, setActiveTab] = useState<'schedules' | 'analytics' | 'optimization'>('schedules');
+  const [activeTab, setActiveTab] = useState<'schedules' | 'analytics' | 'optimization'>(
+    'schedules'
+  );
   const [selectedSchedule, setSelectedSchedule] = useState<string>('');
 
   // Use the main irrigation hook for mutation functions
-  const { 
-    updateSchedule,
-    optimizeSchedule,
-    isOptimizing
-  } = useIrrigation();
+  const { updateSchedule, optimizeSchedule, isOptimizing } = useIrrigation();
 
   // Fetch schedules for the farm
-  const { data: schedules = [], isLoading: schedulesLoading, error: schedulesError } = useQuery({
+  const {
+    data: schedules = [],
+    isLoading: schedulesLoading,
+    error: schedulesError,
+  } = useQuery({
     queryKey: ['irrigation-schedules', 'farm', farmId],
     queryFn: async () => {
       const response = await fetch('/api/crops/irrigation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'list', farm_id: farmId })
+        body: JSON.stringify({ action: 'list', farm_id: farmId }),
       });
       if (!response.ok) throw new Error('Failed to fetch irrigation schedules');
       return await response.json();
@@ -68,13 +70,17 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   });
 
   // Fetch analytics for the farm
-  const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery({
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useQuery({
     queryKey: ['irrigation-analytics', farmId],
     queryFn: async () => {
       const response = await fetch('/api/crops/irrigation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'analytics', farm_id: farmId })
+        body: JSON.stringify({ action: 'analytics', farm_id: farmId }),
       });
       if (!response.ok) throw new Error('Failed to fetch irrigation analytics');
       return await response.json();
@@ -97,7 +103,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
     updateSchedule({
       id: scheduleId,
-      status: newStatus
+      status: newStatus,
     });
   };
 
@@ -106,49 +112,54 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
     optimizeSchedule({ schedule_id: scheduleId });
   };
 
-  const getWateringRecommendation = (schedule: any) => {
-    const cropReqs = CROP_WATER_REQUIREMENTS[schedule.crop_type as keyof typeof CROP_WATER_REQUIREMENTS];
+  const getWateringRecommendation = (schedule: unknown) => {
+    const cropReqs =
+      CROP_WATER_REQUIREMENTS[schedule.crop_type as keyof typeof CROP_WATER_REQUIREMENTS];
     if (!cropReqs) return { shouldWater: false, reason: 'Unknown crop type' };
 
     const nextWatering = new Date(schedule.next_watering_date);
     const now = new Date();
-    const daysUntilNext = Math.ceil((nextWatering.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilNext = Math.ceil(
+      (nextWatering.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     // Simplified logic - could be enhanced with weather data
     if (daysUntilNext <= 0) {
-      return { 
-        shouldWater: true, 
+      return {
+        shouldWater: true,
         reason: `Irrigation due ${Math.abs(daysUntilNext)} day(s) ago`,
-        priority: 'high'
+        priority: 'high',
       };
     } else if (daysUntilNext <= 1) {
-      return { 
-        shouldWater: true, 
+      return {
+        shouldWater: true,
         reason: 'Irrigation due today',
-        priority: 'medium'
+        priority: 'medium',
       };
     }
 
-    return { 
-      shouldWater: false, 
+    return {
+      shouldWater: false,
       reason: `Next irrigation in ${daysUntilNext} day(s)`,
-      priority: 'low'
+      priority: 'low',
     };
   };
 
-  const calculateWaterEfficiency = (schedule: any) => {
-    const irrigationType = IRRIGATION_TYPES[schedule.irrigation_type as keyof typeof IRRIGATION_TYPES];
+  const calculateWaterEfficiency = (schedule: unknown) => {
+    const irrigationType =
+      IRRIGATION_TYPES[schedule.irrigation_type as keyof typeof IRRIGATION_TYPES];
     if (!irrigationType) return 0;
 
     // Calculate efficiency based on type and crop requirements
     const baseEfficiency = irrigationType.efficiency;
-    const cropReq = CROP_WATER_REQUIREMENTS[schedule.crop_type as keyof typeof CROP_WATER_REQUIREMENTS];
-    
+    const cropReq =
+      CROP_WATER_REQUIREMENTS[schedule.crop_type as keyof typeof CROP_WATER_REQUIREMENTS];
+
     if (!cropReq) return baseEfficiency;
 
     // Adjust based on how well scheduled watering matches crop needs
     const scheduleAlignment = Math.min(1, schedule.frequency_days / cropReq.peak_daily);
-    return Math.round((baseEfficiency * (0.8 + scheduleAlignment * 0.2)) * 100);
+    return Math.round(baseEfficiency * (0.8 + scheduleAlignment * 0.2) * 100);
   };
 
   if (schedulesLoading || analyticsLoading) {
@@ -234,19 +245,24 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
               {schedules.length === 0 ? (
                 <div className="text-center py-8">
                   <Droplets className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Irrigation Schedules</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Irrigation Schedules
+                  </h3>
                   <p className="text-gray-600 mb-4">
                     Create irrigation schedules to optimize water usage and crop health.
                   </p>
-                  <Button onClick={() => console.log('Create schedule clicked')}>Create Schedule</Button>
+                  <Button onClick={() => console.log('Create schedule clicked')}>
+                    Create Schedule
+                  </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {schedules.map((schedule) => {
+                  {schedules.map(schedule => {
                     const recommendation = getWateringRecommendation(schedule);
                     const efficiency = calculateWaterEfficiency(schedule);
-                    const irrigationType = IRRIGATION_TYPES[schedule.irrigation_type as keyof typeof IRRIGATION_TYPES];
-                    
+                    const irrigationType =
+                      IRRIGATION_TYPES[schedule.irrigation_type as keyof typeof IRRIGATION_TYPES];
+
                     return (
                       <div key={schedule.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
@@ -255,10 +271,15 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                             <p className="text-sm text-gray-600 capitalize">{schedule.crop_type}</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${
-                              schedule.status === 'active' ? 'bg-green-500' :
-                              schedule.status === 'paused' ? 'bg-yellow-500' : 'bg-gray-400'
-                            }`}></div>
+                            <div
+                              className={`w-3 h-3 rounded-full ${
+                                schedule.status === 'active'
+                                  ? 'bg-green-500'
+                                  : schedule.status === 'paused'
+                                    ? 'bg-yellow-500'
+                                    : 'bg-gray-400'
+                              }`}
+                            ></div>
                             <span className="text-sm text-gray-600">{schedule.status}</span>
                           </div>
                         </div>
@@ -298,24 +319,36 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                         </div>
 
                         {/* Recommendation */}
-                        <div className={`p-3 rounded text-sm mb-3 ${
-                          recommendation.shouldWater ? 
-                            (recommendation.priority === 'high' ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200') :
-                            'bg-green-50 border border-green-200'
-                        }`}>
+                        <div
+                          className={`p-3 rounded text-sm mb-3 ${
+                            recommendation.shouldWater
+                              ? recommendation.priority === 'high'
+                                ? 'bg-red-50 border border-red-200'
+                                : 'bg-yellow-50 border border-yellow-200'
+                              : 'bg-green-50 border border-green-200'
+                          }`}
+                        >
                           <div className="flex items-center gap-2">
                             {recommendation.shouldWater ? (
-                              <AlertTriangle className={`h-4 w-4 ${
-                                recommendation.priority === 'high' ? 'text-red-500' : 'text-yellow-500'
-                              }`} />
+                              <AlertTriangle
+                                className={`h-4 w-4 ${
+                                  recommendation.priority === 'high'
+                                    ? 'text-red-500'
+                                    : 'text-yellow-500'
+                                }`}
+                              />
                             ) : (
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             )}
-                            <span className={`font-medium ${
-                              recommendation.shouldWater ? 
-                                (recommendation.priority === 'high' ? 'text-red-700' : 'text-yellow-700') :
-                                'text-green-700'
-                            }`}>
+                            <span
+                              className={`font-medium ${
+                                recommendation.shouldWater
+                                  ? recommendation.priority === 'high'
+                                    ? 'text-red-700'
+                                    : 'text-yellow-700'
+                                  : 'text-green-700'
+                              }`}
+                            >
                               {recommendation.reason}
                             </span>
                           </div>

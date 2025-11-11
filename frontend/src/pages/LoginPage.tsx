@@ -24,7 +24,7 @@ export function LoginPage() {
     setError('');
 
     const { error: authError } = await signIn(email, password);
-    
+
     if (authError) {
       setError(authError.message);
       setLoading(false);
@@ -66,7 +66,11 @@ export function LoginPage() {
               data-testid="login-password"
             />
           </div>
-          {error && <div className="error" data-testid="login-error">{error}</div>}
+          {error && (
+            <div className="error" data-testid="login-error">
+              {error}
+            </div>
+          )}
           <button type="submit" disabled={loading} data-testid="login-submit-button">
             {loading ? 'Logging in...' : 'Login'}
           </button>
@@ -77,7 +81,10 @@ export function LoginPage() {
           </div>
         </form>
         <p>
-          Don't have an account? <a href="/signup" data-testid="signup-link">Sign up</a>
+          Don&apos;t have an account?{' '}
+          <a href="/signup" data-testid="signup-link">
+            Sign up
+          </a>
         </p>
       </div>
     </div>

@@ -7,15 +7,6 @@
     <title>Farmers Boot</title>
     <meta name="description" content="Farm Management Platform" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <script>
-      // Early theme apply to prevent flash of wrong theme
-      (function() {
-        const theme = localStorage.getItem('theme') || 'system';
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const appliedTheme = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme;
-        document.documentElement.setAttribute('data-theme', appliedTheme);
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

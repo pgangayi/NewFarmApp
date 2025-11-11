@@ -52,7 +52,11 @@ export function FarmsPage() {
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'analytics'>('grid');
 
-  const { data: farms, isLoading, error } = useQuery({
+  const {
+    data: farms,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['farms', 'enhanced'],
     queryFn: async () => {
       if (!isAuthenticated()) {
@@ -61,7 +65,7 @@ export function FarmsPage() {
 
       const response = await fetch('/api/farms?analytics=true', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -70,7 +74,7 @@ export function FarmsPage() {
 
       return response.json() as Promise<Farm[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   const createFarmMutation = useMutation({
@@ -79,9 +83,9 @@ export function FarmsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify(farmData)
+        body: JSON.stringify(farmData),
       });
 
       if (!response.ok) {
@@ -95,7 +99,7 @@ export function FarmsPage() {
       setShowCreateForm(false);
       // Redirect to dashboard after successful farm creation
       navigate('/dashboard');
-    }
+    },
   });
 
   const updateFarmMutation = useMutation({
@@ -104,9 +108,9 @@ export function FarmsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ id, ...farmData })
+        body: JSON.stringify({ id, ...farmData }),
       });
 
       if (!response.ok) {
@@ -118,14 +122,14 @@ export function FarmsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
       setEditingFarm(null);
-    }
+    },
   });
 
   const deleteFarmMutation = useMutation({
     mutationFn: async (farmId: number) => {
       const response = await fetch(`/api/farms?id=${farmId}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -136,7 +140,7 @@ export function FarmsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
-    }
+    },
   });
 
   const handleCreateFarm = (farmData: FarmFormData) => {
@@ -166,27 +170,34 @@ export function FarmsPage() {
     );
   }
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p>Loading farms...</p>
-    </div>
-  </div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading farms...</p>
+        </div>
+      </div>
+    );
 
-  if (error) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading farms</h2>
-      <p className="text-gray-600">{error.message}</p>
-    </div>
-  </div>;
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading farms</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
 
   const totalAnimals = farms?.reduce((sum, farm) => sum + (farm.animal_count || 0), 0) || 0;
   const totalFields = farms?.reduce((sum, farm) => sum + (farm.field_count || 0), 0) || 0;
   const totalRevenue = farms?.reduce((sum, farm) => sum + (farm.total_revenue || 0), 0) || 0;
   const totalExpenses = farms?.reduce((sum, farm) => sum + (farm.total_expenses || 0), 0) || 0;
-  const avgProductivity = farms && farms.length > 0
-    ? farms.reduce((sum, farm) => sum + (farm.latest_productivity_score || 0), 0) / farms.length
-    : 0;
+  const avgProductivity =
+    farms && farms.length > 0
+      ? farms.reduce((sum, farm) => sum + (farm.latest_productivity_score || 0), 0) / farms.length
+      : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -222,7 +233,10 @@ export function FarmsPage() {
                 Analytics
               </button>
             </div>
-            <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add New Farm
             </Button>
@@ -239,9 +253,7 @@ export function FarmsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{farms.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Active farm operations
-                </p>
+                <p className="text-xs text-muted-foreground">Active farm operations</p>
               </CardContent>
             </Card>
 
@@ -252,9 +264,7 @@ export function FarmsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalAnimals}</div>
-                <p className="text-xs text-muted-foreground">
-                  Across all farms
-                </p>
+                <p className="text-xs text-muted-foreground">Across all farms</p>
               </CardContent>
             </Card>
 
@@ -267,9 +277,7 @@ export function FarmsPage() {
                 <div className="text-2xl font-bold">
                   ${(totalRevenue - totalExpenses).toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Revenue - Expenses
-                </p>
+                <p className="text-xs text-muted-foreground">Revenue - Expenses</p>
               </CardContent>
             </Card>
 
@@ -280,9 +288,7 @@ export function FarmsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{avgProductivity.toFixed(1)}%</div>
-                <p className="text-xs text-muted-foreground">
-                  Productivity score
-                </p>
+                <p className="text-xs text-muted-foreground">Productivity score</p>
               </CardContent>
             </Card>
           </div>
@@ -293,7 +299,7 @@ export function FarmsPage() {
           /* Grid View */
           farms && farms.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {farms.map((farm) => (
+              {farms.map(farm => (
                 <Card key={farm.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -305,11 +311,7 @@ export function FarmsPage() {
                         </CardDescription>
                       </div>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingFarm(farm)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => setEditingFarm(farm)}>
                           Edit
                         </Button>
                       </div>
@@ -352,14 +354,22 @@ export function FarmsPage() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Pending Tasks</span>
-                        <Badge variant={farm.pending_tasks && farm.pending_tasks > 0 ? "destructive" : "secondary"}>
+                        <Badge
+                          variant={
+                            farm.pending_tasks && farm.pending_tasks > 0
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                        >
                           {farm.pending_tasks || 0}
                         </Badge>
                       </div>
                       {farm.latest_productivity_score && (
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Productivity</span>
-                          <Badge variant={farm.latest_productivity_score > 70 ? "default" : "secondary"}>
+                          <Badge
+                            variant={farm.latest_productivity_score > 70 ? 'default' : 'secondary'}
+                          >
                             {farm.latest_productivity_score.toFixed(1)}%
                           </Badge>
                         </div>
@@ -432,7 +442,10 @@ export function FarmsPage() {
                 <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No farms yet</h3>
                 <p className="text-gray-600 mb-4">Get started by creating your first farm.</p>
-                <Button onClick={() => setShowCreateForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   Create Farm
                 </Button>
               </div>
@@ -444,15 +457,16 @@ export function FarmsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Farm Performance Analytics</CardTitle>
-                <CardDescription>
-                  Comprehensive analysis of your farm operations
-                </CardDescription>
+                <CardDescription>Comprehensive analysis of your farm operations</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
                   <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
                   <p>Advanced analytics dashboard coming soon...</p>
-                  <p className="text-sm">This will include detailed performance metrics, trend analysis, and optimization recommendations.</p>
+                  <p className="text-sm">
+                    This will include detailed performance metrics, trend analysis, and optimization
+                    recommendations.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -496,7 +510,7 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
     operational_start_date: farm?.operational_start_date || '',
     management_structure: farm?.management_structure || '',
     seasonal_staff: farm?.seasonal_staff,
-    annual_budget: farm?.annual_budget
+    annual_budget: farm?.annual_budget,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -509,13 +523,8 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">
-              {farm ? 'Edit Farm' : 'Create New Farm'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <h2 className="text-xl font-semibold">{farm ? 'Edit Farm' : 'Create New Farm'}</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               ×
             </button>
           </div>
@@ -523,27 +532,23 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Farm Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm Name *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
                 <input
                   type="text"
                   required
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={e => setFormData({ ...formData, location: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -556,18 +561,21 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
                   type="number"
                   step="0.01"
                   value={formData.area_hectares || ''}
-                  onChange={(e) => setFormData({ ...formData, area_hectares: parseFloat(e.target.value) || undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      area_hectares: parseFloat(e.target.value) || undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Farm Type
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm Type</label>
                 <select
                   value={formData.farm_type || ''}
-                  onChange={(e) => setFormData({ ...formData, farm_type: e.target.value })}
+                  onChange={e => setFormData({ ...formData, farm_type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select type</option>
@@ -586,7 +594,7 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
                 </label>
                 <select
                   value={formData.certification_status || ''}
-                  onChange={(e) => setFormData({ ...formData, certification_status: e.target.value })}
+                  onChange={e => setFormData({ ...formData, certification_status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select status</option>
@@ -604,7 +612,12 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
                 <input
                   type="number"
                   value={formData.seasonal_staff || ''}
-                  onChange={(e) => setFormData({ ...formData, seasonal_staff: parseInt(e.target.value) || undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      seasonal_staff: parseInt(e.target.value) || undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -616,7 +629,9 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
                 <input
                   type="date"
                   value={formData.operational_start_date || ''}
-                  onChange={(e) => setFormData({ ...formData, operational_start_date: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, operational_start_date: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -629,7 +644,12 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
                   type="number"
                   step="0.01"
                   value={formData.annual_budget || ''}
-                  onChange={(e) => setFormData({ ...formData, annual_budget: parseFloat(e.target.value) || undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      annual_budget: parseFloat(e.target.value) || undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -641,7 +661,7 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
               </label>
               <textarea
                 value={formData.management_structure || ''}
-                onChange={(e) => setFormData({ ...formData, management_structure: e.target.value })}
+                onChange={e => setFormData({ ...formData, management_structure: e.target.value })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Describe your farm management structure..."
@@ -654,7 +674,9 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
               </label>
               <textarea
                 value={formData.environmental_compliance || ''}
-                onChange={(e) => setFormData({ ...formData, environmental_compliance: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, environmental_compliance: e.target.value })
+                }
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Environmental compliance notes..."
@@ -662,20 +684,11 @@ function FarmFormModal({ farm, onSubmit, onClose, isLoading }: FarmFormModalProp
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isLoading ? 'Saving...' : (farm ? 'Update Farm' : 'Create Farm')}
+              <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+                {isLoading ? 'Saving...' : farm ? 'Update Farm' : 'Create Farm'}
               </Button>
             </div>
           </form>

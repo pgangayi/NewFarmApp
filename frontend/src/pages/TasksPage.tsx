@@ -23,7 +23,7 @@ import {
   ChevronDown,
   ChevronRight,
   Flag,
-  Tag
+  Tag,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -127,7 +127,9 @@ interface TaskFormData {
 export function TasksPage() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState<'overview' | 'tasks' | 'templates' | 'analytics' | 'time-tracker'>('overview');
+  const [viewMode, setViewMode] = useState<
+    'overview' | 'tasks' | 'templates' | 'analytics' | 'time-tracker'
+  >('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
@@ -135,7 +137,7 @@ export function TasksPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [timerActive, setTimerActive] = useState<{[key: number]: boolean}>({});
+  const [timerActive, setTimerActive] = useState<{ [key: number]: boolean }>({});
   const [currentTimer, setCurrentTimer] = useState<{
     taskId: number;
     startTime: Date;
@@ -147,21 +149,25 @@ export function TasksPage() {
     queryFn: async () => {
       const response = await fetch('/api/farms', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch farms');
       return response.json();
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get enhanced tasks
-  const { data: tasks, isLoading, error } = useQuery({
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['tasks', 'enhanced'],
     queryFn: async () => {
       const response = await fetch('/api/tasks?analytics=true', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -170,7 +176,7 @@ export function TasksPage() {
 
       return response.json() as Promise<Task[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get task templates
@@ -179,7 +185,7 @@ export function TasksPage() {
     queryFn: async () => {
       const response = await fetch('/api/tasks/templates', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -188,7 +194,7 @@ export function TasksPage() {
 
       return response.json() as Promise<TaskTemplate[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get users for assignment
@@ -197,12 +203,12 @@ export function TasksPage() {
     queryFn: async () => {
       const response = await fetch('/api/users', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   const createTaskMutation = useMutation({
@@ -211,9 +217,9 @@ export function TasksPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify(taskData)
+        body: JSON.stringify(taskData),
       });
 
       if (!response.ok) {
@@ -225,7 +231,7 @@ export function TasksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowCreateForm(false);
-    }
+    },
   });
 
   const updateTaskMutation = useMutation({
@@ -234,9 +240,9 @@ export function TasksPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ id, ...taskData })
+        body: JSON.stringify({ id, ...taskData }),
       });
 
       if (!response.ok) {
@@ -248,7 +254,7 @@ export function TasksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setEditingTask(null);
-    }
+    },
   });
 
   const startTimerMutation = useMutation({
@@ -257,12 +263,12 @@ export function TasksPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ 
-          task_id: taskId, 
-          start_time: startTime 
-        })
+        body: JSON.stringify({
+          task_id: taskId,
+          start_time: startTime,
+        }),
       });
 
       if (!response.ok) {
@@ -273,7 +279,7 @@ export function TasksPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    }
+    },
   });
 
   const stopTimerMutation = useMutation({
@@ -282,12 +288,12 @@ export function TasksPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ 
-          task_id: taskId, 
-          end_time: endTime 
-        })
+        body: JSON.stringify({
+          task_id: taskId,
+          end_time: endTime,
+        }),
       });
 
       if (!response.ok) {
@@ -300,7 +306,7 @@ export function TasksPage() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setTimerActive(prev => ({ ...prev, [currentTimer?.taskId || 0]: false }));
       setCurrentTimer(null);
-    }
+    },
   });
 
   const handleCreateTask = (taskData: TaskFormData) => {
@@ -336,38 +342,47 @@ export function TasksPage() {
     );
   }
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p>Loading tasks...</p>
-    </div>
-  </div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading tasks...</p>
+        </div>
+      </div>
+    );
 
-  if (error) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading tasks</h2>
-      <p className="text-gray-600">{error.message}</p>
-    </div>
-  </div>;
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading tasks</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
 
   // Calculate summary statistics
   const totalTasks = tasks?.length || 0;
   const completedTasks = tasks?.filter(task => task.status === 'completed').length || 0;
   const inProgressTasks = tasks?.filter(task => task.status === 'in_progress').length || 0;
   const pendingTasks = tasks?.filter(task => task.status === 'pending').length || 0;
-  const overdueTasks = tasks?.filter(task => 
-    task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed'
-  ).length || 0;
+  const overdueTasks =
+    tasks?.filter(
+      task => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed'
+    ).length || 0;
 
   // Filter tasks based on search and filters
-  const filteredTasks = tasks?.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = !selectedStatus || task.status === selectedStatus;
-    const matchesPriority = !selectedPriority || task.priority === selectedPriority;
-    const matchesCategory = !selectedCategory || task.task_category === selectedCategory;
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
-  }) || [];
+  const filteredTasks =
+    tasks?.filter(task => {
+      const matchesSearch =
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = !selectedStatus || task.status === selectedStatus;
+      const matchesPriority = !selectedPriority || task.priority === selectedPriority;
+      const matchesCategory = !selectedCategory || task.task_category === selectedCategory;
+      return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
+    }) || [];
 
   // Get unique categories for filter dropdown
   const categories = [...new Set(tasks?.map(task => task.task_category).filter(Boolean) || [])];
@@ -414,11 +429,11 @@ export function TasksPage() {
               { key: 'overview', label: 'Overview', icon: CheckSquare },
               { key: 'tasks', label: 'Tasks', icon: Target },
               { key: 'templates', label: 'Templates', icon: Target },
-              { key: 'time-tracker', label: 'Time Tracker', icon: Timer }
+              { key: 'time-tracker', label: 'Time Tracker', icon: Timer },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as any)}
+                onClick={() => setViewMode(key as unknown)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-blue-500 text-blue-600'
@@ -428,9 +443,7 @@ export function TasksPage() {
                 <Icon className="h-4 w-4" />
                 {label}
                 {key === 'tasks' && overdueTasks > 0 && (
-                  <Badge className="bg-red-100 text-red-800">
-                    {overdueTasks}
-                  </Badge>
+                  <Badge className="bg-red-100 text-red-800">{overdueTasks}</Badge>
                 )}
               </button>
             ))}
@@ -449,9 +462,7 @@ export function TasksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{totalTasks}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Across all farms
-                  </p>
+                  <p className="text-xs text-muted-foreground">Across all farms</p>
                 </CardContent>
               </Card>
 
@@ -463,7 +474,8 @@ export function TasksPage() {
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">{completedTasks}</div>
                   <p className="text-xs text-muted-foreground">
-                    {totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}% completion rate
+                    {totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%
+                    completion rate
                   </p>
                 </CardContent>
               </Card>
@@ -475,9 +487,7 @@ export function TasksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600">{inProgressTasks}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Active tasks
-                  </p>
+                  <p className="text-xs text-muted-foreground">Active tasks</p>
                 </CardContent>
               </Card>
 
@@ -488,9 +498,7 @@ export function TasksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-600">{pendingTasks}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Awaiting start
-                  </p>
+                  <p className="text-xs text-muted-foreground">Awaiting start</p>
                 </CardContent>
               </Card>
 
@@ -501,9 +509,7 @@ export function TasksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">{overdueTasks}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Need attention
-                  </p>
+                  <p className="text-xs text-muted-foreground">Need attention</p>
                 </CardContent>
               </Card>
             </div>
@@ -512,20 +518,27 @@ export function TasksPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Tasks</CardTitle>
-                <CardDescription>
-                  Latest task activities and updates
-                </CardDescription>
+                <CardDescription>Latest task activities and updates</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {tasks?.slice(0, 5).map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  {tasks?.slice(0, 5).map(task => (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          task.status === 'completed' ? 'bg-green-500' :
-                          task.status === 'in_progress' ? 'bg-blue-500' :
-                          task.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
-                        }`} />
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            task.status === 'completed'
+                              ? 'bg-green-500'
+                              : task.status === 'in_progress'
+                                ? 'bg-blue-500'
+                                : task.status === 'pending'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-gray-500'
+                          }`}
+                        />
                         <div>
                           <p className="text-sm font-medium">{task.title}</p>
                           <p className="text-xs text-gray-600">
@@ -534,10 +547,15 @@ export function TasksPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={
-                          task.priority === 'urgent' ? 'destructive' :
-                          task.priority === 'high' ? 'secondary' : 'default'
-                        }>
+                        <Badge
+                          variant={
+                            task.priority === 'urgent'
+                              ? 'destructive'
+                              : task.priority === 'high'
+                                ? 'secondary'
+                                : 'default'
+                          }
+                        >
                           {task.priority}
                         </Badge>
                         {task.due_date && (
@@ -564,9 +582,9 @@ export function TasksPage() {
                       <span className="text-sm">This Week</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{width: `${(completedTasks / totalTasks) * 100}%`}}
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${(completedTasks / totalTasks) * 100}%` }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium">
@@ -587,15 +605,24 @@ export function TasksPage() {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Logged Hours</span>
                       <span className="text-sm font-medium">
-                        {tasks?.reduce((sum, task) => sum + (task.total_logged_hours || 0), 0) || 0}h
+                        {tasks?.reduce((sum, task) => sum + (task.total_logged_hours || 0), 0) || 0}
+                        h
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Avg per Task</span>
                       <span className="text-sm font-medium">
-                        {totalTasks > 0 ? 
-                          Math.round((tasks?.reduce((sum, task) => sum + (task.total_logged_hours || 0), 0) || 0) / totalTasks * 10) / 10
-                          : 0}h
+                        {totalTasks > 0
+                          ? Math.round(
+                              ((tasks?.reduce(
+                                (sum, task) => sum + (task.total_logged_hours || 0),
+                                0
+                              ) || 0) /
+                                totalTasks) *
+                                10
+                            ) / 10
+                          : 0}
+                        h
                       </span>
                     </div>
                   </div>
@@ -616,13 +643,13 @@ export function TasksPage() {
                   type="text"
                   placeholder="Search tasks..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <select
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                onChange={e => setSelectedStatus(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Status</option>
@@ -633,7 +660,7 @@ export function TasksPage() {
               </select>
               <select
                 value={selectedPriority}
-                onChange={(e) => setSelectedPriority(e.target.value)}
+                onChange={e => setSelectedPriority(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Priority</option>
@@ -647,33 +674,35 @@ export function TasksPage() {
             {/* Tasks List */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="divide-y divide-gray-200">
-                {filteredTasks.map((task) => (
+                {filteredTasks.map(task => (
                   <div key={task.id} className="p-6 hover:bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full ${
-                          task.status === 'completed' ? 'bg-green-500' :
-                          task.status === 'in_progress' ? 'bg-blue-500' :
-                          task.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
-                        }`} />
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            task.status === 'completed'
+                              ? 'bg-green-500'
+                              : task.status === 'in_progress'
+                                ? 'bg-blue-500'
+                                : task.status === 'pending'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-gray-500'
+                          }`}
+                        />
                         <div className="flex-1">
                           <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
                           {task.description && (
                             <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                           )}
                           <div className="flex items-center gap-4 mt-2">
-                            <span className="text-sm text-gray-500">
-                              📍 {task.farm_name}
-                            </span>
+                            <span className="text-sm text-gray-500">📍 {task.farm_name}</span>
                             {task.assigned_to_name && (
                               <span className="text-sm text-gray-500">
                                 👤 {task.assigned_to_name}
                               </span>
                             )}
                             {task.task_category && (
-                              <span className="text-sm text-gray-500">
-                                🏷️ {task.task_category}
-                              </span>
+                              <span className="text-sm text-gray-500">🏷️ {task.task_category}</span>
                             )}
                             {task.total_logged_hours && task.total_logged_hours > 0 && (
                               <span className="text-sm text-gray-500">
@@ -684,51 +713,54 @@ export function TasksPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={
-                          task.priority === 'urgent' ? 'destructive' :
-                          task.priority === 'high' ? 'secondary' : 'default'
-                        }>
+                        <Badge
+                          variant={
+                            task.priority === 'urgent'
+                              ? 'destructive'
+                              : task.priority === 'high'
+                                ? 'secondary'
+                                : 'default'
+                          }
+                        >
                           <Flag className="h-3 w-3 mr-1" />
                           {task.priority}
                         </Badge>
-                        <Badge variant={
-                          task.status === 'completed' ? 'default' :
-                          task.status === 'in_progress' ? 'secondary' : 'outline'
-                        }>
+                        <Badge
+                          variant={
+                            task.status === 'completed'
+                              ? 'default'
+                              : task.status === 'in_progress'
+                                ? 'secondary'
+                                : 'outline'
+                          }
+                        >
                           {task.status.replace('_', ' ')}
                         </Badge>
                         <div className="flex items-center gap-1">
-                          <span className="text-sm text-gray-500">
-                            {task.progress_percentage}%
-                          </span>
+                          <span className="text-sm text-gray-500">{task.progress_percentage}%</span>
                           <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{width: `${task.progress_percentage}%`}}
+                            <div
+                              className="bg-blue-600 h-2 rounded-full"
+                              style={{ width: `${task.progress_percentage}%` }}
                             ></div>
                           </div>
                         </div>
                         {task.due_date && (
-                          <span className={`text-sm ${
-                            new Date(task.due_date) < new Date() && task.status !== 'completed' 
-                              ? 'text-red-600' : 'text-gray-500'
-                          }`}>
+                          <span
+                            className={`text-sm ${
+                              new Date(task.due_date) < new Date() && task.status !== 'completed'
+                                ? 'text-red-600'
+                                : 'text-gray-500'
+                            }`}
+                          >
                             Due: {new Date(task.due_date).toLocaleDateString()}
                           </span>
                         )}
                         <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingTask(task)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => setEditingTask(task)}>
                             <Edit className="h-3 w-3" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedTask(task)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => setSelectedTask(task)}>
                             <Eye className="h-3 w-3" />
                           </Button>
                           {!timerActive[task.id] ? (
@@ -771,10 +803,9 @@ export function TasksPage() {
                   <CheckSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h4>
                   <p className="text-gray-600 mb-4">
-                    {searchTerm || selectedStatus || selectedPriority || selectedCategory 
-                      ? 'Try adjusting your search or filter criteria' 
-                      : 'Start by creating your first task'
-                    }
+                    {searchTerm || selectedStatus || selectedPriority || selectedCategory
+                      ? 'Try adjusting your search or filter criteria'
+                      : 'Start by creating your first task'}
                   </p>
                   <Button onClick={() => setShowCreateForm(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -798,19 +829,15 @@ export function TasksPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates?.map((template) => (
+              {templates?.map(template => (
                 <Card key={template.id}>
                   <CardHeader>
                     <CardTitle className="text-lg">{template.template_name}</CardTitle>
-                    <CardDescription>
-                      Category: {template.category}
-                    </CardDescription>
+                    <CardDescription>Category: {template.category}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {template.description && (
-                      <p className="text-sm text-gray-600 mb-4">
-                        {template.description}
-                      </p>
+                      <p className="text-sm text-gray-600 mb-4">{template.description}</p>
                     )}
                     <div className="space-y-2">
                       {template.estimated_duration && (
@@ -824,16 +851,12 @@ export function TasksPage() {
                       {template.priority_level && (
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Priority:</span>
-                          <span className="text-sm font-medium">
-                            {template.priority_level}/10
-                          </span>
+                          <span className="text-sm font-medium">{template.priority_level}/10</span>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center justify-between mt-4">
-                      <Badge variant="default">
-                        {template.category}
-                      </Badge>
+                      <Badge variant="default">{template.category}</Badge>
                       <div className="flex items-center gap-2">
                         <Button size="sm" variant="outline">
                           <Edit className="h-3 w-3" />
@@ -851,7 +874,9 @@ export function TasksPage() {
                 <div className="col-span-full text-center py-8">
                   <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No templates</h4>
-                  <p className="text-gray-600 mb-4">Create reusable task templates for common activities</p>
+                  <p className="text-gray-600 mb-4">
+                    Create reusable task templates for common activities
+                  </p>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Create First Template
@@ -871,7 +896,11 @@ export function TasksPage() {
                 {currentTimer && (
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
-                    Tracking: {Math.floor((new Date().getTime() - currentTimer.startTime.getTime()) / 60000)} min
+                    Tracking:{' '}
+                    {Math.floor(
+                      (new Date().getTime() - currentTimer.startTime.getTime()) / 60000
+                    )}{' '}
+                    min
                   </div>
                 )}
               </div>
@@ -881,44 +910,43 @@ export function TasksPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Active Tasks</CardTitle>
-                  <CardDescription>
-                    Tasks currently being worked on
-                  </CardDescription>
+                  <CardDescription>Tasks currently being worked on</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {tasks?.filter(task => task.status === 'in_progress').map((task) => (
-                      <div key={task.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{task.title}</h4>
-                          <p className="text-sm text-gray-600">{task.farm_name}</p>
+                    {tasks
+                      ?.filter(task => task.status === 'in_progress')
+                      .map(task => (
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
+                        >
+                          <div>
+                            <h4 className="font-medium">{task.title}</h4>
+                            <p className="text-sm text-gray-600">{task.farm_name}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!timerActive[task.id] ? (
+                              <Button size="sm" onClick={() => handleStartTimer(task)}>
+                                <PlayCircle className="h-4 w-4 mr-1" />
+                                Start
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleStopTimer(task)}
+                              >
+                                <PauseCircle className="h-4 w-4 mr-1" />
+                                Stop
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {!timerActive[task.id] ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleStartTimer(task)}
-                            >
-                              <PlayCircle className="h-4 w-4 mr-1" />
-                              Start
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleStopTimer(task)}
-                            >
-                              <PauseCircle className="h-4 w-4 mr-1" />
-                              Stop
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {(!tasks || tasks.filter(task => task.status === 'in_progress').length === 0) && (
-                      <div className="text-center py-4 text-gray-500">
-                        No active tasks
-                      </div>
+                      ))}
+                    {(!tasks ||
+                      tasks.filter(task => task.status === 'in_progress').length === 0) && (
+                      <div className="text-center py-4 text-gray-500">No active tasks</div>
                     )}
                   </div>
                 </CardContent>
@@ -926,23 +954,26 @@ export function TasksPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Today's Summary</CardTitle>
+                  <CardTitle>Today&apos;s Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Tasks Completed</span>
                       <span className="text-sm font-medium">
-                        {tasks?.filter(task => 
-                          task.status === 'completed' && 
-                          new Date(task.updated_at || task.created_at).toDateString() === new Date().toDateString()
+                        {tasks?.filter(
+                          task =>
+                            task.status === 'completed' &&
+                            new Date(task.updated_at || task.created_at).toDateString() ===
+                              new Date().toDateString()
                         ).length || 0}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Time Logged</span>
                       <span className="text-sm font-medium">
-                        {tasks?.reduce((sum, task) => sum + (task.total_logged_hours || 0), 0) || 0}h
+                        {tasks?.reduce((sum, task) => sum + (task.total_logged_hours || 0), 0) || 0}
+                        h
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -962,7 +993,7 @@ export function TasksPage() {
         {viewMode === 'analytics' && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">Task Analytics</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -974,9 +1005,11 @@ export function TasksPage() {
                       <span className="text-sm">Completed</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
-                            style={{width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`}}
+                          <div
+                            className="bg-green-600 h-2 rounded-full"
+                            style={{
+                              width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
+                            }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium">{completedTasks}</span>
@@ -986,9 +1019,11 @@ export function TasksPage() {
                       <span className="text-sm">In Progress</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{width: `${totalTasks > 0 ? (inProgressTasks / totalTasks) * 100 : 0}%`}}
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{
+                              width: `${totalTasks > 0 ? (inProgressTasks / totalTasks) * 100 : 0}%`,
+                            }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium">{inProgressTasks}</span>
@@ -998,9 +1033,11 @@ export function TasksPage() {
                       <span className="text-sm">Pending</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-yellow-600 h-2 rounded-full" 
-                            style={{width: `${totalTasks > 0 ? (pendingTasks / totalTasks) * 100 : 0}%`}}
+                          <div
+                            className="bg-yellow-600 h-2 rounded-full"
+                            style={{
+                              width: `${totalTasks > 0 ? (pendingTasks / totalTasks) * 100 : 0}%`,
+                            }}
                           ></div>
                         </div>
                         <span className="text-sm font-medium">{pendingTasks}</span>
@@ -1016,8 +1053,9 @@ export function TasksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {categories.slice(0, 5).map((category) => {
-                      const categoryTasks = tasks?.filter(task => task.task_category === category) || [];
+                    {categories.slice(0, 5).map(category => {
+                      const categoryTasks =
+                        tasks?.filter(task => task.task_category === category) || [];
                       return (
                         <div key={category} className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">{category}</span>
@@ -1053,8 +1091,8 @@ export function TasksPage() {
 
 interface TaskModalProps {
   task?: Task | null;
-  farms: any[];
-  users: any[];
+  farms: unknown[];
+  users: unknown[];
   onSave: (data: TaskFormData) => void;
   onClose: () => void;
   isLoading: boolean;
@@ -1077,7 +1115,7 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
     completion_criteria: task?.completion_criteria || '',
     progress_percentage: task?.progress_percentage || 0,
     tags: task?.tags || '',
-    location: task?.location || ''
+    location: task?.location || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1089,48 +1127,42 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h3 className="text-lg font-semibold mb-4">
-            {task ? 'Edit Task' : 'Create New Task'}
-          </h3>
+          <h3 className="text-lg font-semibold mb-4">{task ? 'Edit Task' : 'Create New Task'}</h3>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Farm *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm *</label>
                 <select
                   value={formData.farm_id}
-                  onChange={(e) => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
+                  onChange={e => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  {farms.map((farm) => (
-                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                  {farms.map(farm => (
+                    <option key={farm.id} value={farm.id}>
+                      {farm.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Task Title *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Task Title *</label>
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={e => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  onChange={e => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="pending">Pending</option>
@@ -1141,12 +1173,10 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Priority
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                 <select
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  onChange={e => setFormData({ ...formData, priority: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="low">Low</option>
@@ -1157,40 +1187,36 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Assigned To
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
                 <select
                   value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                  onChange={e => setFormData({ ...formData, assigned_to: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Unassigned</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                 <input
                   type="date"
                   value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  onChange={e => setFormData({ ...formData, due_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select
                   value={formData.task_category}
-                  onChange={(e) => setFormData({ ...formData, task_category: e.target.value })}
+                  onChange={e => setFormData({ ...formData, task_category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select category</option>
@@ -1213,21 +1239,26 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
                   type="number"
                   step="0.5"
                   value={formData.estimated_duration}
-                  onChange={(e) => setFormData({ ...formData, estimated_duration: parseFloat(e.target.value) || undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      estimated_duration: parseFloat(e.target.value) || undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Progress (%)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={formData.progress_percentage}
-                  onChange={(e) => setFormData({ ...formData, progress_percentage: parseInt(e.target.value) || 0 })}
+                  onChange={e =>
+                    setFormData({ ...formData, progress_percentage: parseInt(e.target.value) || 0 })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1241,19 +1272,22 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
                   min="1"
                   max="10"
                   value={formData.priority_score}
-                  onChange={(e) => setFormData({ ...formData, priority_score: parseInt(e.target.value) || undefined })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      priority_score: parseInt(e.target.value) || undefined,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Describe the task requirements..."
@@ -1261,12 +1295,10 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dependencies
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dependencies</label>
               <textarea
                 value={formData.dependencies}
-                onChange={(e) => setFormData({ ...formData, dependencies: e.target.value })}
+                onChange={e => setFormData({ ...formData, dependencies: e.target.value })}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Task dependencies (comma-separated IDs or descriptions)..."
@@ -1279,7 +1311,7 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
               </label>
               <textarea
                 value={formData.resource_requirements}
-                onChange={(e) => setFormData({ ...formData, resource_requirements: e.target.value })}
+                onChange={e => setFormData({ ...formData, resource_requirements: e.target.value })}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Equipment, tools, materials needed..."
@@ -1292,7 +1324,7 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
               </label>
               <textarea
                 value={formData.completion_criteria}
-                onChange={(e) => setFormData({ ...formData, completion_criteria: e.target.value })}
+                onChange={e => setFormData({ ...formData, completion_criteria: e.target.value })}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="What constitutes task completion..."
@@ -1300,46 +1332,33 @@ function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModal
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
               <input
                 type="text"
                 value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                onChange={e => setFormData({ ...formData, tags: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Comma-separated tags..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <input
                 type="text"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={e => setFormData({ ...formData, location: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Specific location or area..."
               />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isLoading ? 'Saving...' : (task ? 'Update Task' : 'Create Task')}
+              <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+                {isLoading ? 'Saving...' : task ? 'Update Task' : 'Create Task'}
               </Button>
             </div>
           </form>

@@ -14,40 +14,38 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
   const location = useLocation();
-  
+
   // Generate breadcrumbs automatically if not provided
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
-    const breadcrumbs: BreadcrumbItem[] = [
-      { label: 'Dashboard', path: '/dashboard' }
-    ];
+    const breadcrumbs: BreadcrumbItem[] = [{ label: 'Dashboard', path: '/dashboard' }];
 
     const routeLabels: Record<string, string> = {
-      'dashboard': 'Dashboard',
-      'farms': 'Farms',
-      'fields': 'Fields',
-      'animals': 'Animals',
-      'crops': 'Crops',
-      'tasks': 'Tasks',
-      'inventory': 'Inventory',
-      'finance': 'Finance',
-      'queue': 'Queue'
+      dashboard: 'Dashboard',
+      farms: 'Farms',
+      fields: 'Fields',
+      animals: 'Animals',
+      crops: 'Crops',
+      tasks: 'Tasks',
+      inventory: 'Inventory',
+      finance: 'Finance',
+      queue: 'Queue',
     };
 
     let currentPath = '';
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      
+
       // Skip dashboard as it's already added
       if (segment === 'dashboard') return;
-      
+
       const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
       const isLast = index === pathSegments.length - 1;
-      
+
       breadcrumbs.push({
         label,
         path: currentPath,
-        isActive: isLast
+        isActive: isLast,
       });
     });
 
@@ -69,10 +67,7 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
           {item.isActive || index === breadcrumbItems.length - 1 ? (
             <span className="text-gray-900 font-medium">{item.label}</span>
           ) : (
-            <Link 
-              to={item.path}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
-            >
+            <Link to={item.path} className="text-blue-600 hover:text-blue-800 transition-colors">
               {item.label}
             </Link>
           )}

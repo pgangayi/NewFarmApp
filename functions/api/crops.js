@@ -1,18 +1,398 @@
 import { AuthUtils, createUnauthorizedResponse, createErrorResponse, createSuccessResponse } from './_auth.js';
 
-// Forward requests to the main crops functionality
 export async function onRequest(context) {
   const { request, env } = context;
-  
-  // Import the main crops functionality
-  const { onRequest: mainCropsHandler } = await import('./crops-main.js');
-  return mainCropsHandler(context);
+  const url = new URL(request.url);
+  const method = request.method;
+
+  try {
+    // Initialize AuthUtils
+    const auth = new AuthUtils(env);
+    
+    // Get user from token
+    const user = await auth.getUserFromToken(request);
+    if (!user) {
+      return createUnauthorizedResponse();
+    }
+
+    // Enhanced crops listing with comprehensive data
+    if (method === 'GET') {
+      const cropId = url.searchParams.get('id');
+      const analytics = url.searchParams.get('analytics');
+      const varieties = url.searchParams.get('varieties');
+      const activities = url.searchParams.get('activities');
+      const observations = url.searchParams.get('observations');
+      const yields = url.searchParams.get('yields');
+      const fieldId = url.searchParams.get('field_id');
+      const status = url.searchParams.get('status');
+
+      if (cropId) {
+        // Get specific crop with comprehensive data
+        const { results: cropResults, error } = await env.DB.prepare(`
+          SELECT 
+            c.*,
+            f.name as field_name,
+            fa.name as farm_name,
+            COALESCE((SELECT COUNT(*) FROM crop_activities ca WHERE ca.crop_id = c.id), 0) as activity_count,
+            COALESCE((SELECT COUNT(*) FROM crop_observations co WHERE co.crop_id = c.id), 0) as observation_count,
+            COALESCE((SELECT COUNT(*) FROM irrigation_schedules isc WHERE isc.crop_id = c.id AND isc.is_active = 1), 0) as irrigation_schedules
+          FROM crops c
+          JOIN farm_members fm ON c.farm_id = fm.farm_id
+          JOIN farms fa ON c.farm_id = fa.id
+          LEFT JOIN fields f ON c.field_id = f.id
+          WHERE c.id = ? AND fm.user_id = ?
+        `).bind(cropId, user.id).all();
+
+        if (error) {
+          console.error('Database error:', error);
+          return createErrorResponse('Database error', 500);
+        }
+
+        const crop = cropResults[0];
+        if (!crop) {
+          return createErrorResponse('Crop not found or access denied', 404);
+        }
+
+        // Get crop activities if requested
+        if (activities === 'true') {
+          const { results: activitiesResults } = await env.DB.prepare(`
+            SELECT * FROM crop_activities 
+            WHERE crop_id = ? 
+            ORDER BY activity_date DESC 
+            LIMIT 20
+          `).bind(cropId).all();
+          
+          crop.activities = activitiesResults;
+        }
+
+        // Get crop observations if requested
+        if (observations === 'true') {
+          const { results: observationsResults } = await env.DB.prepare(`
+            SELECT * FROM crop_observations 
+            WHERE crop_id = ? 
+            ORDER BY observation_date DESC 
+            LIMIT 10
+          `).bind(cropId).all();
+          
+          crop.observations = observationsResults;
+        }
+
+        // Get yield records if requested
+        if (yields === 'true') {
+          const { results: yieldsResults } = await env.DB.prepare(`
+            SELECT * FROM crop_yield_records 
+            WHERE crop_id = ? 
+            ORDER BY harvest_date DESC 
+          `).bind(cropId).all();
+          
+          crop.yield_records = yieldsResults;
+        }
+
+        return createSuccessResponse(crop);
+
+      } else if (varieties === 'true') {
+        // Get crop varieties
+        const { results: varietiesResults, error } = await env.DB.prepare(`
+          SELECT * FROM crop_varieties 
+          ORDER BY crop_type, name
+        `).all();
+
+        if (error) {
+          console.error('Database error:', error);
+          return createErrorResponse('Database error', 500);
+        }
+
+        return createSuccessResponse(varietiesResults);
+
+      } else if (analytics === 'true') {
+        // Get crops with analytics data
+        let query = `
+          SELECT 
+            c.*,
+            f.name as field_name,
+            fa.name as farm_name,
+            COALESCE((SELECT COUNT(*) FROM crop_activities ca WHERE ca.crop_id = c.id), 0) as activity_count,
+            COALESCE((SELECT COUNT(*) FROM crop_observations co WHERE co.crop_id = c.id), 0) as observation_count,
+            COALESCE((SELECT MAX(cyr.total_yield) FROM crop_yield_records cyr WHERE cyr.crop_id = c.id), 0) as best_yield,
+            COALESCE((SELECT AVG(cyr.yield_per_hectare) FROM crop_yield_records cyr WHERE cyr.crop_id = c.id), 0) as avg_yield_per_hectare,
+            COALESCE((SELECT AVG(cyr.revenue) FROM crop_yield_records cyr WHERE cyr.crop_id = c.id), 0) as avg_revenue
+          FROM crops c
+          JOIN farm_members fm ON c.farm_id = fm.farm_id
+          JOIN farms fa ON c.farm_id = fa.id
+          LEFT JOIN fields f ON c.field_id = f.id
+          WHERE fm.user_id = ?
+        `;
+        const params = [user.id];
+
+        // Add filters
+        if (fieldId) {
+          query += ' AND c.field_id = ?';
+          params.push(fieldId);
+        }
+        if (status) {
+          query += ' AND c.status = ?';
+          params.push(status);
+        }
+
+        query += ' ORDER BY c.planting_date DESC';
+
+        const { results: crops, error } = await env.DB.prepare(query).bind(...params).all();
+
+        if (error) {
+          console.error('Database error:', error);
+          return createErrorResponse('Database error', 500);
+        }
+
+        return createSuccessResponse(crops || []);
+
+      } else {
+        // Standard crops list with enhanced data
+        let query = `
+          SELECT 
+            c.*,
+            f.name as field_name,
+            fa.name as farm_name
+          FROM crops c
+          JOIN farm_members fm ON c.farm_id = fm.farm_id
+          JOIN farms fa ON c.farm_id = fa.id
+          LEFT JOIN fields f ON c.field_id = f.id
+          WHERE fm.user_id = ?
+        `;
+        const params = [user.id];
+
+        if (fieldId) {
+          query += ' AND c.field_id = ?';
+          params.push(fieldId);
+        }
+
+        query += ' ORDER BY c.created_at DESC';
+
+        const { results: crops, error } = await env.DB.prepare(query).bind(...params).all();
+
+        if (error) {
+          console.error('Database error:', error);
+          return createErrorResponse('Database error', 500);
+        }
+
+        return createSuccessResponse(crops || []);
+      }
+
+    } else if (method === 'POST') {
+      // Create crop with enhanced data
+      const body = await request.json();
+      const { 
+        farm_id,
+        field_id,
+        crop_type, 
+        crop_variety,
+        planting_date,
+        expected_yield,
+        seeds_used,
+        fertilizer_type,
+        irrigation_schedule,
+        pest_control_schedule,
+        soil_preparation,
+        weather_requirements,
+        target_weight,
+        notes
+      } = body;
+
+      if (!farm_id || !crop_type) {
+        return createErrorResponse('Farm ID and crop type are required', 400);
+      }
+
+      // Check if user has access to this farm
+      if (!await auth.hasFarmAccess(user.id, farm_id)) {
+        return createErrorResponse('Farm not found or access denied', 404);
+      }
+
+      const { results, error: insertError } = await env.DB.prepare(`
+        INSERT INTO crops (
+          farm_id, field_id, crop_type, crop_variety, planting_date,
+          expected_yield, seeds_used, fertilizer_type, irrigation_schedule,
+          pest_control_schedule, soil_preparation, weather_requirements,
+          target_weight, notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        farm_id, field_id || null, crop_type, crop_variety || null, planting_date || null,
+        expected_yield || null, seeds_used || null, fertilizer_type || null,
+        irrigation_schedule || null, pest_control_schedule || null,
+        soil_preparation || null, weather_requirements || null,
+        target_weight || null, notes || null
+      ).run();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        return createErrorResponse('Failed to create crop', 500);
+      }
+
+      // Get the created crop
+      const { results: cropResults } = await env.DB.prepare(`
+        SELECT 
+          c.*,
+          f.name as field_name,
+          fa.name as farm_name
+        FROM crops c
+        JOIN farms fa ON c.farm_id = fa.id
+        LEFT JOIN fields f ON c.field_id = f.id
+        WHERE c.rowid = last_insert_rowid()
+      `).all();
+
+      const newCrop = cropResults[0];
+
+      // Create initial activity record
+      await env.DB.prepare(`
+        INSERT INTO crop_activities (crop_id, activity_type, activity_date, description)
+        VALUES (?, 'planted', ?, ?)
+      `).bind(newCrop.id, new Date().toISOString().split('T')[0], `Planted ${crop_type}${crop_variety ? ' (' + crop_variety + ')' : ''}`).run();
+
+  return createSuccessResponse(newCrop, 201);
+
+    } else if (method === 'PUT') {
+      // Update crop with enhanced data
+      const body = await request.json();
+      const { id, ...updateData } = body;
+
+      if (!id) {
+        return createErrorResponse('Crop ID required', 400);
+      }
+
+      // Get the crop and check farm access
+      const { results: existingCrops } = await env.DB.prepare(`
+        SELECT c.farm_id, c.status
+        FROM crops c
+        JOIN farm_members fm ON c.farm_id = fm.farm_id
+        WHERE c.id = ? AND fm.user_id = ?
+      `).bind(id, user.id).all();
+
+      if (existingCrops.length === 0) {
+        return createErrorResponse('Crop not found or access denied', 404);
+      }
+
+      const existingCrop = existingCrops[0];
+
+      const updateFields = [];
+      const updateValues = [];
+
+      // Handle all possible update fields
+      const allowedFields = [
+        'field_id', 'crop_type', 'crop_variety', 'planting_date', 'harvest_date',
+        'expected_yield', 'actual_yield', 'seeds_used', 'fertilizer_type',
+        'irrigation_schedule', 'pest_control_schedule', 'soil_preparation',
+        'weather_requirements', 'growth_stage', 'status', 'current_weight',
+        'target_weight', 'health_status', 'last_inspection_date', 'notes'
+      ];
+
+      allowedFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          updateFields.push(`${field} = ?`);
+          updateValues.push(updateData[field]);
+        }
+      });
+
+      if (updateFields.length === 0) {
+        return createErrorResponse('No fields to update', 400);
+      }
+
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      updateValues.push(id);
+
+      const { error: updateError } = await env.DB.prepare(`
+        UPDATE crops 
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `).bind(...updateValues).run();
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        return createErrorResponse('Failed to update crop', 500);
+      }
+
+      // Log activity for status changes
+      if (updateData.status && updateData.status !== existingCrop.status) {
+        await env.DB.prepare(`
+          INSERT INTO crop_activities (crop_id, activity_type, activity_date, description)
+          VALUES (?, ?, ?, ?)
+        `).bind(id, 'status_changed', new Date().toISOString().split('T')[0], `Status changed to ${updateData.status}`).run();
+      }
+
+      // Get updated crop
+      const { results: cropResults } = await env.DB.prepare(`
+        SELECT 
+          c.*,
+          f.name as field_name,
+          fa.name as farm_name
+        FROM crops c
+        JOIN farms fa ON c.farm_id = fa.id
+        LEFT JOIN fields f ON c.field_id = f.id
+        WHERE c.id = ?
+      `).bind(id).all();
+
+      return createSuccessResponse(cropResults[0]);
+
+    } else if (method === 'DELETE') {
+      // Enhanced delete with dependency checks
+      const cropId = url.searchParams.get('id');
+
+      if (!cropId) {
+        return createErrorResponse('Crop ID required', 400);
+      }
+
+      // Get the crop and check farm access
+      const { results: existingCrops } = await env.DB.prepare(`
+        SELECT c.farm_id 
+        FROM crops c
+        JOIN farm_members fm ON c.farm_id = fm.farm_id
+        WHERE c.id = ? AND fm.user_id = ?
+      `).bind(cropId, user.id).all();
+
+      if (existingCrops.length === 0) {
+        return createErrorResponse('Crop not found or access denied', 404);
+      }
+
+      // Check for dependencies
+      const { results: dependencies } = await env.DB.prepare(`
+        SELECT 
+          (SELECT COUNT(*) FROM irrigation_schedules WHERE crop_id = ?) as irrigation_schedules,
+          (SELECT COUNT(*) FROM crop_yield_records WHERE crop_id = ?) as yield_records
+      `).bind(cropId, cropId).all();
+
+      const dep = dependencies[0];
+      if (dep.irrigation_schedules > 0 || dep.yield_records > 0) {
+        return createErrorResponse(
+          'Cannot delete crop with existing schedules or yield records. Please archive instead.', 
+          400
+        );
+      }
+
+      const { error: deleteError } = await env.DB.prepare(`
+        DELETE FROM crops WHERE id = ?
+      `).bind(cropId).run();
+
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        return createErrorResponse('Failed to delete crop', 500);
+      }
+
+      return createSuccessResponse({ success: true });
+
+    } else {
+      return createErrorResponse('Method not allowed', 405);
+    }
+
+  } catch (error) {
+    console.error('Crops API error:', error);
+    return createErrorResponse('Internal server error', 500);
+  }
 }
 
-// Additional endpoint routing for crops sub-resources
-export async function onRequestPost(context) {
+// Crop Activities Management
+export async function onRequestActivities(context) {
   const { request, env } = context;
-  
+  const url = new URL(request.url);
+  const method = request.method;
+
   try {
     const auth = new AuthUtils(env);
     const user = await auth.getUserFromToken(request);
@@ -20,239 +400,213 @@ export async function onRequestPost(context) {
       return createUnauthorizedResponse();
     }
 
-    // Route to specific functionality based on action parameter
-    const body = await request.json();
-    const { action } = body;
+    if (method === 'GET') {
+      const cropId = url.searchParams.get('crop_id');
+      const limit = url.searchParams.get('limit') || '20';
 
-    switch (action) {
-      case 'overview':
-        return handleCropOverview(body, env, user, auth);
-      case 'health':
-        return handleCropHealth(body, env, user, auth);
-      case 'yield_prediction':
-        return handleYieldPrediction(body, env, user, auth);
-      default:
-        return createErrorResponse('Invalid action', 400);
+      if (!cropId) {
+        return createErrorResponse('Crop ID required', 400);
+      }
+
+      // Check access
+      const { results: accessCheck } = await env.DB.prepare(`
+        SELECT c.farm_id 
+        FROM crops c
+        JOIN farm_members fm ON c.farm_id = fm.farm_id
+        WHERE c.id = ? AND fm.user_id = ?
+      `).bind(cropId, user.id).all();
+
+      if (accessCheck.length === 0) {
+        return createErrorResponse('Access denied', 403);
+      }
+
+      const { results, error } = await env.DB.prepare(`
+        SELECT * FROM crop_activities 
+        WHERE crop_id = ? 
+        ORDER BY activity_date DESC 
+        LIMIT ?
+      `).bind(cropId, parseInt(limit)).all();
+
+      if (error) {
+        console.error('Activities error:', error);
+        return createErrorResponse('Database error', 500);
+      }
+
+      return createSuccessResponse(results);
+
+    } else if (method === 'POST') {
+      const body = await request.json();
+      const { crop_id, activity_type, activity_date, description, cost, weather_conditions } = body;
+
+      if (!crop_id || !activity_type || !activity_date) {
+        return createErrorResponse('Crop ID, activity type, and date required', 400);
+      }
+
+      // Check access
+      const { results: accessCheck } = await env.DB.prepare(`
+        SELECT c.farm_id 
+        FROM crops c
+        JOIN farm_members fm ON c.farm_id = fm.farm_id
+        WHERE c.id = ? AND fm.user_id = ?
+      `).bind(crop_id, user.id).all();
+
+      if (accessCheck.length === 0) {
+        return createErrorResponse('Access denied', 403);
+      }
+
+      const { error } = await env.DB.prepare(`
+        INSERT INTO crop_activities (
+          crop_id, activity_type, activity_date, description,
+          cost, worker_id, weather_conditions
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        crop_id,
+        activity_type,
+        activity_date,
+        description || '',
+        cost || 0,
+        user.id,
+        weather_conditions || ''
+      ).run();
+
+      if (error) {
+        console.error('Activity insert error:', error);
+        return createErrorResponse('Failed to create activity', 500);
+      }
+
+      return createSuccessResponse({ success: true });
+
+    } else {
+      return createErrorResponse('Method not allowed', 405);
     }
+
   } catch (error) {
-    console.error('Crops action handler error:', error);
+    console.error('Activities API error:', error);
     return createErrorResponse('Internal server error', 500);
   }
 }
 
-async function handleCropOverview(body, env, user, auth) {
-  const { farm_id } = body;
-
-  if (!farm_id) {
-    return createErrorResponse('Farm ID required', 400);
-  }
-
-  try {
-    // Check access to farm
-    if (!await auth.hasFarmAccess(user.id, farm_id)) {
-      return createErrorResponse('Farm access denied', 403);
-    }
-
-    const { results, error } = await env.DB.prepare(`
-      SELECT 
-        COUNT(*) as active_crops,
-        COALESCE((SELECT COUNT(*) FROM crops WHERE farm_id = ? AND health_status = 'excellent'), 0) as healthy_crops,
-        COALESCE((SELECT COUNT(*) FROM irrigation_schedules WHERE farm_id = ? AND is_active = 1), 0) as irrigation_systems,
-        COALESCE((SELECT COUNT(*) FROM crop_pest_issues WHERE farm_id = ? AND status = 'active'), 0) as active_pest_issues,
-        COALESCE((SELECT AVG(soil_health_score) FROM soil_analysis WHERE field_id IN 
-          (SELECT id FROM fields WHERE farm_id = ?)), 0) as soil_health_score
-      FROM crops
-      WHERE farm_id = ? AND status = 'active'
-    `).bind(farm_id, farm_id, farm_id, farm_id, farm_id).all();
-
-    if (error) {
-      console.error('Database error:', error);
-      return createErrorResponse('Database error', 500);
-    }
-
-    const overview = results[0] || {};
-    
-    // Get recent activity
-    const { results: recentActivity } = await env.DB.prepare(`
-      SELECT 
-        ca.*,
-        c.crop_type,
-        f.name as field_name
-      FROM crop_activities ca
-      JOIN crops c ON ca.crop_id = c.id
-      JOIN fields f ON c.field_id = f.id
-      WHERE c.farm_id = ?
-      ORDER BY ca.activity_date DESC
-      LIMIT 5
-    `).bind(farm_id).all();
-
-    // Get upcoming tasks
-    const { results: upcomingTasks } = await env.DB.prepare(`
-      SELECT 
-        t.*,
-        c.crop_type,
-        f.name as field_name
-      FROM tasks t
-      LEFT JOIN crops c ON t.target_id = CAST(c.id AS TEXT) AND t.target_type = 'crop'
-      LEFT JOIN fields f ON c.field_id = f.id
-      WHERE t.farm_id = ? AND t.status = 'pending' AND t.due_date <= date('now', '+30 days')
-      ORDER BY t.due_date ASC
-      LIMIT 5
-    `).bind(farm_id).all();
-
-    return createSuccessResponse({
-      ...overview,
-      recent_activity: recentActivity || [],
-      upcoming_tasks: upcomingTasks || []
-    });
-  } catch (error) {
-    console.error('Crop overview error:', error);
-    return createErrorResponse('Failed to get crop overview', 500);
-  }
-}
-
-async function handleCropHealth(body, env, user, auth) {
-  const { farm_id } = body;
-
-  if (!farm_id) {
-    return createErrorResponse('Farm ID required', 400);
-  }
+// Crop Observations Management
+export async function onRequestObservations(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const method = request.method;
 
   try {
-    if (!await auth.hasFarmAccess(user.id, farm_id)) {
-      return createErrorResponse('Farm access denied', 403);
+    const auth = new AuthUtils(env);
+    const user = await auth.getUserFromToken(request);
+    if (!user) {
+      return createUnauthorizedResponse();
     }
 
-    // Get detailed health status
-    const { results: healthData } = await env.DB.prepare(`
-      SELECT 
-        c.id,
-        c.crop_type,
-        c.crop_variety,
-        c.health_status,
-        c.last_inspection_date,
-        f.name as field_name,
-        COALESCE((SELECT COUNT(*) FROM crop_observations 
-          WHERE crop_id = c.id AND DATE(observation_date) >= DATE('now', '-7 days')), 0) as recent_observations
-      FROM crops c
-      JOIN fields f ON c.field_id = f.id
-      WHERE c.farm_id = ?
-      ORDER BY c.health_status DESC, c.last_inspection_date DESC
-    `).bind(farm_id).all();
+    if (method === 'GET') {
+      const cropId = url.searchParams.get('crop_id');
+      const limit = url.searchParams.get('limit') || '10';
 
-    // Generate alerts for crops needing attention
-    const alerts = [];
-    healthData.forEach(crop => {
-      if (crop.health_status === 'poor') {
-        alerts.push({
-          type: 'health_issue',
-          crop: crop.crop_type,
-          message: `${crop.crop_type} in ${crop.field_name} requires immediate attention`,
-          priority: 'high'
-        });
+      if (!cropId) {
+        return createErrorResponse('Crop ID required', 400);
       }
-      
-      if (!crop.last_inspection_date || 
-          (new Date() - new Date(crop.last_inspection_date)) / (1000 * 60 * 60 * 24) > 14) {
-        alerts.push({
-          type: 'inspection_due',
-          crop: crop.crop_type,
-          message: `${crop.crop_type} inspection overdue`,
-          priority: 'medium'
-        });
+
+      // Check access
+      const { results: accessCheck } = await env.DB.prepare(`
+        SELECT c.farm_id 
+        FROM crops c
+        JOIN farm_members fm ON c.farm_id = fm.farm_id
+        WHERE c.id = ? AND fm.user_id = ?
+      `).bind(cropId, user.id).all();
+
+      if (accessCheck.length === 0) {
+        return createErrorResponse('Access denied', 403);
       }
-    });
 
-    return createSuccessResponse({
-      crops: healthData,
-      alerts
-    });
-  } catch (error) {
-    console.error('Crop health error:', error);
-    return createErrorResponse('Failed to get crop health data', 500);
-  }
-}
+      const { results, error } = await env.DB.prepare(`
+        SELECT * FROM crop_observations 
+        WHERE crop_id = ? 
+        ORDER BY observation_date DESC 
+        LIMIT ?
+      `).bind(cropId, parseInt(limit)).all();
 
-async function handleYieldPrediction(body, env, user, auth) {
-  const { farm_id } = body;
+      if (error) {
+        console.error('Observations error:', error);
+        return createErrorResponse('Database error', 500);
+      }
 
-  if (!farm_id) {
-    return createErrorResponse('Farm ID required', 400);
-  }
+      return createSuccessResponse(results);
 
-  try {
-    if (!await auth.hasFarmAccess(user.id, farm_id)) {
-      return createErrorResponse('Farm access denied', 403);
+    } else if (method === 'POST') {
+      const body = await request.json();
+      const { 
+        crop_id, 
+        observation_date, 
+        growth_stage, 
+        health_status, 
+        height_cm, 
+        leaf_count,
+        pest_presence, 
+        disease_signs, 
+        soil_moisture, 
+        photos, 
+        notes 
+      } = body;
+
+      if (!crop_id || !observation_date) {
+        return createErrorResponse('Crop ID and observation date required', 400);
+      }
+
+      // Check access
+      const { results: accessCheck } = await env.DB.prepare(`
+        SELECT c.farm_id 
+        FROM crops c
+        JOIN farm_members fm ON c.farm_id = fm.farm_id
+        WHERE c.id = ? AND fm.user_id = ?
+      `).bind(crop_id, user.id).all();
+
+      if (accessCheck.length === 0) {
+        return createErrorResponse('Access denied', 403);
+      }
+
+      const { error } = await env.DB.prepare(`
+        INSERT INTO crop_observations (
+          crop_id, observation_date, growth_stage, health_status,
+          height_cm, leaf_count, pest_presence, disease_signs,
+          soil_moisture, photos, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        crop_id,
+        observation_date,
+        growth_stage || null,
+        health_status || null,
+        height_cm || null,
+        leaf_count || null,
+        pest_presence ? 1 : 0,
+        disease_signs || null,
+        soil_moisture || null,
+        photos || null,
+        notes || null
+      ).run();
+
+      if (error) {
+        console.error('Observation insert error:', error);
+        return createErrorResponse('Failed to create observation', 500);
+      }
+
+      // Update crop health status and last inspection date
+      if (health_status) {
+        await env.DB.prepare(`
+          UPDATE crops 
+          SET health_status = ?, last_inspection_date = ?
+          WHERE id = ?
+        `).bind(health_status, observation_date, crop_id).run();
+      }
+
+      return createSuccessResponse({ success: true });
+
+    } else {
+      return createErrorResponse('Method not allowed', 405);
     }
 
-    // Get crops with yield data for prediction
-    const { results: crops } = await env.DB.prepare(`
-      SELECT 
-        c.id,
-        c.crop_type,
-        c.planting_date,
-        c.expected_yield,
-        c.actual_yield,
-        f.name as field_name,
-        f.area_hectares,
-        COALESCE((SELECT AVG(yield_per_hectare) FROM crop_yield_records 
-          WHERE crop_id = c.id), 0) as historical_avg_yield
-      FROM crops c
-      JOIN fields f ON c.field_id = f.id
-      WHERE c.farm_id = ? AND c.status = 'active'
-    `).bind(farm_id).all();
-
-    // Generate yield predictions based on historical data and growth stage
-    const predictions = crops.map(crop => {
-      const plantingDate = new Date(crop.planting_date);
-      const daysSincePlanting = (new Date() - plantingDate) / (1000 * 60 * 60 * 24);
-      const growthStage = getGrowthStage(crop.crop_type, daysSincePlanting);
-      
-      let predictionConfidence = 0.7; // Base confidence
-      let predictedYield = crop.expected_yield;
-      
-      // Adjust based on historical performance
-      if (crop.historical_avg_yield > 0) {
-        const performanceRatio = crop.actual_yield / crop.historical_avg_yield;
-        predictedYield = crop.expected_yield * performanceRatio;
-        predictionConfidence = Math.min(0.9, 0.5 + (performanceRatio * 0.4));
-      }
-
-      return {
-        ...crop,
-        growth_stage: growthStage,
-        predicted_yield: Math.round(predictedYield),
-        prediction_confidence: Math.round(predictionConfidence * 100),
-        harvest_ready_days: Math.max(0, 90 - daysSincePlanting) // Rough estimate
-      };
-    });
-
-    return createSuccessResponse({ predictions });
   } catch (error) {
-    console.error('Yield prediction error:', error);
-    return createErrorResponse('Failed to generate yield predictions', 500);
-  }
-}
-
-function getGrowthStage(cropType, daysSincePlanting) {
-  const cropTypeLower = cropType.toLowerCase();
-  
-  if (cropTypeLower.includes('corn') || cropTypeLower.includes('maize')) {
-    if (daysSincePlanting < 21) return 'germination';
-    if (daysSincePlanting < 45) return 'seedling';
-    if (daysSincePlanting < 70) return 'vegetative';
-    if (daysSincePlanting < 90) return 'flowering';
-    return 'mature';
-  } else if (cropTypeLower.includes('tomato')) {
-    if (daysSincePlanting < 14) return 'germination';
-    if (daysSincePlanting < 35) return 'seedling';
-    if (daysSincePlanting < 60) return 'flowering';
-    return 'fruiting';
-  } else {
-    // Default growth stages
-    if (daysSincePlanting < 30) return 'germination';
-    if (daysSincePlanting < 60) return 'growing';
-    if (daysSincePlanting < 90) return 'flowering';
-    return 'mature';
+    console.error('Observations API error:', error);
+    return createErrorResponse('Internal server error', 500);
   }
 }

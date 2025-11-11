@@ -28,7 +28,12 @@ export function useFinance() {
   const apiClient = getApiClient();
 
   // Fetch all finance entries
-  const { data: entries, isLoading, error, refetch } = useQuery({
+  const {
+    data: entries,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['finance'],
     queryFn: async () => {
       const response = await apiClient.get<FinanceEntry[]>(apiEndpoints.finance.entries);
@@ -40,12 +45,13 @@ export function useFinance() {
   });
 
   // Create finance entry mutation
-  const { mutate: createEntry, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createEntry,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (entryData: CreateFinanceForm) => {
-      const response = await apiClient.post<FinanceEntry>(
-        apiEndpoints.finance.entries,
-        entryData
-      );
+      const response = await apiClient.post<FinanceEntry>(apiEndpoints.finance.entries, entryData);
       return response;
     },
     onSuccess: () => {
@@ -54,7 +60,11 @@ export function useFinance() {
   });
 
   // Update finance entry mutation
-  const { mutate: updateEntry, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateEntry,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, ...entryData }: UpdateFinanceForm) => {
       const response = await apiClient.put<FinanceEntry>(
         `${apiEndpoints.finance.entries}/${id}`,
@@ -68,7 +78,11 @@ export function useFinance() {
   });
 
   // Delete finance entry mutation
-  const { mutate: deleteEntry, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteEntry,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
       await apiClient.delete(`${apiEndpoints.finance.entries}/${id}`);
     },
@@ -100,7 +114,12 @@ export function useFinance() {
 export function useFinanceByFarm(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: entries, isLoading, error, refetch } = useQuery({
+  const {
+    data: entries,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['finance', 'farm', farmId],
     queryFn: async () => {
       const response = await apiClient.get<FinanceEntry[]>(
@@ -123,12 +142,15 @@ export function useFinanceByFarm(farmId: string) {
 export function useFinanceReport(type?: string) {
   const apiClient = getApiClient();
 
-  const { data: report, isLoading, error, refetch } = useQuery({
+  const {
+    data: report,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['finance', 'report', type],
     queryFn: async () => {
-      const endpoint = type 
-        ? apiEndpoints.finance.reports(type)
-        : apiEndpoints.finance.entries;
+      const endpoint = type ? apiEndpoints.finance.reports(type) : apiEndpoints.finance.entries;
       const response = await apiClient.get<FinanceReport>(endpoint);
       return response;
     },
@@ -150,17 +172,17 @@ export function useFinanceStats() {
   const stats = {
     total_entries: entries.length,
     total_income: entries
-      .filter((e) => e.entry_type === 'income')
+      .filter(e => e.entry_type === 'income')
       .reduce((sum, e) => sum + (e.amount || 0), 0),
     total_expenses: entries
-      .filter((e) => e.entry_type === 'expense')
+      .filter(e => e.entry_type === 'expense')
       .reduce((sum, e) => sum + (e.amount || 0), 0),
     net_profit: 0,
     by_category: {} as Record<string, number>,
     by_type: {
-      income: entries.filter((e) => e.entry_type === 'income').length,
-      expense: entries.filter((e) => e.entry_type === 'expense').length,
-      adjustment: entries.filter((e) => e.entry_type === 'adjustment').length,
+      income: entries.filter(e => e.entry_type === 'income').length,
+      expense: entries.filter(e => e.entry_type === 'expense').length,
+      adjustment: entries.filter(e => e.entry_type === 'adjustment').length,
     },
   };
 
@@ -168,7 +190,7 @@ export function useFinanceStats() {
   stats.net_profit = stats.total_income - stats.total_expenses;
 
   // Group by category
-  entries.forEach((entry) => {
+  entries.forEach(entry => {
     const cat = entry.category || 'Uncategorized';
     stats.by_category[cat] = (stats.by_category[cat] || 0) + entry.amount;
   });

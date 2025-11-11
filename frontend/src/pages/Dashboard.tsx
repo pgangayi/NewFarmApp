@@ -1,8 +1,29 @@
 import { useState, useMemo } from 'react';
-import { 
-  Cloud, Calendar, TrendingUp, Bell, BarChart3, Settings, Plus,
-  Sprout, Activity, Target, Leaf, Package, DollarSign, Clock,
-  Menu, X, ChevronRight, AlertCircle, CheckCircle, Filter, ChevronDown, Loader2, AlertTriangle
+import {
+  Cloud,
+  Calendar,
+  TrendingUp,
+  Bell,
+  BarChart3,
+  Settings,
+  Plus,
+  Sprout,
+  Activity,
+  Target,
+  Leaf,
+  Package,
+  DollarSign,
+  Clock,
+  Menu,
+  X,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle,
+  Filter,
+  ChevronDown,
+  Loader2,
+  AlertTriangle,
+  MapPin,
 } from 'lucide-react';
 import { useFarm } from '../hooks/useFarm';
 import { useCrops } from '../hooks/useCrops';
@@ -10,6 +31,9 @@ import { useAnimals } from '../hooks/useAnimals';
 import { useInventory } from '../hooks/useInventory';
 import { useTasks } from '../hooks/useTasks';
 import { useFinance } from '../hooks/useFinance';
+import EnhancedFarmCalendar from '../components/EnhancedFarmCalendar';
+import WeatherCalendar from '../components/WeatherCalendar';
+import WeatherAnalytics from '../components/WeatherAnalytics';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -28,49 +52,63 @@ export default function Dashboard() {
   // Set default selected farm when farms are loaded
   useMemo(() => {
     if (farms.length > 0 && !selectedFarm) {
-      setSelectedFarm(farms[0].id);
+      setSelectedFarm(farms[0]?.id || '');
     }
   }, [farms, selectedFarm]);
 
   const farmData = farms.find(f => f.id === selectedFarm) || farms[0];
 
   // Loading states
-  const isLoading = farmsLoading || cropsLoading || animalsLoading || inventoryLoading || tasksLoading || financeLoading;
-  
+  const isLoading =
+    farmsLoading ||
+    cropsLoading ||
+    animalsLoading ||
+    inventoryLoading ||
+    tasksLoading ||
+    financeLoading;
+
   // Error states
-  const hasError = farmsError || cropsError || animalsError || inventoryError || tasksError || financeError;
+  const hasError =
+    farmsError || cropsError || animalsError || inventoryError || tasksError || financeError;
 
   // Calculate stats with proper type handling
   const cropStats = {
     total: crops.length,
     active: crops.filter(c => c.status === 'active').length,
     healthy: crops.filter(c => c.health_status === 'healthy').length,
-    needsAttention: crops.filter(c => c.health_status !== 'healthy').length
+    needsAttention: crops.filter(c => c.health_status !== 'healthy').length,
   };
 
   const animalStats = {
     total: animals.length,
     active: animals.filter(a => a.status === 'active').length,
     sold: animals.filter(a => a.status === 'sold').length,
-    deceased: animals.filter(a => a.status === 'deceased').length
+    deceased: animals.filter(a => a.status === 'deceased').length,
   };
 
   const inventoryStats = {
     total: inventory.length,
     lowStock: inventory.filter(i => i.stock_status === 'low').length,
-    totalValue: inventory.reduce((sum, item) => sum + (item.qty * (item.current_cost_per_unit || 0)), 0)
+    totalValue: inventory.reduce(
+      (sum, item) => sum + item.qty * (item.current_cost_per_unit || 0),
+      0
+    ),
   };
 
   const taskStats = {
     pending: tasks.filter(t => t.status === 'pending').length,
     overdue: tasks.filter(t => new Date(t.due_date) < new Date() && t.status === 'pending').length,
-    inProgress: tasks.filter(t => t.status === 'in_progress').length
+    inProgress: tasks.filter(t => t.status === 'in_progress').length,
   };
 
   const financeStats = {
-    income: financeEntries.filter(f => f.entry_type === 'income').reduce((sum, f) => sum + Math.abs(f.amount), 0),
-    expenses: financeEntries.filter(f => f.entry_type === 'expense').reduce((sum, f) => sum + Math.abs(f.amount), 0),
-    netBalance: financeEntries.reduce((sum, f) => sum + f.amount, 0)
+    income: financeEntries
+      .filter(f => f.entry_type === 'income')
+      .reduce((sum, f) => sum + Math.abs(f.amount), 0),
+    expenses: financeEntries
+      .filter(f => f.entry_type === 'expense')
+      .reduce((sum, f) => sum + Math.abs(f.amount), 0),
+    netBalance: financeEntries.reduce((sum, f) => sum + f.amount, 0),
   };
 
   const tabs = [
@@ -78,6 +116,7 @@ export default function Dashboard() {
     { id: 'crops', label: 'Crops', icon: Sprout, count: cropStats.total },
     { id: 'animals', label: 'Animals', icon: Activity, count: animalStats.active },
     { id: 'tasks', label: 'Tasks', icon: Calendar, count: taskStats.pending },
+    { id: 'weather', label: 'Weather Calendar', icon: Cloud },
   ];
 
   // Loading spinner
@@ -100,7 +139,8 @@ export default function Dashboard() {
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Data</h2>
           <p className="text-gray-600 mb-4">
-            We're having trouble loading your dashboard data. Please check your connection and try again.
+            We&apos;re having trouble loading your dashboard data. Please check your connection and
+            try again.
           </p>
           <div className="space-y-3">
             <button
@@ -130,9 +170,12 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <Sprout className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to Your Farm Dashboard</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Welcome to Your Farm Dashboard
+          </h2>
           <p className="text-gray-600 mb-4">
-            You don't have any farms yet. Create your first farm to get started with crop management, animal tracking, and more.
+            You don&apos;t have unknown farms yet. Create your first farm to get started with crop
+            management, animal tracking, and more.
           </p>
           <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto">
             <Plus className="h-4 w-4" />
@@ -144,26 +187,39 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50">
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 bg-cover bg-center bg-fixed relative"
+      style={{
+        backgroundImage: `url('/Lockscreen Wallpaper.jpg')`,
+        backgroundBlendMode: 'overlay',
+      }}
+    >
+      {/* Wallpaper overlay for better readability */}
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-[0.5px]"></div>
+
       {/* Modern Mobile Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm relative">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <button 
+              <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">{farmData?.name || 'Select Farm'}</h1>
-                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">{farmData?.location || 'Farm Location'}</p>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                  {farmData?.name || 'Select Farm'}
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
+                  {farmData?.location || 'Farm Location'}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setFarmSelectorOpen(!farmSelectorOpen)}
                   className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
@@ -173,15 +229,15 @@ export default function Dashboard() {
                   </span>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </button>
-                
+
                 {farmSelectorOpen && (
                   <>
-                    <div 
+                    <div
                       className="fixed inset-0 z-40"
                       onClick={() => setFarmSelectorOpen(false)}
                     ></div>
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                      {farms.map((farm) => (
+                      {farms.map(farm => (
                         <button
                           key={farm.id}
                           onClick={() => {
@@ -193,17 +249,23 @@ export default function Dashboard() {
                           }`}
                         >
                           <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-lg ${
-                              selectedFarm === farm.id ? 'bg-green-100' : 'bg-gray-100'
-                            }`}>
-                              <Sprout className={`h-4 w-4 ${
-                                selectedFarm === farm.id ? 'text-green-600' : 'text-gray-600'
-                              }`} />
+                            <div
+                              className={`p-2 rounded-lg ${
+                                selectedFarm === farm.id ? 'bg-green-100' : 'bg-gray-100'
+                              }`}
+                            >
+                              <Sprout
+                                className={`h-4 w-4 ${
+                                  selectedFarm === farm.id ? 'text-green-600' : 'text-gray-600'
+                                }`}
+                              />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium truncate ${
-                                selectedFarm === farm.id ? 'text-green-900' : 'text-gray-900'
-                              }`}>
+                              <p
+                                className={`text-sm font-medium truncate ${
+                                  selectedFarm === farm.id ? 'text-green-900' : 'text-gray-900'
+                                }`}
+                              >
                                 {farm.name}
                               </p>
                               <p className="text-xs text-gray-500 truncate">{farm.location}</p>
@@ -239,7 +301,7 @@ export default function Dashboard() {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-gray-200 bg-white">
             <nav className="px-4 py-3 space-y-1">
-              {tabs.map((tab) => (
+              {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => {
@@ -270,7 +332,7 @@ export default function Dashboard() {
         {/* Desktop Navigation Tabs */}
         <div className="hidden lg:block border-t border-gray-200">
           <nav className="flex space-x-1 px-4 overflow-x-auto">
-            {tabs.map((tab) => (
+            {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -299,12 +361,39 @@ export default function Dashboard() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {[
-                { icon: Sprout, label: 'Crops', value: cropStats.total, sublabel: `${cropStats.active} active`, color: 'green' },
-                { icon: Activity, label: 'Animals', value: animalStats.total, sublabel: `${animalStats.active} active`, color: 'blue' },
-                { icon: Package, label: 'Inventory', value: inventoryStats.total, sublabel: `${inventoryStats.lowStock} low stock`, color: 'orange' },
-                { icon: Calendar, label: 'Tasks', value: taskStats.pending, sublabel: `${taskStats.overdue} overdue`, color: 'purple' }
+                {
+                  icon: Sprout,
+                  label: 'Crops',
+                  value: cropStats.total,
+                  sublabel: `${cropStats.active} active`,
+                  color: 'green',
+                },
+                {
+                  icon: Activity,
+                  label: 'Animals',
+                  value: animalStats.total,
+                  sublabel: `${animalStats.active} active`,
+                  color: 'blue',
+                },
+                {
+                  icon: Package,
+                  label: 'Inventory',
+                  value: inventoryStats.total,
+                  sublabel: `${inventoryStats.lowStock} low stock`,
+                  color: 'orange',
+                },
+                {
+                  icon: Calendar,
+                  label: 'Tasks',
+                  value: taskStats.pending,
+                  sublabel: `${taskStats.overdue} overdue`,
+                  color: 'purple',
+                },
               ].map((stat, idx) => (
-                <div key={idx} className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div
+                  key={idx}
+                  className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
                   <div className={`inline-flex p-2 rounded-lg bg-${stat.color}-50 mb-3`}>
                     <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 text-${stat.color}-600`} />
                   </div>
@@ -324,15 +413,21 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-emerald-100 text-xs sm:text-sm">Income</p>
-                  <p className="text-xl sm:text-2xl font-bold mt-1">${financeStats.income.toFixed(0)}</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-1">
+                    ${financeStats.income.toFixed(0)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-emerald-100 text-xs sm:text-sm">Expenses</p>
-                  <p className="text-xl sm:text-2xl font-bold mt-1">${financeStats.expenses.toFixed(0)}</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-1">
+                    ${financeStats.expenses.toFixed(0)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-emerald-100 text-xs sm:text-sm">Balance</p>
-                  <p className="text-xl sm:text-2xl font-bold mt-1">${financeStats.netBalance.toFixed(0)}</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-1">
+                    ${financeStats.netBalance.toFixed(0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -340,22 +435,33 @@ export default function Dashboard() {
             {/* Recent Activities */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Activities</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+                  Recent Activities
+                </h3>
               </div>
               <div className="divide-y divide-gray-100">
-                {tasks.slice(0, 3).map((task) => (
-                  <div key={task.id} className="px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors">
+                {tasks.slice(0, 3).map(task => (
+                  <div
+                    key={task.id}
+                    className="px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className={`p-2 rounded-lg ${
-                          task.priority === 'urgent' ? 'bg-red-50' : 'bg-blue-50'
-                        }`}>
-                          <Calendar className={`h-4 w-4 ${
-                            task.priority === 'urgent' ? 'text-red-600' : 'text-blue-600'
-                          }`} />
+                        <div
+                          className={`p-2 rounded-lg ${
+                            task.priority === 'urgent' ? 'bg-red-50' : 'bg-blue-50'
+                          }`}
+                        >
+                          <Calendar
+                            className={`h-4 w-4 ${
+                              task.priority === 'urgent' ? 'text-red-600' : 'text-blue-600'
+                            }`}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{task.title}</p>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                            {task.title}
+                          </p>
                           <p className="text-xs sm:text-sm text-gray-500">
                             Due: {new Date(task.due_date).toLocaleDateString()}
                           </p>
@@ -380,7 +486,7 @@ export default function Dashboard() {
                 { icon: Plus, label: 'Add Crop', color: 'green' },
                 { icon: Activity, label: 'Log Activity', color: 'blue' },
                 { icon: Package, label: 'Update Stock', color: 'orange' },
-                { icon: DollarSign, label: 'Add Transaction', color: 'emerald' }
+                { icon: DollarSign, label: 'Add Transaction', color: 'emerald' },
               ].map((action, idx) => (
                 <button
                   key={idx}
@@ -389,7 +495,9 @@ export default function Dashboard() {
                   <div className={`p-3 rounded-full bg-${action.color}-50`}>
                     <action.icon className={`h-5 w-5 text-${action.color}-600`} />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-gray-700 text-center">{action.label}</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-700 text-center">
+                    {action.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -413,7 +521,12 @@ export default function Dashboard() {
                 { label: 'Total', value: cropStats.total, icon: Sprout, color: 'green' },
                 { label: 'Active', value: cropStats.active, icon: Activity, color: 'blue' },
                 { label: 'Healthy', value: cropStats.healthy, icon: CheckCircle, color: 'emerald' },
-                { label: 'Alert', value: cropStats.needsAttention, icon: AlertCircle, color: 'amber' }
+                {
+                  label: 'Alert',
+                  value: cropStats.needsAttention,
+                  icon: AlertCircle,
+                  color: 'amber',
+                },
               ].map((stat, idx) => (
                 <div key={idx} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                   <div className={`inline-flex p-2 rounded-lg bg-${stat.color}-50 mb-2`}>
@@ -427,23 +540,30 @@ export default function Dashboard() {
 
             {/* Crops List */}
             <div className="space-y-3">
-              {crops.map((crop) => (
-                <div key={crop.id} className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              {crops.map(crop => (
+                <div
+                  key={crop.id}
+                  className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-50 rounded-lg">
                         <Leaf className="h-5 w-5 text-green-600" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{crop.name}</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+                          {crop.name}
+                        </h4>
                         <p className="text-xs sm:text-sm text-gray-600">{crop.crop_type}</p>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      crop.health_status === 'healthy'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-amber-100 text-amber-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        crop.health_status === 'healthy'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
                       {crop.health_status || 'No status'}
                     </span>
                   </div>
@@ -473,7 +593,9 @@ export default function Dashboard() {
                 <div className="text-center py-12">
                   <Sprout className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No Crops Yet</h3>
-                  <p className="text-gray-600 mb-4">Start tracking your crops to monitor growth and health</p>
+                  <p className="text-gray-600 mb-4">
+                    Start tracking your crops to monitor growth and health
+                  </p>
                   <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto">
                     <Plus className="h-4 w-4" />
                     <span>Add Your First Crop</span>
@@ -501,7 +623,7 @@ export default function Dashboard() {
                 { label: 'Total', value: animalStats.total, icon: Activity, color: 'blue' },
                 { label: 'Active', value: animalStats.active, icon: CheckCircle, color: 'green' },
                 { label: 'Sold', value: animalStats.sold, icon: DollarSign, color: 'orange' },
-                { label: 'Deceased', value: animalStats.deceased, icon: AlertCircle, color: 'red' }
+                { label: 'Deceased', value: animalStats.deceased, icon: AlertCircle, color: 'red' },
               ].map((stat, idx) => (
                 <div key={idx} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                   <div className={`inline-flex p-2 rounded-lg bg-${stat.color}-50 mb-2`}>
@@ -515,25 +637,32 @@ export default function Dashboard() {
 
             {/* Animals List */}
             <div className="space-y-3">
-              {animals.map((animal) => (
-                <div key={animal.id} className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              {animals.map(animal => (
+                <div
+                  key={animal.id}
+                  className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-blue-50 rounded-lg">
                         <Activity className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{animal.identification}</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+                          {animal.identification}
+                        </h4>
                         <p className="text-xs sm:text-sm text-gray-600">{animal.animal_type}</p>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      animal.status === 'active'
-                        ? 'bg-green-100 text-green-700'
-                        : animal.status === 'sold'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        animal.status === 'active'
+                          ? 'bg-green-100 text-green-700'
+                          : animal.status === 'sold'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-red-100 text-red-700'
+                      }`}
+                    >
                       {animal.status}
                     </span>
                   </div>
@@ -563,7 +692,9 @@ export default function Dashboard() {
                 <div className="text-center py-12">
                   <Activity className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No Animals Yet</h3>
-                  <p className="text-gray-600 mb-4">Start tracking your livestock to monitor health and production</p>
+                  <p className="text-gray-600 mb-4">
+                    Start tracking your livestock to monitor health and production
+                  </p>
                   <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 mx-auto">
                     <Plus className="h-4 w-4" />
                     <span>Add Your First Animal</span>
@@ -572,6 +703,52 @@ export default function Dashboard() {
               )}
             </div>
           </>
+        )}
+
+        {activeTab === 'weather' && (
+          <div className="space-y-6">
+            {/* Weather Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Weather & Calendar</h2>
+              <div className="flex space-x-3">
+                <button className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
+                  <MapPin className="h-5 w-5" />
+                  <span>Update Location</span>
+                </button>
+                <button className="bg-green-600 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
+                  <Plus className="h-5 w-5" />
+                  <span>Add Event</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Weather Analytics */}
+            {farmData && <WeatherAnalytics farmId={farmData.id} cropType="wheat" />}
+
+            {/* Enhanced Farm Calendar */}
+            {farmData && (
+              <EnhancedFarmCalendar
+                farmId={farmData.id}
+                onEventClick={event => console.log('Event clicked:', event)}
+                onCreateEvent={date => console.log('Create event for:', date)}
+              />
+            )}
+
+            {/* Weather Calendar */}
+            {farmData && (
+              <WeatherCalendar
+                farmId={farmData.id}
+                operations={tasks.map(task => ({
+                  id: task.id,
+                  title: task.title,
+                  scheduled_date: task.due_date,
+                  type: task.task_type,
+                  status: task.status,
+                }))}
+                onOperationClick={operationId => console.log('Operation clicked:', operationId)}
+              />
+            )}
+          </div>
         )}
 
         {activeTab === 'tasks' && (
@@ -589,9 +766,14 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {[
                 { label: 'Pending', value: taskStats.pending, icon: Clock, color: 'yellow' },
-                { label: 'In Progress', value: taskStats.inProgress, icon: Activity, color: 'blue' },
+                {
+                  label: 'In Progress',
+                  value: taskStats.inProgress,
+                  icon: Activity,
+                  color: 'blue',
+                },
                 { label: 'Overdue', value: taskStats.overdue, icon: AlertCircle, color: 'red' },
-                { label: 'Total', value: tasks.length, icon: CheckCircle, color: 'green' }
+                { label: 'Total', value: tasks.length, icon: CheckCircle, color: 'green' },
               ].map((stat, idx) => (
                 <div key={idx} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                   <div className={`inline-flex p-2 rounded-lg bg-${stat.color}-50 mb-2`}>
@@ -605,46 +787,67 @@ export default function Dashboard() {
 
             {/* Tasks List */}
             <div className="space-y-3">
-              {tasks.map((task) => (
-                <div key={task.id} className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              {tasks.map(task => (
+                <div
+                  key={task.id}
+                  className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${
-                        task.priority === 'urgent' ? 'bg-red-50' :
-                        task.priority === 'high' ? 'bg-orange-50' :
-                        task.priority === 'normal' ? 'bg-blue-50' : 'bg-gray-50'
-                      }`}>
-                        <Calendar className={`h-4 w-4 ${
-                          task.priority === 'urgent' ? 'text-red-600' :
-                          task.priority === 'high' ? 'text-orange-600' :
-                          task.priority === 'normal' ? 'text-blue-600' : 'text-gray-600'
-                        }`} />
+                      <div
+                        className={`p-2 rounded-lg ${
+                          task.priority === 'urgent'
+                            ? 'bg-red-50'
+                            : task.priority === 'high'
+                              ? 'bg-orange-50'
+                              : task.priority === 'normal'
+                                ? 'bg-blue-50'
+                                : 'bg-gray-50'
+                        }`}
+                      >
+                        <Calendar
+                          className={`h-4 w-4 ${
+                            task.priority === 'urgent'
+                              ? 'text-red-600'
+                              : task.priority === 'high'
+                                ? 'text-orange-600'
+                                : task.priority === 'normal'
+                                  ? 'text-blue-600'
+                                  : 'text-gray-600'
+                          }`}
+                        />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{task.title}</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+                          {task.title}
+                        </h4>
                         <p className="text-xs text-gray-600">{task.task_type}</p>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      task.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : task.status === 'in_progress'
-                        ? 'bg-blue-100 text-blue-700'
-                        : task.status === 'completed'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        task.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : task.status === 'in_progress'
+                            ? 'bg-blue-100 text-blue-700'
+                            : task.status === 'completed'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
                       {task.status.replace('_', ' ')}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
                     <div>
                       <span className="text-gray-500">Due:</span>
-                      <p className={`font-medium ${
-                        new Date(task.due_date) < new Date() && task.status === 'pending'
-                          ? 'text-red-600'
-                          : 'text-gray-900'
-                      }`}>
+                      <p
+                        className={`font-medium ${
+                          new Date(task.due_date) < new Date() && task.status === 'pending'
+                            ? 'text-red-600'
+                            : 'text-gray-900'
+                        }`}
+                      >
                         {new Date(task.due_date).toLocaleDateString()}
                       </p>
                     </div>
@@ -667,7 +870,9 @@ export default function Dashboard() {
                 <div className="text-center py-12">
                   <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Yet</h3>
-                  <p className="text-gray-600 mb-4">Create your first task to start organizing your farm work</p>
+                  <p className="text-gray-600 mb-4">
+                    Create your first task to start organizing your farm work
+                  </p>
                   <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 mx-auto">
                     <Plus className="h-4 w-4" />
                     <span>Create Your First Task</span>
@@ -681,15 +886,13 @@ export default function Dashboard() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="grid grid-cols-4 gap-1 px-2 py-2">
-          {tabs.map((tab) => (
+        <div className="grid grid-cols-5 gap-1 px-2 py-2">
+          {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all ${
-                activeTab === tab.id
-                  ? 'bg-green-50 text-green-600'
-                  : 'text-gray-600'
+                activeTab === tab.id ? 'bg-green-50 text-green-600' : 'text-gray-600'
               }`}
             >
               <div className="relative">

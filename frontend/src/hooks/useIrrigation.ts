@@ -52,13 +52,17 @@ export function useIrrigation() {
   const apiClient = getApiClient();
 
   // Fetch all irrigation schedules
-  const { data: schedules, isLoading, error, refetch } = useQuery({
+  const {
+    data: schedules,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['irrigation-schedules'],
     queryFn: async () => {
-      const response = await apiClient.post<IrrigationSchedule[]>(
-        '/api/crops/irrigation',
-        { action: 'list' }
-      );
+      const response = await apiClient.post<IrrigationSchedule[]>('/api/crops/irrigation', {
+        action: 'list',
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -67,7 +71,11 @@ export function useIrrigation() {
   });
 
   // Create irrigation schedule mutation
-  const { mutate: createSchedule, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createSchedule,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (scheduleData: CreateIrrigationForm) => {
       const response = await apiClient.post<{ success: boolean; id: string }>(
         '/api/crops/irrigation',
@@ -81,12 +89,17 @@ export function useIrrigation() {
   });
 
   // Update irrigation schedule mutation
-  const { mutate: updateSchedule, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateSchedule,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, ...scheduleData }: UpdateIrrigationForm) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/irrigation',
-        { action: 'update', id, ...scheduleData }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/irrigation', {
+        action: 'update',
+        id,
+        ...scheduleData,
+      });
       return response;
     },
     onSuccess: () => {
@@ -95,12 +108,16 @@ export function useIrrigation() {
   });
 
   // Delete irrigation schedule mutation
-  const { mutate: deleteSchedule, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteSchedule,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/irrigation',
-        { action: 'delete', id }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/irrigation', {
+        action: 'delete',
+        id,
+      });
       return response;
     },
     onSuccess: () => {
@@ -109,16 +126,23 @@ export function useIrrigation() {
   });
 
   // Optimize irrigation schedule mutation
-  const { mutate: optimizeSchedule, isPending: isOptimizing, error: optimizeError } = useMutation({
-    mutationFn: async ({ schedule_id, weatherData }: { schedule_id: string; weatherData?: any }) => {
+  const {
+    mutate: optimizeSchedule,
+    isPending: isOptimizing,
+    error: optimizeError,
+  } = useMutation({
+    mutationFn: async ({
+      schedule_id,
+      weatherData,
+    }: {
+      schedule_id: string;
+      weatherData?: unknown;
+    }) => {
       const response = await apiClient.post<{
         success: boolean;
-        optimizations: any;
-        savings: any;
-      }>(
-        '/api/crops/irrigation',
-        { action: 'optimize', schedule_id, weather_data: weatherData }
-      );
+        optimizations: unknown;
+        savings: unknown;
+      }>('/api/crops/irrigation', { action: 'optimize', schedule_id, weather_data: weatherData });
       return response;
     },
     onSuccess: () => {
@@ -153,13 +177,18 @@ export function useIrrigation() {
 export function useIrrigationByFarm(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: schedules, isLoading, error, refetch } = useQuery({
+  const {
+    data: schedules,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['irrigation-schedules', 'farm', farmId],
     queryFn: async () => {
-      const response = await apiClient.post<IrrigationSchedule[]>(
-        '/api/crops/irrigation',
-        { action: 'list', farm_id: farmId }
-      );
+      const response = await apiClient.post<IrrigationSchedule[]>('/api/crops/irrigation', {
+        action: 'list',
+        farm_id: farmId,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -177,13 +206,18 @@ export function useIrrigationByFarm(farmId: string) {
 export function useIrrigationAnalytics(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: analytics, isLoading, error, refetch } = useQuery({
+  const {
+    data: analytics,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['irrigation-analytics', farmId],
     queryFn: async () => {
-      const response = await apiClient.post<IrrigationAnalytics>(
-        '/api/crops/irrigation',
-        { action: 'analytics', farm_id: farmId }
-      );
+      const response = await apiClient.post<IrrigationAnalytics>('/api/crops/irrigation', {
+        action: 'analytics',
+        farm_id: farmId,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -200,7 +234,12 @@ export function useIrrigationAnalytics(farmId: string) {
 export function useIrrigationRecommendations(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: recommendations, isLoading, error, refetch } = useQuery({
+  const {
+    data: recommendations,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['irrigation-recommendations', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
@@ -211,10 +250,7 @@ export function useIrrigationRecommendations(farmId: string) {
           benefit: string;
           action: string;
         }>;
-      }>(
-        '/api/crops/irrigation',
-        { action: 'recommendations', farm_id: farmId }
-      );
+      }>('/api/crops/irrigation', { action: 'recommendations', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.long,
@@ -222,10 +258,10 @@ export function useIrrigationRecommendations(farmId: string) {
     enabled: !!farmId,
   });
 
-  return { 
-    recommendations: recommendations?.recommendations || [], 
-    isLoading, 
-    error, 
-    refetch 
+  return {
+    recommendations: recommendations?.recommendations || [],
+    isLoading,
+    error,
+    refetch,
   };
 }

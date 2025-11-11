@@ -44,7 +44,11 @@ const qualityGrades = [
   { value: 'standard', label: 'Standard' },
 ];
 
-export function AnimalProductionTracker({ animalId, animalName, productionType }: AnimalProductionTrackerProps) {
+export function AnimalProductionTracker({
+  animalId,
+  animalName,
+  productionType,
+}: AnimalProductionTrackerProps) {
   const { getAuthHeaders } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ProductionRecord | null>(null);
@@ -53,12 +57,16 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
   const queryClient = useQueryClient();
 
   // Fetch production records
-  const { data: productionRecords, isLoading, error } = useQuery({
+  const {
+    data: productionRecords,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['animal-production-records', animalId, dateFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (dateFilter) params.append('date', dateFilter);
-      
+
       const response = await fetch(`/api/animals/${animalId}/production?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
@@ -75,24 +83,27 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
   // Calculate analytics
   const analytics = React.useMemo(() => {
     if (!productionRecords) return null;
-    
+
     const records = Array.isArray(productionRecords) ? productionRecords : [];
     const totalQuantity = records.reduce((sum, record) => sum + (record.quantity || 0), 0);
     const totalValue = records.reduce((sum, record) => sum + (record.total_value || 0), 0);
     const avgQuantity = records.length > 0 ? totalQuantity / records.length : 0;
-    
+
     // Group by production type
-    const byType = records.reduce((acc, record) => {
-      const type = record.production_type;
-      if (!acc[type]) {
-        acc[type] = { quantity: 0, value: 0, count: 0 };
-      }
-      acc[type].quantity += record.quantity || 0;
-      acc[type].value += record.total_value || 0;
-      acc[type].count += 1;
-      return acc;
-    }, {} as Record<string, { quantity: number; value: number; count: number }>);
-    
+    const byType = records.reduce(
+      (acc, record) => {
+        const type = record.production_type;
+        if (!acc[type]) {
+          acc[type] = { quantity: 0, value: 0, count: 0 };
+        }
+        acc[type].quantity += record.quantity || 0;
+        acc[type].value += record.total_value || 0;
+        acc[type].count += 1;
+        return acc;
+      },
+      {} as Record<string, { quantity: number; value: number; count: number }>
+    );
+
     return {
       totalQuantity,
       totalValue,
@@ -104,7 +115,7 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
 
   // Create production record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: any) => {
+    mutationFn: async (recordData: unknown) => {
       const response = await fetch(`/api/animals/${animalId}/production`, {
         method: 'POST',
         headers: {
@@ -128,7 +139,7 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
 
   // Update production record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: any) => {
+    mutationFn: async ({ id, ...recordData }: unknown) => {
       const response = await fetch(`/api/animals/${animalId}/production/${id}`, {
         method: 'PUT',
         headers: {
@@ -226,7 +237,7 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
           <input
             type="date"
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            onChange={e => setDateFilter(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
           <button
@@ -285,9 +296,7 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-orange-700">Records</p>
-                <p className="text-2xl font-bold text-orange-900">
-                  {analytics.recordCount}
-                </p>
+                <p className="text-2xl font-bold text-orange-900">{analytics.recordCount}</p>
                 <p className="text-xs text-orange-600">total entries</p>
               </div>
               <Award className="h-8 w-8 text-orange-600" />
@@ -299,25 +308,31 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
       {/* Production Records List */}
       <div className="space-y-4">
         {records.map((record: ProductionRecord) => (
-          <div key={record.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+          <div
+            key={record.id}
+            className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
+          >
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{getProductionTypeIcon(record.production_type)}</span>
                 <div>
-                  <h4 className="font-medium text-gray-900 capitalize">
-                    {record.production_type}
-                  </h4>
+                  <h4 className="font-medium text-gray-900 capitalize">{record.production_type}</h4>
                   <p className="text-sm text-gray-500">
                     {new Date(record.production_date).toLocaleDateString()}
                   </p>
                 </div>
                 {record.quality_grade && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    record.quality_grade === 'premium' ? 'bg-gold-100 text-gold-800' :
-                    record.quality_grade === 'grade_a' ? 'bg-green-100 text-green-800' :
-                    record.quality_grade === 'grade_b' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      record.quality_grade === 'premium'
+                        ? 'bg-gold-100 text-gold-800'
+                        : record.quality_grade === 'grade_a'
+                          ? 'bg-green-100 text-green-800'
+                          : record.quality_grade === 'grade_b'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
                     {record.quality_grade.replace('_', ' ').toUpperCase()}
                   </span>
                 )}
@@ -329,7 +344,12 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
                   title="Edit"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                 </button>
                 <button
@@ -338,7 +358,12 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
                   title="Delete"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </div>
@@ -347,18 +372,24 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
               <div>
                 <span className="font-medium text-gray-700">Quantity:</span>
-                <span className="text-gray-600 ml-2">{record.quantity} {record.unit}</span>
+                <span className="text-gray-600 ml-2">
+                  {record.quantity} {record.unit}
+                </span>
               </div>
               {record.price_per_unit && (
                 <div>
                   <span className="font-medium text-gray-700">Price/Unit:</span>
-                  <span className="text-gray-600 ml-2">{formatCurrency(record.price_per_unit)}</span>
+                  <span className="text-gray-600 ml-2">
+                    {formatCurrency(record.price_per_unit)}
+                  </span>
                 </div>
               )}
               {record.total_value && (
                 <div>
                   <span className="font-medium text-gray-700">Total Value:</span>
-                  <span className="text-gray-600 ml-2 font-semibold">{formatCurrency(record.total_value)}</span>
+                  <span className="text-gray-600 ml-2 font-semibold">
+                    {formatCurrency(record.total_value)}
+                  </span>
                 </div>
               )}
               {record.market_destination && (
@@ -377,7 +408,8 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
 
             {record.recorded_by_name && (
               <div className="mt-2 text-xs text-gray-500">
-                Recorded by {record.recorded_by_name} on {new Date(record.created_at).toLocaleDateString()}
+                Recorded by {record.recorded_by_name} on{' '}
+                {new Date(record.created_at).toLocaleDateString()}
               </div>
             )}
           </div>
@@ -388,12 +420,24 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
       {records.length === 0 && (
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            <svg
+              className="mx-auto h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+              />
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No production records</h3>
-          <p className="text-gray-500 mb-4">Start tracking {animalName}'s production by adding records</p>
+          <p className="text-gray-500 mb-4">
+            Start tracking {animalName}&apos;s production by adding records
+          </p>
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
@@ -413,7 +457,7 @@ export function AnimalProductionTracker({ animalId, animalName, productionType }
             setShowAddModal(false);
             setEditingRecord(null);
           }}
-          onSubmit={(data) => {
+          onSubmit={data => {
             if (editingRecord) {
               updateMutation.mutate({ ...data, id: editingRecord.id });
             } else {
@@ -432,11 +476,17 @@ interface ProductionRecordModalProps {
   record?: ProductionRecord | null;
   productionType?: string;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: unknown) => void;
   isLoading: boolean;
 }
 
-function ProductionRecordModal({ record, productionType, onClose, onSubmit, isLoading }: ProductionRecordModalProps) {
+function ProductionRecordModal({
+  record,
+  productionType,
+  onClose,
+  onSubmit,
+  isLoading,
+}: ProductionRecordModalProps) {
   const [formData, setFormData] = useState({
     production_date: record?.production_date || new Date().toISOString().split('T')[0],
     production_type: record?.production_type || productionType || '',
@@ -461,13 +511,15 @@ function ProductionRecordModal({ record, productionType, onClose, onSubmit, isLo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = {
       ...formData,
       quantity: formData.quantity ? parseFloat(formData.quantity.toString()) : undefined,
-      price_per_unit: formData.price_per_unit ? parseFloat(formData.price_per_unit.toString()) : undefined,
+      price_per_unit: formData.price_per_unit
+        ? parseFloat(formData.price_per_unit.toString())
+        : undefined,
     };
-    
+
     onSubmit(submitData);
   };
 
@@ -482,22 +534,30 @@ function ProductionRecordModal({ record, productionType, onClose, onSubmit, isLo
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Production Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Production Date *
+                </label>
                 <input
                   type="date"
                   required
                   value={formData.production_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, production_date: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, production_date: e.target.value }))
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Production Type *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Production Type *
+                </label>
                 <select
                   required
                   value={formData.production_type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, production_type: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, production_type: e.target.value }))
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="">Select Type</option>
@@ -516,7 +576,7 @@ function ProductionRecordModal({ record, productionType, onClose, onSubmit, isLo
                   step="0.01"
                   required
                   value={formData.quantity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
@@ -527,51 +587,65 @@ function ProductionRecordModal({ record, productionType, onClose, onSubmit, isLo
                   type="text"
                   required
                   value={formData.unit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, unit: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quality Grade</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quality Grade
+                </label>
                 <select
                   value={formData.quality_grade}
-                  onChange={(e) => setFormData(prev => ({ ...prev, quality_grade: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, quality_grade: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   {qualityGrades.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price per Unit ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price per Unit ($)
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.price_per_unit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price_per_unit: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, price_per_unit: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Market Destination</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Market Destination
+                </label>
                 <input
                   type="text"
                   value={formData.market_destination}
-                  onChange={(e) => setFormData(prev => ({ ...prev, market_destination: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, market_destination: e.target.value }))
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Storage Location
+                </label>
                 <input
                   type="text"
                   value={formData.storage_location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, storage_location: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, storage_location: e.target.value }))
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
@@ -582,7 +656,7 @@ function ProductionRecordModal({ record, productionType, onClose, onSubmit, isLo
               <textarea
                 rows={3}
                 value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Additional notes about this production record..."
               />

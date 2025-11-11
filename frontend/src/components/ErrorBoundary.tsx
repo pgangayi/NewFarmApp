@@ -38,7 +38,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       }
 
       return (
-        <div 
+        <div
           className="min-h-screen bg-gray-50 flex items-center justify-center p-4"
           data-testid="error-boundary"
         >
@@ -46,7 +46,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <h2 className="text-lg font-semibold text-gray-900" data-testid="error-title">
@@ -54,11 +58,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </h2>
             </div>
             <p className="text-gray-600 mb-4" data-testid="error-message">
-              {this.state.error?.message || 'An unexpected error occurred while loading the application.'}
+              {this.state.error?.message ||
+                'An unexpected error occurred while loading the application.'}
             </p>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mb-4">
-                <summary className="cursor-pointer text-sm text-gray-500">Technical details</summary>
+                <summary className="cursor-pointer text-sm text-gray-500">
+                  Technical details
+                </summary>
                 <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
                   {this.state.error.stack}
                 </pre>
@@ -92,6 +99,6 @@ export function withErrorBoundary<P extends object>(
   );
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 }

@@ -90,7 +90,7 @@ export function useFarm(): UseFarmReturn {
       if (!response.ok) throw new Error('Failed to create farm');
 
       const newFarm = await response.json();
-      
+
       const updatedFarms = [...farms, newFarm];
       setFarms(updatedFarms);
 
@@ -123,10 +123,8 @@ export function useFarm(): UseFarmReturn {
       if (!response.ok) throw new Error('Failed to update farm');
 
       const updatedFarm = await response.json();
-      
-      const updatedFarms = farms.map(farm =>
-        farm.id === id ? { ...farm, ...updatedFarm } : farm
-      );
+
+      const updatedFarms = farms.map(farm => (farm.id === id ? { ...farm, ...updatedFarm } : farm));
       setFarms(updatedFarms);
 
       // Update current farm if it's the one being updated

@@ -1,65 +1,61 @@
+// DEPRECATED: Debug Database Endpoint - SECURITY REMEDIATION
+// This endpoint has been DISABLED for production security
+// Date: November 10, 2025
+
+// 🚨 SECURITY ALERT: This file contained debug endpoints that exposed
+// database schema, user counts, and internal system information.
+// This poses a CRITICAL security risk and has been deprecated.
+
+// PRODUCTION SECURITY CONTROLS IMPLEMENTED:
+// 1. Debug endpoints removed from production
+// 2. Database schema information now protected
+// 3. Sensitive system information no longer exposed
+// 4. Production monitoring implemented via proper logging
+
+// REPLACEMENT: Use production monitoring endpoints
+// - Health checks: /api/health
+// - Status monitoring: /api/status
+// - Database health: Use proper monitoring tools
+
 export async function onRequest(context) {
-  const { env } = context;
+  // SECURITY FIX: Always return 404 for debug endpoints
+  // This prevents any potential exploitation of debug information
 
-  try {
-    // Test basic database connectivity
-    const { results, error } = await env.DB.prepare(
-      'SELECT name FROM sqlite_master WHERE type="table"'
-    ).all();
+  const { request } = context;
+  const clientIP = request.headers.get("CF-Connecting-IP") || "unknown";
+  const userAgent = request.headers.get("User-Agent") || "unknown";
 
-    if (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Database error', 
-        details: error.message 
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  // Log attempted access to debug endpoint for security monitoring
+  console.warn("SECURITY: Blocked access attempt to debug endpoint", {
+    timestamp: new Date().toISOString(),
+    clientIP,
+    userAgent,
+    method: request.method,
+    url: request.url,
+    severity: "HIGH",
+  });
 
-    // Check farms table schema
-    const { results: farmSchema } = await env.DB.prepare(
-      'PRAGMA table_info(farms)'
-    ).all();
-
-    // Check users table schema
-    const { results: userSchema } = await env.DB.prepare(
-      'PRAGMA table_info(users)'
-    ).all();
-
-    // Count users
-    const { results: userCount } = await env.DB.prepare(
-      'SELECT COUNT(*) as count FROM users'
-    ).all();
-
-    // Count farms
-    const { results: farmCount } = await env.DB.prepare(
-      'SELECT COUNT(*) as count FROM farms'
-    ).all();
-
-    return new Response(JSON.stringify({
-      status: 'ok',
-      tables: results,
-      schemas: {
-        farms: farmSchema,
-        users: userSchema
+  return new Response(
+    JSON.stringify({
+      error: "Endpoint not found",
+      message: "Debug endpoints are not available in production",
+      timestamp: new Date().toISOString(),
+    }),
+    {
+      status: 404,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
-      counts: {
-        users: userCount?.[0]?.count || 0,
-        farms: farmCount?.[0]?.count || 0
-      }
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
-    return new Response(JSON.stringify({ 
-      error: 'Internal server error', 
-      message: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+    }
+  );
 }
+
+// ADDITIONAL SECURITY NOTES:
+// - Original debug code exposed table schemas, user counts, and system structure
+// - This information could be used for targeted attacks
+// - Production deployments should never include debug endpoints
+// - Use proper monitoring and health check endpoints instead
+// - Audit logs should track any attempts to access deprecated endpoints

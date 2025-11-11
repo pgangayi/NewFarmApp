@@ -4,13 +4,17 @@ import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 
 interface OfflineOperation {
   id?: number;
-  type: 'create_inventory_item' | 'update_inventory_item' | 'delete_inventory_item' | 'apply_treatment';
-  payload: any;
+  type:
+    | 'create_inventory_item'
+    | 'update_inventory_item'
+    | 'delete_inventory_item'
+    | 'apply_treatment';
+  payload: unknown;
   timestamp: number;
   retryCount: number;
   status: 'pending' | 'syncing' | 'failed' | 'conflict';
   error?: string;
-  conflictData?: any;
+  conflictData?: unknown;
 }
 
 class OfflineQueueDB extends Dexie {
@@ -19,7 +23,7 @@ class OfflineQueueDB extends Dexie {
   constructor() {
     super('FarmersBootOffline');
     this.version(2).stores({
-      operations: '++id, type, timestamp, retryCount, status'
+      operations: '++id, type, timestamp, retryCount, status',
     });
     this.operations = this.table('operations');
   }
@@ -28,7 +32,8 @@ class OfflineQueueDB extends Dexie {
 const db = new OfflineQueueDB();
 
 export function useOfflineQueue() {
-  const { isOnline, queueLength, conflicts, setIsOnline, updateQueueStats } = useOfflineQueueStore();
+  const { isOnline, queueLength, conflicts, setIsOnline, updateQueueStats } =
+    useOfflineQueueStore();
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -52,13 +57,13 @@ export function useOfflineQueue() {
     updateQueueStats(count, conflictOps);
   };
 
-  const addToQueue = async (type: OfflineOperation['type'], payload: any) => {
+  const addToQueue = async (type: OfflineOperation['type'], payload: unknown) => {
     await db.operations.add({
       type,
       payload,
       timestamp: Date.now(),
       retryCount: 0,
-      status: 'pending'
+      status: 'pending',
     });
     updateStats();
   };
@@ -66,9 +71,7 @@ export function useOfflineQueue() {
   const processQueue = async () => {
     if (!isOnline) return;
 
-    const operations = await db.operations
-      .where('status').equals('pending')
-      .sortBy('timestamp');
+    const operations = await db.operations.where('status').equals('pending').sortBy('timestamp');
 
     for (const op of operations) {
       try {
@@ -82,20 +85,20 @@ export function useOfflineQueue() {
           await db.operations.update(op.id!, {
             status: 'conflict',
             error: result.error,
-            conflictData: result.conflictData
+            conflictData: result.conflictData,
           });
         } else {
           await db.operations.update(op.id!, {
             status: 'failed',
             retryCount: op.retryCount + 1,
-            error: result.error
+            error: result.error,
           });
         }
       } catch (error) {
         await db.operations.update(op.id!, {
           status: 'failed',
           retryCount: op.retryCount + 1,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -109,7 +112,7 @@ export function useOfflineQueue() {
 
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     };
 
     try {
@@ -118,7 +121,7 @@ export function useOfflineQueue() {
           const createRes = await fetch('/api/inventory/items', {
             method: 'POST',
             headers,
-            body: JSON.stringify(op.payload)
+            body: JSON.stringify(op.payload),
           });
           if (createRes.status === 409) {
             const conflictData = await createRes.json();
@@ -131,11 +134,16 @@ export function useOfflineQueue() {
           const updateRes = await fetch(`/api/inventory/items/${op.payload.id}`, {
             method: 'PATCH',
             headers,
-            body: JSON.stringify(op.payload)
+            body: JSON.stringify(op.payload),
           });
           if (updateRes.status === 409) {
             const conflictData = await updateRes.json();
-            return { success: false, conflict: true, error: 'Item was modified by another user', conflictData };
+            return {
+              success: false,
+              conflict: true,
+              error: 'Item was modified by another user',
+              conflictData,
+            };
           }
           if (!updateRes.ok) throw new Error(`HTTP ${updateRes.status}`);
           return { success: true };
@@ -143,7 +151,7 @@ export function useOfflineQueue() {
         case 'delete_inventory_item':
           const deleteRes = await fetch(`/api/inventory/items/${op.payload.id}`, {
             method: 'DELETE',
-            headers
+            headers,
           });
           if (!deleteRes.ok) throw new Error(`HTTP ${deleteRes.status}`);
           return { success: true };
@@ -153,13 +161,18 @@ export function useOfflineQueue() {
             method: 'POST',
             headers: {
               ...headers,
-              'Idempotency-Key': op.payload.idempotencyKey || `offline-${op.timestamp}`
+              'Idempotency-Key': op.payload.idempotencyKey || `offline-${op.timestamp}`,
             },
-            body: JSON.stringify(op.payload)
+            body: JSON.stringify(op.payload),
           });
           if (treatmentRes.status === 409) {
             const conflictData = await treatmentRes.json();
-            return { success: false, conflict: true, error: 'Insufficient inventory', conflictData };
+            return {
+              success: false,
+              conflict: true,
+              error: 'Insufficient inventory',
+              conflictData,
+            };
           }
           if (!treatmentRes.ok) throw new Error(`HTTP ${treatmentRes.status}`);
           return { success: true };
@@ -172,7 +185,11 @@ export function useOfflineQueue() {
     }
   };
 
-  const resolveConflict = async (opId: number, resolution: 'overwrite' | 'discard' | 'merge', updatedPayload?: any) => {
+  const resolveConflict = async (
+    opId: number,
+    resolution: 'overwrite' | 'discard' | 'merge',
+    updatedPayload?: unknown
+  ) => {
     const op = await db.operations.get(opId);
     if (!op) return;
 
@@ -184,7 +201,7 @@ export function useOfflineQueue() {
         payload: updatedPayload || op.payload,
         retryCount: 0,
         error: undefined,
-        conflictData: undefined
+        conflictData: undefined,
       });
     } else if (resolution === 'merge') {
       // For merge, we'd need specific logic per operation type
@@ -194,7 +211,7 @@ export function useOfflineQueue() {
         payload: updatedPayload || op.payload,
         retryCount: 0,
         error: undefined,
-        conflictData: undefined
+        conflictData: undefined,
       });
     }
 

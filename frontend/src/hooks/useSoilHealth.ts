@@ -66,13 +66,17 @@ export function useSoilHealth() {
   const apiClient = getApiClient();
 
   // Fetch all soil tests
-  const { data: soilTests, isLoading, error, refetch } = useQuery({
+  const {
+    data: soilTests,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['soil-tests'],
     queryFn: async () => {
-      const response = await apiClient.post<SoilTestResult[]>(
-        '/api/crops/soil-health',
-        { action: 'list_tests' }
-      );
+      const response = await apiClient.post<SoilTestResult[]>('/api/crops/soil-health', {
+        action: 'list_tests',
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -81,12 +85,17 @@ export function useSoilHealth() {
   });
 
   // Create soil test mutation
-  const { mutate: createSoilTest, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createSoilTest,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (testData: CreateSoilTestForm) => {
-      const response = await apiClient.post<{ success: boolean; id: string; recommendations: string[] }>(
-        '/api/crops/soil-health',
-        { action: 'create_test', ...testData }
-      );
+      const response = await apiClient.post<{
+        success: boolean;
+        id: string;
+        recommendations: string[];
+      }>('/api/crops/soil-health', { action: 'create_test', ...testData });
       return response;
     },
     onSuccess: () => {
@@ -96,12 +105,17 @@ export function useSoilHealth() {
   });
 
   // Update soil test mutation
-  const { mutate: updateSoilTest, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateSoilTest,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, ...testData }: UpdateSoilTestForm) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/soil-health',
-        { action: 'update_test', id, ...testData }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/soil-health', {
+        action: 'update_test',
+        id,
+        ...testData,
+      });
       return response;
     },
     onSuccess: () => {
@@ -111,12 +125,16 @@ export function useSoilHealth() {
   });
 
   // Delete soil test mutation
-  const { mutate: deleteSoilTest, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteSoilTest,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/soil-health',
-        { action: 'delete_test', id }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/soil-health', {
+        action: 'delete_test',
+        id,
+      });
       return response;
     },
     onSuccess: () => {
@@ -148,13 +166,19 @@ export function useSoilHealth() {
 export function useSoilTestsByFarm(farmId: string, fieldId?: string) {
   const apiClient = getApiClient();
 
-  const { data: soilTests, isLoading, error, refetch } = useQuery({
+  const {
+    data: soilTests,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['soil-tests', 'farm', farmId, fieldId],
     queryFn: async () => {
-      const response = await apiClient.post<SoilTestResult[]>(
-        '/api/crops/soil-health',
-        { action: 'list_tests', farm_id: farmId, field_id: fieldId }
-      );
+      const response = await apiClient.post<SoilTestResult[]>('/api/crops/soil-health', {
+        action: 'list_tests',
+        farm_id: farmId,
+        field_id: fieldId,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -172,13 +196,18 @@ export function useSoilTestsByFarm(farmId: string, fieldId?: string) {
 export function useSoilHealthMetrics(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: metrics, isLoading, error, refetch } = useQuery({
+  const {
+    data: metrics,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['soil-health-metrics', farmId],
     queryFn: async () => {
-      const response = await apiClient.post<SoilHealthMetrics>(
-        '/api/crops/soil-health',
-        { action: 'metrics', farm_id: farmId }
-      );
+      const response = await apiClient.post<SoilHealthMetrics>('/api/crops/soil-health', {
+        action: 'metrics',
+        farm_id: farmId,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -195,7 +224,12 @@ export function useSoilHealthMetrics(farmId: string) {
 export function useSoilRecommendations(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: recommendations, isLoading, error, refetch } = useQuery({
+  const {
+    data: recommendations,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['soil-recommendations', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
@@ -211,10 +245,7 @@ export function useSoilRecommendations(farmId: string) {
             timeline: string;
           }>;
         }>;
-      }>(
-        '/api/crops/soil-health',
-        { action: 'recommendations', farm_id: farmId }
-      );
+      }>('/api/crops/soil-health', { action: 'recommendations', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.long,
@@ -222,11 +253,11 @@ export function useSoilRecommendations(farmId: string) {
     enabled: !!farmId,
   });
 
-  return { 
-    recommendations: recommendations?.recommendations || [], 
-    isLoading, 
-    error, 
-    refetch 
+  return {
+    recommendations: recommendations?.recommendations || [],
+    isLoading,
+    error,
+    refetch,
   };
 }
 
@@ -236,7 +267,12 @@ export function useSoilRecommendations(farmId: string) {
 export function useSoilTrendsAnalysis(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: trendsAnalysis, isLoading, error, refetch } = useQuery({
+  const {
+    data: trendsAnalysis,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['soil-trends-analysis', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
@@ -254,10 +290,7 @@ export function useSoilTrendsAnalysis(farmId: string) {
             nitrogen: { direction: string; magnitude: number };
           };
         }>;
-      }>(
-        '/api/crops/soil-health',
-        { action: 'trends_analysis', farm_id: farmId }
-      );
+      }>('/api/crops/soil-health', { action: 'trends_analysis', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.long,
@@ -265,11 +298,11 @@ export function useSoilTrendsAnalysis(farmId: string) {
     enabled: !!farmId,
   });
 
-  return { 
-    trendsAnalysis: trendsAnalysis?.trend_analysis || [], 
-    isLoading, 
-    error, 
-    refetch 
+  return {
+    trendsAnalysis: trendsAnalysis?.trend_analysis || [],
+    isLoading,
+    error,
+    refetch,
   };
 }
 
@@ -279,15 +312,16 @@ export function useSoilTrendsAnalysis(farmId: string) {
 export function useSoilReportExport(farmId: string) {
   const apiClient = getApiClient();
 
-  const { mutate: exportReport, isPending: isExporting, error: exportError } = useMutation({
+  const {
+    mutate: exportReport,
+    isPending: isExporting,
+    error: exportError,
+  } = useMutation({
     mutationFn: async () => {
       const response = await apiClient.post<{
         report: string;
         filename: string;
-      }>(
-        '/api/crops/soil-health',
-        { action: 'export_report', farm_id: farmId }
-      );
+      }>('/api/crops/soil-health', { action: 'export_report', farm_id: farmId });
       return response;
     },
   });

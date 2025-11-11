@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useWebSocket } from '../hooks/useWebSocket';
 import {
   Activity,
   TrendingUp,
@@ -32,20 +33,59 @@ import {
   Package,
   Truck,
   Wrench,
-  Lightbulb
+  Lightbulb,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
 interface SystemDashboard {
-  farm: any;
-  animals: any[];
-  crops: any[];
-  fields: any;
-  inventory: any;
-  tasks: any;
-  finance: any;
+  farm: {
+    id?: string;
+    name?: string;
+    location?: string;
+    animal_count?: number;
+    crop_count?: number;
+    field_count?: number;
+    task_count?: number;
+    total_revenue?: number;
+    total_expenses?: number;
+  } | null;
+  animals: Array<{
+    species: string;
+    count: number;
+    healthy_count: number;
+    avg_weight: number;
+  }>;
+  crops: Array<{
+    crop_type: string;
+    count: number;
+    avg_yield: number;
+    mature_count: number;
+  }>;
+  fields: {
+    total_fields: number;
+    avg_area: number;
+    cultivated_fields: number;
+  } | null;
+  inventory: {
+    total_items: number;
+    low_stock_items: number;
+    total_value: number;
+  } | null;
+  tasks: {
+    total_tasks: number;
+    completed_tasks: number;
+    active_tasks: number;
+    overdue_tasks: number;
+  } | null;
+  finance: {
+    revenue: number;
+    expenses: number;
+    net_profit: number;
+  } | null;
   alerts: Alert[];
   insights: Insight[];
 }
@@ -55,6 +95,7 @@ interface Alert {
   category: string;
   message: string;
   count: number;
+  timestamp?: number;
 }
 
 interface Insight {
@@ -64,36 +105,77 @@ interface Insight {
   description: string;
   impact: 'low' | 'medium' | 'high';
   suggestion: string;
+  timestamp?: number;
 }
 
 interface IntegrationData {
-  relationships: any[];
-  data_flows: any[];
-  integration_points: any[];
+  relationships: Array<{
+    module: string;
+    related_module: string;
+    relationship_count: number;
+  }>;
+  data_flows: unknown[];
+  integration_points: Array<{
+    from: string;
+    to: string;
+    type: string;
+  }>;
 }
 
 interface WorkflowData {
-  workflows: any[];
-  process_automation: any;
-  efficiency_metrics: any;
+  workflows: Array<{
+    workflow_name: string;
+    trigger_type: string;
+    status: string;
+    execution_count: number;
+    last_execution: string | null;
+  }>;
+  process_automation: unknown;
+  efficiency_metrics: unknown;
 }
+
+type ViewMode = 'dashboard' | 'integrations' | 'workflows' | 'optimization' | 'insights';
 
 export function AdvancedManagementDashboard() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+
+  // WebSocket integration for real-time updates
+  const {
+    isConnected: isWebSocketConnected,
+    connectionStatus: wsStatus,
+    lastMessage: wsMessage,
+    connect: connectWebSocket,
+    subscribeToFarm,
+    requestDashboardData,
+    isAuthenticated: isWsAuthenticated,
+  } = useWebSocket();
+
   const [selectedFarm, setSelectedFarm] = useState<number>(1);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'integrations' | 'workflows' | 'optimization' | 'insights'>('dashboard');
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [realtimeData, setRealtimeData] = useState<SystemDashboard | null>(null);
+  const [connectionIndicator, setConnectionIndicator] = useState<
+    'online' | 'offline' | 'connecting'
+  >('connecting');
 
   // Get system dashboard data
-  const { data: dashboard, isLoading, error, refetch } = useQuery({
+  const {
+    data: dashboard,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['system', 'dashboard', selectedFarm],
     queryFn: async () => {
-      const response = await fetch(`/api/system-integration?farm_id=${selectedFarm}&type=dashboard`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(
+        `/api/system-integration?farm_id=${selectedFarm}&type=dashboard`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');
@@ -109,10 +191,13 @@ export function AdvancedManagementDashboard() {
   const { data: integrations } = useQuery({
     queryKey: ['system', 'integrations', selectedFarm],
     queryFn: async () => {
-      const response = await fetch(`/api/system-integration?farm_id=${selectedFarm}&type=integration`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(
+        `/api/system-integration?farm_id=${selectedFarm}&type=integration`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch integration data');
@@ -127,10 +212,13 @@ export function AdvancedManagementDashboard() {
   const { data: workflows } = useQuery({
     queryKey: ['system', 'workflows', selectedFarm],
     queryFn: async () => {
-      const response = await fetch(`/api/system-integration?farm_id=${selectedFarm}&type=workflow`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(
+        `/api/system-integration?farm_id=${selectedFarm}&type=workflow`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch workflow data');
@@ -153,19 +241,84 @@ export function AdvancedManagementDashboard() {
     }
   }, [autoRefresh, queryClient, dashboard]);
 
+  // WebSocket connection and farm subscription
+  useEffect(() => {
+    if (isAuthenticated() && !isWebSocketConnected) {
+      connectWebSocket();
+    }
+  }, [isAuthenticated, isWebSocketConnected, connectWebSocket]);
+
+  useEffect(() => {
+    if (isWebSocketConnected && selectedFarm) {
+      subscribeToFarm(selectedFarm.toString());
+    }
+  }, [isWebSocketConnected, selectedFarm, subscribeToFarm]);
+
+  // Handle WebSocket messages for real-time updates
+  useEffect(() => {
+    if (wsMessage) {
+      switch (wsMessage.type) {
+        case 'initial_data':
+          setConnectionIndicator('online');
+          break;
+        case 'dashboard_update':
+          if (wsMessage.farm_id === selectedFarm.toString() && wsMessage.data) {
+            setRealtimeData(wsMessage.data as SystemDashboard);
+            setLastUpdated(new Date());
+          }
+          break;
+        case 'farm_broadcast':
+          if (wsMessage.farm_id === selectedFarm.toString() && wsMessage.data) {
+            const broadcastData = wsMessage.data as { type: string };
+            // Handle various broadcast types
+            switch (broadcastData.type) {
+              case 'new_task':
+              case 'task_update':
+              case 'inventory_alert':
+              case 'animal_health_alert':
+                setRealtimeData(prev => (prev ? { ...prev } : null));
+                setLastUpdated(new Date());
+                break;
+              default:
+                // Refresh dashboard for other updates
+                queryClient.invalidateQueries({ queryKey: ['system', 'dashboard'] });
+            }
+          }
+          break;
+        case 'heartbeat':
+          setConnectionIndicator('online');
+          break;
+        case 'error':
+          setConnectionIndicator('offline');
+          break;
+      }
+    }
+  }, [wsMessage, selectedFarm, queryClient]);
+
+  // Connection status indicator
+  useEffect(() => {
+    if (isWebSocketConnected) {
+      setConnectionIndicator('online');
+    } else if (wsStatus === 'connecting') {
+      setConnectionIndicator('connecting');
+    } else {
+      setConnectionIndicator('offline');
+    }
+  }, [isWebSocketConnected, wsStatus]);
+
   const triggerWorkflowMutation = useMutation({
     mutationFn: async (action: string) => {
       const response = await fetch('/api/system-integration', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           action,
           farm_id: selectedFarm,
-          data: {}
-        })
+          data: {},
+        }),
       });
 
       if (!response.ok) {
@@ -176,7 +329,7 @@ export function AdvancedManagementDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system'] });
-    }
+    },
   });
 
   if (!isAuthenticated()) {
@@ -184,52 +337,79 @@ export function AdvancedManagementDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
-          <p className="text-gray-600">You need to be logged in to access the management dashboard.</p>
+          <p className="text-gray-600">
+            You need to be logged in to access the management dashboard.
+          </p>
         </div>
       </div>
     );
   }
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p>Loading management dashboard...</p>
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading management dashboard...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  if (error) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading dashboard</h2>
-        <p className="text-gray-600">{error.message}</p>
-        <Button onClick={() => refetch()} className="mt-4">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
-        </Button>
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading dashboard</h2>
+          <p className="text-gray-600">{error.message}</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
 
   const getAlertIcon = (type: string) => {
     switch (type) {
-      case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default: return <Info className="h-4 w-4 text-blue-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
   const getInsightIcon = (type: string) => {
     switch (type) {
-      case 'improvement': return <Target className="h-4 w-4 text-purple-500" />;
-      case 'efficiency': return <Zap className="h-4 w-4 text-blue-500" />;
-      case 'optimization': return <Brain className="h-4 w-4 text-green-500" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-orange-500" />;
-      default: return <Info className="h-4 w-4 text-gray-500" />;
+      case 'improvement':
+        return <Target className="h-4 w-4 text-purple-500" />;
+      case 'efficiency':
+        return <Zap className="h-4 w-4 text-blue-500" />;
+      case 'optimization':
+        return <Brain className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Info className="h-4 w-4 text-gray-500" />;
     }
   };
+
+  const getConnectionIcon = () => {
+    switch (connectionIndicator) {
+      case 'online':
+        return <Wifi className="h-4 w-4 text-green-500" />;
+      case 'offline':
+        return <WifiOff className="h-4 w-4 text-red-500" />;
+      default:
+        return <div className="h-4 w-4 rounded-full bg-yellow-500 animate-pulse" />;
+    }
+  };
+
+  // Use real-time data if available, otherwise fall back to cached data
+  const currentData = realtimeData || dashboard;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -239,9 +419,19 @@ export function AdvancedManagementDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Advanced Management Dashboard</h1>
             <p className="text-gray-600 mt-1">
-              Comprehensive farm management with AI-powered insights and automation
+              Comprehensive farm management with real-time updates and AI-powered insights
             </p>
             <div className="flex items-center gap-4 mt-2">
+              <div className="flex items-center gap-2">
+                {getConnectionIcon()}
+                <span className="text-sm text-gray-600">
+                  {connectionIndicator === 'online'
+                    ? 'Live updates'
+                    : connectionIndicator === 'connecting'
+                      ? 'Connecting...'
+                      : 'Offline mode'}
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-green-500" />
                 <span className="text-sm text-gray-600">
@@ -255,7 +445,11 @@ export function AdvancedManagementDashboard() {
                   onClick={() => setAutoRefresh(!autoRefresh)}
                   className={autoRefresh ? 'bg-green-50 border-green-200' : ''}
                 >
-                  {autoRefresh ? <Pause className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+                  {autoRefresh ? (
+                    <Pause className="h-3 w-3 mr-1" />
+                  ) : (
+                    <Play className="h-3 w-3 mr-1" />
+                  )}
                   {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -268,7 +462,7 @@ export function AdvancedManagementDashboard() {
           <div className="flex items-center space-x-4">
             <select
               value={selectedFarm}
-              onChange={(e) => setSelectedFarm(parseInt(e.target.value))}
+              onChange={e => setSelectedFarm(parseInt(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={1}>Main Farm</option>
@@ -285,11 +479,11 @@ export function AdvancedManagementDashboard() {
               { key: 'integrations', label: 'Integrations', icon: Settings },
               { key: 'workflows', label: 'Workflows', icon: Zap },
               { key: 'optimization', label: 'Optimization', icon: Brain },
-              { key: 'insights', label: 'Insights', icon: Lightbulb }
+              { key: 'insights', label: 'Insights', icon: Lightbulb },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as any)}
+                onClick={() => setViewMode(key as ViewMode)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-blue-500 text-blue-600'
@@ -298,10 +492,8 @@ export function AdvancedManagementDashboard() {
               >
                 <Icon className="h-4 w-4" />
                 {label}
-                {key === 'dashboard' && dashboard?.alerts && dashboard.alerts.length > 0 && (
-                  <Badge className="bg-red-100 text-red-800">
-                    {dashboard.alerts.length}
-                  </Badge>
+                {key === 'dashboard' && currentData?.alerts && currentData.alerts.length > 0 && (
+                  <Badge className="bg-red-100 text-red-800">{currentData.alerts.length}</Badge>
                 )}
               </button>
             ))}
@@ -309,7 +501,7 @@ export function AdvancedManagementDashboard() {
         </div>
 
         {/* Dashboard Tab */}
-        {viewMode === 'dashboard' && dashboard && (
+        {viewMode === 'dashboard' && currentData && (
           <div className="space-y-8">
             {/* System Status Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -320,10 +512,10 @@ export function AdvancedManagementDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {dashboard.farm?.animal_count || 0} Animals
+                    {currentData.farm?.animal_count || 0} Animals
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboard.fields?.total_fields || 0} fields managed
+                    {currentData.fields?.total_fields || 0} fields managed
                   </p>
                 </CardContent>
               </Card>
@@ -335,11 +527,14 @@ export function AdvancedManagementDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600">
-                    {Math.round(((dashboard.tasks?.completed_tasks || 0) / (dashboard.tasks?.total_tasks || 1)) * 100)}%
+                    {Math.round(
+                      ((currentData.tasks?.completed_tasks || 0) /
+                        (currentData.tasks?.total_tasks || 1)) *
+                        100
+                    )}
+                    %
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Completion rate
-                  </p>
+                  <p className="text-xs text-muted-foreground">Completion rate</p>
                 </CardContent>
               </Card>
 
@@ -349,14 +544,16 @@ export function AdvancedManagementDashboard() {
                   <DollarSign className="h-4 w-4 text-purple-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${
-                    (dashboard.finance?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    ${(dashboard.finance?.net_profit || 0).toLocaleString()}
+                  <div
+                    className={`text-2xl font-bold ${
+                      (currentData.finance?.net_profit || 0) >= 0
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    ${(currentData.finance?.net_profit || 0).toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    30-day net profit
-                  </p>
+                  <p className="text-xs text-muted-foreground">30-day net profit</p>
                 </CardContent>
               </Card>
 
@@ -367,11 +564,9 @@ export function AdvancedManagementDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-600">
-                    {dashboard.inventory?.low_stock_items || 0}
+                    {currentData.inventory?.low_stock_items || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Low stock alerts
-                  </p>
+                  <p className="text-xs text-muted-foreground">Low stock alerts</p>
                 </CardContent>
               </Card>
             </div>
@@ -389,18 +584,25 @@ export function AdvancedManagementDashboard() {
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Active Crops:</span>
-                      <span className="text-sm font-medium">{dashboard.crops?.length || 0}</span>
+                      <span className="text-sm font-medium">{currentData.crops?.length || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Mature Plants:</span>
                       <span className="text-sm font-medium">
-                        {dashboard.crops?.reduce((sum, crop) => sum + (crop.mature_count || 0), 0) || 0}
+                        {currentData.crops?.reduce(
+                          (sum, crop) => sum + (crop.mature_count || 0),
+                          0
+                        ) || 0}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Avg Yield:</span>
                       <span className="text-sm font-medium">
-                        {Math.round(dashboard.crops?.reduce((sum, crop) => sum + (crop.avg_yield || 0), 0) / (dashboard.crops?.length || 1) || 0)} units
+                        {Math.round(
+                          currentData.crops?.reduce((sum, crop) => sum + (crop.avg_yield || 0), 0) /
+                            (currentData.crops?.length || 1) || 0
+                        )}{' '}
+                        units
                       </span>
                     </div>
                   </div>
@@ -418,16 +620,29 @@ export function AdvancedManagementDashboard() {
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Total Animals:</span>
-                      <span className="text-sm font-medium">{dashboard.animals?.reduce((sum, animal) => sum + animal.count, 0) || 0}</span>
+                      <span className="text-sm font-medium">
+                        {currentData.animals?.reduce((sum, animal) => sum + animal.count, 0) || 0}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Healthy:</span>
-                      <span className="text-sm font-medium">{dashboard.animals?.reduce((sum, animal) => sum + animal.healthy_count, 0) || 0}</span>
+                      <span className="text-sm font-medium">
+                        {currentData.animals?.reduce(
+                          (sum, animal) => sum + animal.healthy_count,
+                          0
+                        ) || 0}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Avg Weight:</span>
                       <span className="text-sm font-medium">
-                        {Math.round(dashboard.animals?.reduce((sum, animal) => sum + (animal.avg_weight || 0), 0) / (dashboard.animals?.length || 1) || 0)} kg
+                        {Math.round(
+                          currentData.animals?.reduce(
+                            (sum, animal) => sum + (animal.avg_weight || 0),
+                            0
+                          ) / (currentData.animals?.length || 1) || 0
+                        )}{' '}
+                        kg
                       </span>
                     </div>
                   </div>
@@ -445,16 +660,26 @@ export function AdvancedManagementDashboard() {
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Total Items:</span>
-                      <span className="text-sm font-medium">{dashboard.inventory?.total_items || 0}</span>
+                      <span className="text-sm font-medium">
+                        {currentData.inventory?.total_items || 0}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Stock Value:</span>
-                      <span className="text-sm font-medium">${(dashboard.inventory?.total_value || 0).toLocaleString()}</span>
+                      <span className="text-sm font-medium">
+                        ${(currentData.inventory?.total_value || 0).toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Utilization:</span>
                       <span className="text-sm font-medium">
-                        {Math.round((1 - (dashboard.inventory?.low_stock_items || 0) / (dashboard.inventory?.total_items || 1)) * 100)}%
+                        {Math.round(
+                          (1 -
+                            (currentData.inventory?.low_stock_items || 0) /
+                              (currentData.inventory?.total_items || 1)) *
+                            100
+                        )}
+                        %
                       </span>
                     </div>
                   </div>
@@ -469,13 +694,21 @@ export function AdvancedManagementDashboard() {
                   <CardTitle className="flex items-center gap-2">
                     <Bell className="h-5 w-5 text-red-500" />
                     System Alerts
+                    {realtimeData && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        LIVE
+                      </Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {dashboard.alerts && dashboard.alerts.length > 0 ? (
-                      dashboard.alerts.map((alert, index) => (
-                        <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    {currentData.alerts && currentData.alerts.length > 0 ? (
+                      currentData.alerts.map((alert, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                        >
                           {getAlertIcon(alert.type)}
                           <div className="flex-1">
                             <p className="text-sm font-medium">{alert.message}</p>
@@ -490,6 +723,9 @@ export function AdvancedManagementDashboard() {
                       <div className="text-center py-4">
                         <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
                         <p className="text-sm text-gray-600">All systems running smoothly</p>
+                        {realtimeData && (
+                          <p className="text-xs text-green-600 mt-1">Real-time monitoring active</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -505,9 +741,12 @@ export function AdvancedManagementDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {dashboard.insights && dashboard.insights.length > 0 ? (
-                      dashboard.insights.map((insight, index) => (
-                        <div key={index} className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+                    {currentData.insights && currentData.insights.length > 0 ? (
+                      currentData.insights.map((insight, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100"
+                        >
                           <div className="flex items-start gap-3">
                             {getInsightIcon(insight.type)}
                             <div className="flex-1">
@@ -518,7 +757,9 @@ export function AdvancedManagementDashboard() {
                                 </Badge>
                               </div>
                               <p className="text-xs text-gray-600 mb-2">{insight.description}</p>
-                              <p className="text-xs text-blue-600 font-medium">💡 {insight.suggestion}</p>
+                              <p className="text-xs text-blue-600 font-medium">
+                                💡 {insight.suggestion}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -612,8 +853,13 @@ export function AdvancedManagementDashboard() {
                 <CardContent>
                   <div className="space-y-3">
                     {integrations.relationships?.map((rel, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm">{rel.module} → {rel.related_module}</span>
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                      >
+                        <span className="text-sm">
+                          {rel.module} → {rel.related_module}
+                        </span>
                         <Badge>{rel.relationship_count}</Badge>
                       </div>
                     ))}
@@ -631,7 +877,9 @@ export function AdvancedManagementDashboard() {
                       <div key={index} className="p-2 bg-blue-50 rounded">
                         <div className="flex items-center gap-2">
                           <ArrowUpRight className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium">{point.from} → {point.to}</span>
+                          <span className="text-sm font-medium">
+                            {point.from} → {point.to}
+                          </span>
                         </div>
                         <p className="text-xs text-gray-600">{point.type}</p>
                       </div>
@@ -669,7 +917,9 @@ export function AdvancedManagementDashboard() {
                       <div className="flex justify-between">
                         <span className="text-sm">Last run:</span>
                         <span className="text-sm font-medium">
-                          {workflow.last_execution ? new Date(workflow.last_execution).toLocaleDateString() : 'Never'}
+                          {workflow.last_execution
+                            ? new Date(workflow.last_execution).toLocaleDateString()
+                            : 'Never'}
                         </span>
                       </div>
                     </div>

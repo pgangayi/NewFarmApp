@@ -76,21 +76,25 @@ export function FieldsPage() {
     queryFn: async () => {
       const response = await fetch('/api/farms', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch farms');
       return response.json();
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get enhanced fields with analytics
-  const { data: fields, isLoading, error } = useQuery({
+  const {
+    data: fields,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['fields', 'enhanced'],
     queryFn: async () => {
       const response = await fetch('/api/fields?analytics=true', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -99,7 +103,7 @@ export function FieldsPage() {
 
       return response.json() as Promise<Field[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get soil analysis data for selected field
@@ -107,16 +111,16 @@ export function FieldsPage() {
     queryKey: ['soil-analysis', selectedFieldId],
     queryFn: async () => {
       if (!selectedFieldId) return [];
-      
+
       const response = await fetch(`/api/fields/soil-analysis?field_id=${selectedFieldId}`, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) return [];
       return response.json() as Promise<SoilAnalysisData[]>;
     },
-    enabled: isAuthenticated() && selectedFieldId !== null && viewMode === 'soil'
+    enabled: isAuthenticated() && selectedFieldId !== null && viewMode === 'soil',
   });
 
   const createFieldMutation = useMutation({
@@ -125,9 +129,9 @@ export function FieldsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify(fieldData)
+        body: JSON.stringify(fieldData),
       });
 
       if (!response.ok) {
@@ -139,7 +143,7 @@ export function FieldsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
       setShowCreateForm(false);
-    }
+    },
   });
 
   const updateFieldMutation = useMutation({
@@ -148,9 +152,9 @@ export function FieldsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ id, ...fieldData })
+        body: JSON.stringify({ id, ...fieldData }),
       });
 
       if (!response.ok) {
@@ -162,14 +166,14 @@ export function FieldsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
       setEditingField(null);
-    }
+    },
   });
 
   const deleteFieldMutation = useMutation({
     mutationFn: async (fieldId: number) => {
       const response = await fetch(`/api/fields?id=${fieldId}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -180,7 +184,7 @@ export function FieldsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
-    }
+    },
   });
 
   const handleCreateField = (fieldData: FieldFormData) => {
@@ -210,26 +214,33 @@ export function FieldsPage() {
     );
   }
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-      <p>Loading fields...</p>
-    </div>
-  </div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p>Loading fields...</p>
+        </div>
+      </div>
+    );
 
-  if (error) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading fields</h2>
-      <p className="text-gray-600">{error.message}</p>
-    </div>
-  </div>;
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading fields</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
 
   const totalFields = fields?.length || 0;
   const totalHectares = fields?.reduce((sum, field) => sum + (field.area_hectares || 0), 0) || 0;
   const totalCrops = fields?.reduce((sum, field) => sum + (field.crop_count || 0), 0) || 0;
-  const avgProfitability = fields && fields.length > 0 
-    ? fields.reduce((sum, field) => sum + (field.avg_profitability || 0), 0) / fields.length
-    : 0;
+  const avgProfitability =
+    fields && fields.length > 0
+      ? fields.reduce((sum, field) => sum + (field.avg_profitability || 0), 0) / fields.length
+      : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -283,7 +294,10 @@ export function FieldsPage() {
                 Soil Health
               </button>
             </div>
-            <Button onClick={() => setShowCreateForm(true)} className="bg-green-600 hover:bg-green-700">
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add New Field
             </Button>
@@ -300,9 +314,7 @@ export function FieldsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalFields}</div>
-                <p className="text-xs text-muted-foreground">
-                  Active field operations
-                </p>
+                <p className="text-xs text-muted-foreground">Active field operations</p>
               </CardContent>
             </Card>
 
@@ -313,9 +325,7 @@ export function FieldsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalHectares.toFixed(1)}</div>
-                <p className="text-xs text-muted-foreground">
-                  Under cultivation
-                </p>
+                <p className="text-xs text-muted-foreground">Under cultivation</p>
               </CardContent>
             </Card>
 
@@ -326,9 +336,7 @@ export function FieldsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalCrops}</div>
-                <p className="text-xs text-muted-foreground">
-                  Across all fields
-                </p>
+                <p className="text-xs text-muted-foreground">Across all fields</p>
               </CardContent>
             </Card>
 
@@ -339,9 +347,7 @@ export function FieldsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{avgProfitability.toFixed(1)}%</div>
-                <p className="text-xs text-muted-foreground">
-                  Field performance score
-                </p>
+                <p className="text-xs text-muted-foreground">Field performance score</p>
               </CardContent>
             </Card>
           </div>
@@ -352,7 +358,7 @@ export function FieldsPage() {
           /* Grid View */
           fields && fields.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fields.map((field) => (
+              {fields.map(field => (
                 <Card key={field.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -364,11 +370,7 @@ export function FieldsPage() {
                         </CardDescription>
                       </div>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingField(field)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => setEditingField(field)}>
                           Edit
                         </Button>
                       </div>
@@ -399,7 +401,8 @@ export function FieldsPage() {
                       )}
                       {field.accessibility_score && (
                         <div>
-                          <span className="font-medium">Access:</span> {field.accessibility_score}/10
+                          <span className="font-medium">Access:</span> {field.accessibility_score}
+                          /10
                         </div>
                       )}
                       {field.drainage_quality && (
@@ -418,7 +421,7 @@ export function FieldsPage() {
                       {field.avg_profitability && (
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Profitability</span>
-                          <Badge variant={field.avg_profitability > 70 ? "default" : "secondary"}>
+                          <Badge variant={field.avg_profitability > 70 ? 'default' : 'secondary'}>
                             {field.avg_profitability.toFixed(1)}%
                           </Badge>
                         </div>
@@ -426,7 +429,13 @@ export function FieldsPage() {
                       {field.avg_ph_level && (
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">pH Level</span>
-                          <Badge variant={field.avg_ph_level >= 6.0 && field.avg_ph_level <= 7.5 ? "default" : "destructive"}>
+                          <Badge
+                            variant={
+                              field.avg_ph_level >= 6.0 && field.avg_ph_level <= 7.5
+                                ? 'default'
+                                : 'destructive'
+                            }
+                          >
                             {field.avg_ph_level.toFixed(1)}
                           </Badge>
                         </div>
@@ -443,9 +452,9 @@ export function FieldsPage() {
 
                     {/* Action Buttons */}
                     <div className="flex space-x-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1"
                         onClick={() => {
                           setSelectedFieldId(field.id);
@@ -455,9 +464,9 @@ export function FieldsPage() {
                         <Droplets className="h-4 w-4 mr-1" />
                         Soil Health
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1"
                         onClick={() => {
                           if (confirm(`Delete field "${field.name}"?`)) {
@@ -483,7 +492,10 @@ export function FieldsPage() {
                 <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No fields yet</h3>
                 <p className="text-gray-600 mb-4">Get started by creating your first field.</p>
-                <Button onClick={() => setShowCreateForm(true)} className="bg-green-600 hover:bg-green-700">
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
                   Create Field
                 </Button>
               </div>
@@ -503,7 +515,10 @@ export function FieldsPage() {
                 <div className="text-center py-8 text-gray-500">
                   <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
                   <p>Advanced field analytics dashboard coming soon...</p>
-                  <p className="text-sm">This will include soil health trends, productivity analysis, and optimization recommendations.</p>
+                  <p className="text-sm">
+                    This will include soil health trends, productivity analysis, and optimization
+                    recommendations.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -524,11 +539,21 @@ export function FieldsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {soilAnalysis.slice(0, 6).map((analysis, index) => (
                         <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="font-medium mb-2">{new Date(analysis.analysis_date).toLocaleDateString()}</h4>
+                          <h4 className="font-medium mb-2">
+                            {new Date(analysis.analysis_date).toLocaleDateString()}
+                          </h4>
                           <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
                               <span>pH Level:</span>
-                              <span className={analysis.ph_level && analysis.ph_level >= 6.0 && analysis.ph_level <= 7.5 ? 'text-green-600' : 'text-red-600'}>
+                              <span
+                                className={
+                                  analysis.ph_level &&
+                                  analysis.ph_level >= 6.0 &&
+                                  analysis.ph_level <= 7.5
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                                }
+                              >
                                 {analysis.ph_level?.toFixed(1) || 'N/A'}
                               </span>
                             </div>
@@ -562,7 +587,9 @@ export function FieldsPage() {
                   <div className="text-center py-8 text-gray-500">
                     <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
                     <p>Select a field to view soil analysis data</p>
-                    <p className="text-sm">No soil analysis data available for the selected field.</p>
+                    <p className="text-sm">
+                      No soil analysis data available for the selected field.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -591,7 +618,7 @@ export function FieldsPage() {
 // Field Form Modal Component
 interface FieldFormModalProps {
   field?: Field | null;
-  farms: any[];
+  farms: unknown[];
   onSubmit: (data: FieldFormData) => void;
   onClose: () => void;
   isLoading: boolean;
@@ -611,7 +638,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
     drainage_quality: field?.drainage_quality || '',
     accessibility_score: field?.accessibility_score,
     environmental_factors: field?.environmental_factors || '',
-    maintenance_schedule: field?.maintenance_schedule || ''
+    maintenance_schedule: field?.maintenance_schedule || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -624,13 +651,8 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
       <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">
-              {field ? 'Edit Field' : 'Create New Field'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
+            <h2 className="text-xl font-semibold">{field ? 'Edit Field' : 'Create New Field'}</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
               ×
             </button>
           </div>
@@ -641,18 +663,18 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
               <h3 className="text-lg font-medium mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Farm *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Farm *</label>
                   <select
                     required
                     value={formData.farm_id}
-                    onChange={(e) => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
+                    onChange={e => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select farm</option>
-                    {farms.map((farm) => (
-                      <option key={farm.id} value={farm.id}>{farm.name}</option>
+                    {farms.map(farm => (
+                      <option key={farm.id} value={farm.id}>
+                        {farm.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -665,7 +687,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
@@ -678,7 +700,12 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                     type="number"
                     step="0.01"
                     value={formData.area_hectares || ''}
-                    onChange={(e) => setFormData({ ...formData, area_hectares: parseFloat(e.target.value) || undefined })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        area_hectares: parseFloat(e.target.value) || undefined,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
@@ -690,7 +717,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <input
                     type="text"
                     value={formData.crop_type || ''}
-                    onChange={(e) => setFormData({ ...formData, crop_type: e.target.value })}
+                    onChange={e => setFormData({ ...formData, crop_type: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="e.g., Corn, Wheat, Soybeans"
                   />
@@ -703,12 +730,10 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
               <h3 className="text-lg font-medium mb-4">Soil & Infrastructure</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Soil Type
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Soil Type</label>
                   <select
                     value={formData.soil_type || ''}
-                    onChange={(e) => setFormData({ ...formData, soil_type: e.target.value })}
+                    onChange={e => setFormData({ ...formData, soil_type: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select soil type</option>
@@ -727,7 +752,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   </label>
                   <select
                     value={formData.irrigation_system || ''}
-                    onChange={(e) => setFormData({ ...formData, irrigation_system: e.target.value })}
+                    onChange={e => setFormData({ ...formData, irrigation_system: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select irrigation</option>
@@ -745,7 +770,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   </label>
                   <select
                     value={formData.drainage_quality || ''}
-                    onChange={(e) => setFormData({ ...formData, drainage_quality: e.target.value })}
+                    onChange={e => setFormData({ ...formData, drainage_quality: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select drainage</option>
@@ -766,7 +791,12 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                     min="1"
                     max="10"
                     value={formData.accessibility_score || ''}
-                    onChange={(e) => setFormData({ ...formData, accessibility_score: parseInt(e.target.value) || undefined })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        accessibility_score: parseInt(e.target.value) || undefined,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
@@ -784,7 +814,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <input
                     type="text"
                     value={formData.current_cover_crop || ''}
-                    onChange={(e) => setFormData({ ...formData, current_cover_crop: e.target.value })}
+                    onChange={e => setFormData({ ...formData, current_cover_crop: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="e.g., Rye, Clover, Oats"
                   />
@@ -798,7 +828,12 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                     type="number"
                     step="0.01"
                     value={formData.field_capacity || ''}
-                    onChange={(e) => setFormData({ ...formData, field_capacity: parseFloat(e.target.value) || undefined })}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        field_capacity: parseFloat(e.target.value) || undefined,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
@@ -810,7 +845,9 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                 </label>
                 <textarea
                   value={formData.environmental_factors || ''}
-                  onChange={(e) => setFormData({ ...formData, environmental_factors: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, environmental_factors: e.target.value })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Environmental considerations, wind exposure, slope, etc."
@@ -823,7 +860,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                 </label>
                 <textarea
                   value={formData.maintenance_schedule || ''}
-                  onChange={(e) => setFormData({ ...formData, maintenance_schedule: e.target.value })}
+                  onChange={e => setFormData({ ...formData, maintenance_schedule: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Regular maintenance tasks and schedules..."
@@ -831,12 +868,10 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
                   value={formData.notes || ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Additional notes about the field..."
@@ -845,12 +880,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
             </div>
 
             <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
               <Button
@@ -858,7 +888,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                 disabled={isLoading}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {isLoading ? 'Saving...' : (field ? 'Update Field' : 'Create Field')}
+                {isLoading ? 'Saving...' : field ? 'Update Field' : 'Create Field'}
               </Button>
             </div>
           </form>

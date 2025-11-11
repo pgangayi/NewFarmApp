@@ -13,7 +13,14 @@ export interface CreatePestIssueForm {
   affected_area_percent: number;
   discovery_date?: string;
   outbreak_date?: string;
-  status?: 'active' | 'treated' | 'resolved' | 'monitoring' | 'treating' | 'controlled' | 'contained';
+  status?:
+    | 'active'
+    | 'treated'
+    | 'resolved'
+    | 'monitoring'
+    | 'treating'
+    | 'controlled'
+    | 'contained';
   description: string;
   growth_stage?: string;
   treatment_applied?: string;
@@ -82,13 +89,17 @@ export function usePestDisease() {
   const apiClient = getApiClient();
 
   // Fetch pest issues
-  const { data: pestIssues, isLoading: pestLoading, error: pestError, refetch: refetchPests } = useQuery({
+  const {
+    data: pestIssues,
+    isLoading: pestLoading,
+    error: pestError,
+    refetch: refetchPests,
+  } = useQuery({
     queryKey: ['pest-issues'],
     queryFn: async () => {
-      const response = await apiClient.post<PestIssue[]>(
-        '/api/crops/pests-diseases',
-        { action: 'list_pests' }
-      );
+      const response = await apiClient.post<PestIssue[]>('/api/crops/pests-diseases', {
+        action: 'list_pests',
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -97,13 +108,17 @@ export function usePestDisease() {
   });
 
   // Fetch disease outbreaks
-  const { data: diseaseOutbreaks, isLoading: diseaseLoading, error: diseaseError, refetch: refetchDiseases } = useQuery({
+  const {
+    data: diseaseOutbreaks,
+    isLoading: diseaseLoading,
+    error: diseaseError,
+    refetch: refetchDiseases,
+  } = useQuery({
     queryKey: ['disease-outbreaks'],
     queryFn: async () => {
-      const response = await apiClient.post<DiseaseOutbreak[]>(
-        '/api/crops/pests-diseases',
-        { action: 'list_diseases' }
-      );
+      const response = await apiClient.post<DiseaseOutbreak[]>('/api/crops/pests-diseases', {
+        action: 'list_diseases',
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -112,7 +127,11 @@ export function usePestDisease() {
   });
 
   // Create issue mutation
-  const { mutate: createIssue, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createIssue,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (issueData: CreatePestIssueForm) => {
       const response = await apiClient.post<{ success: boolean; id: string }>(
         '/api/crops/pests-diseases',
@@ -127,12 +146,18 @@ export function usePestDisease() {
   });
 
   // Update issue mutation
-  const { mutate: updateIssue, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateIssue,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, issue_type, ...issueData }: UpdatePestIssueForm) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/pests-diseases',
-        { action: 'update_issue', id, issue_type, ...issueData }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/pests-diseases', {
+        action: 'update_issue',
+        id,
+        issue_type,
+        ...issueData,
+      });
       return response;
     },
     onSuccess: () => {
@@ -142,12 +167,16 @@ export function usePestDisease() {
   });
 
   // Delete issue mutation
-  const { mutate: deleteIssue, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteIssue,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/pests-diseases',
-        { action: 'delete_issue', id }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/pests-diseases', {
+        action: 'delete_issue',
+        id,
+      });
       return response;
     },
     onSuccess: () => {
@@ -181,13 +210,19 @@ export function usePestDisease() {
 export function usePestDiseaseByFarm(farmId: string, severity?: string, status?: string) {
   const apiClient = getApiClient();
 
-  const { data: pestIssues, isLoading: pestLoading, error: pestError } = useQuery({
+  const {
+    data: pestIssues,
+    isLoading: pestLoading,
+    error: pestError,
+  } = useQuery({
     queryKey: ['pest-issues', 'farm', farmId, severity, status],
     queryFn: async () => {
-      const response = await apiClient.post<PestIssue[]>(
-        '/api/crops/pests-diseases',
-        { action: 'list_pests', farm_id: farmId, severity, status }
-      );
+      const response = await apiClient.post<PestIssue[]>('/api/crops/pests-diseases', {
+        action: 'list_pests',
+        farm_id: farmId,
+        severity,
+        status,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -196,13 +231,17 @@ export function usePestDiseaseByFarm(farmId: string, severity?: string, status?:
     enabled: !!farmId,
   });
 
-  const { data: diseaseOutbreaks, isLoading: diseaseLoading, error: diseaseError } = useQuery({
+  const {
+    data: diseaseOutbreaks,
+    isLoading: diseaseLoading,
+    error: diseaseError,
+  } = useQuery({
     queryKey: ['disease-outbreaks', 'farm', farmId],
     queryFn: async () => {
-      const response = await apiClient.post<DiseaseOutbreak[]>(
-        '/api/crops/pests-diseases',
-        { action: 'list_diseases', farm_id: farmId }
-      );
+      const response = await apiClient.post<DiseaseOutbreak[]>('/api/crops/pests-diseases', {
+        action: 'list_diseases',
+        farm_id: farmId,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -225,16 +264,18 @@ export function usePestDiseaseByFarm(farmId: string, severity?: string, status?:
 export function usePreventionCalendar(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: calendar, isLoading, error, refetch } = useQuery({
+  const {
+    data: calendar,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['prevention-calendar', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
         upcoming: PreventionTask[];
-        seasonal_recommendations: any[];
-      }>(
-        '/api/crops/pests-diseases',
-        { action: 'prevention_calendar', farm_id: farmId }
-      );
+        seasonal_recommendations: unknown[];
+      }>('/api/crops/pests-diseases', { action: 'prevention_calendar', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -242,12 +283,12 @@ export function usePreventionCalendar(farmId: string) {
     enabled: !!farmId,
   });
 
-  return { 
+  return {
     preventionTasks: calendar?.upcoming || [],
     seasonalRecommendations: calendar?.seasonal_recommendations || [],
-    isLoading, 
-    error, 
-    refetch 
+    isLoading,
+    error,
+    refetch,
   };
 }
 
@@ -257,7 +298,12 @@ export function usePreventionCalendar(farmId: string) {
 export function usePestPredictions(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: predictions, isLoading, error, refetch } = useQuery({
+  const {
+    data: predictions,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['pest-predictions', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
@@ -269,11 +315,8 @@ export function usePestPredictions(farmId: string) {
           peak_period: string;
           prevention_actions: string[];
         }>;
-        risk_factors: any[];
-      }>(
-        '/api/crops/pests-diseases',
-        { action: 'pest_predictions', farm_id: farmId }
-      );
+        risk_factors: unknown[];
+      }>('/api/crops/pests-diseases', { action: 'pest_predictions', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.long,
@@ -281,12 +324,12 @@ export function usePestPredictions(farmId: string) {
     enabled: !!farmId,
   });
 
-  return { 
+  return {
     predictions: predictions?.predictions || [],
     riskFactors: predictions?.risk_factors || [],
-    isLoading, 
-    error, 
-    refetch 
+    isLoading,
+    error,
+    refetch,
   };
 }
 
@@ -296,7 +339,12 @@ export function usePestPredictions(farmId: string) {
 export function useDiseaseRiskAssessment(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: riskAssessment, isLoading, error, refetch } = useQuery({
+  const {
+    data: riskAssessment,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['disease-risk-assessment', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
@@ -310,10 +358,7 @@ export function useDiseaseRiskAssessment(farmId: string) {
           } | null;
         };
         recommendations: string[];
-      }>(
-        '/api/crops/pests-diseases',
-        { action: 'disease_risk_assessment', farm_id: farmId }
-      );
+      }>('/api/crops/pests-diseases', { action: 'disease_risk_assessment', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -321,11 +366,11 @@ export function useDiseaseRiskAssessment(farmId: string) {
     enabled: !!farmId,
   });
 
-  return { 
+  return {
     riskAssessment: riskAssessment?.risk_assessment,
     recommendations: riskAssessment?.recommendations || [],
-    isLoading, 
-    error, 
-    refetch 
+    isLoading,
+    error,
+    refetch,
   };
 }

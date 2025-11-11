@@ -43,7 +43,11 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
   const queryClient = useQueryClient();
 
   // Fetch health records
-  const { data: healthRecords, isLoading, error } = useQuery({
+  const {
+    data: healthRecords,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['animal-health-records', animalId],
     queryFn: async () => {
       const response = await fetch(`/api/animals/${animalId}/health-records`, {
@@ -61,7 +65,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
 
   // Create health record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: any) => {
+    mutationFn: async (recordData: unknown) => {
       const response = await fetch(`/api/animals/${animalId}/health-records`, {
         method: 'POST',
         headers: {
@@ -85,7 +89,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
 
   // Update health record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: any) => {
+    mutationFn: async ({ id, ...recordData }: unknown) => {
       const response = await fetch(`/api/animals/${animalId}/health-records/${id}`, {
         method: 'PUT',
         headers: {
@@ -210,7 +214,10 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
       {/* Health Records List */}
       <div className="space-y-4">
         {(healthRecords || []).map((record: HealthRecord) => (
-          <div key={record.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+          <div
+            key={record.id}
+            className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
+          >
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-3">
                 {getRecordTypeIcon(record.record_type)}
@@ -222,7 +229,9 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
                     {new Date(record.record_date).toLocaleDateString()}
                   </p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRecordTypeColor(record.record_type)}`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${getRecordTypeColor(record.record_type)}`}
+                >
                   {record.record_type.replace('_', ' ')}
                 </span>
               </div>
@@ -233,7 +242,12 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
                   title="Edit"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                 </button>
                 <button
@@ -242,7 +256,12 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
                   title="Delete"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </div>
@@ -283,7 +302,9 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
               {record.next_due_date && (
                 <div>
                   <span className="font-medium text-gray-700">Next Due:</span>
-                  <span className="text-gray-600 ml-2">{new Date(record.next_due_date).toLocaleDateString()}</span>
+                  <span className="text-gray-600 ml-2">
+                    {new Date(record.next_due_date).toLocaleDateString()}
+                  </span>
                 </div>
               )}
             </div>
@@ -296,7 +317,8 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
 
             {record.recorded_by_name && (
               <div className="mt-2 text-xs text-gray-500">
-                Recorded by {record.recorded_by_name} on {new Date(record.created_at).toLocaleDateString()}
+                Recorded by {record.recorded_by_name} on{' '}
+                {new Date(record.created_at).toLocaleDateString()}
               </div>
             )}
           </div>
@@ -307,12 +329,24 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
       {(healthRecords || []).length === 0 && (
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="mx-auto h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No health records</h3>
-          <p className="text-gray-500 mb-4">Start tracking {animalName}'s health by adding records</p>
+          <p className="text-gray-500 mb-4">
+            Start tracking {animalName}&apos;s health by adding records
+          </p>
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
@@ -331,7 +365,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
             setShowAddModal(false);
             setEditingRecord(null);
           }}
-          onSubmit={(data) => {
+          onSubmit={data => {
             if (editingRecord) {
               updateMutation.mutate({ ...data, id: editingRecord.id });
             } else {
@@ -349,7 +383,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
 interface HealthRecordModalProps {
   record?: HealthRecord | null;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: unknown) => void;
   isLoading: boolean;
 }
 
@@ -370,12 +404,12 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = {
       ...formData,
       cost: formData.cost ? parseFloat(formData.cost.toString()) : undefined,
     };
-    
+
     onSubmit(submitData);
   };
 
@@ -390,27 +424,33 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Record Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Record Date *
+                </label>
                 <input
                   type="date"
                   required
                   value={formData.record_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, record_date: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, record_date: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Record Type *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Record Type *
+                </label>
                 <select
                   required
                   value={formData.record_type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, record_type: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, record_type: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Type</option>
                   {recordTypeOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -420,7 +460,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                 <input
                   type="text"
                   value={formData.vet_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vet_name: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, vet_name: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -430,7 +470,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                 <input
                   type="text"
                   value={formData.vet_contact}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vet_contact: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, vet_contact: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -440,7 +480,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                 <input
                   type="text"
                   value={formData.diagnosis}
-                  onChange={(e) => setFormData(prev => ({ ...prev, diagnosis: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, diagnosis: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -450,7 +490,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                 <input
                   type="text"
                   value={formData.treatment}
-                  onChange={(e) => setFormData(prev => ({ ...prev, treatment: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, treatment: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -460,7 +500,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                 <input
                   type="text"
                   value={formData.medication}
-                  onChange={(e) => setFormData(prev => ({ ...prev, medication: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, medication: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -470,7 +510,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                 <input
                   type="text"
                   value={formData.dosage}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dosage: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, dosage: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -481,17 +521,19 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
                   type="number"
                   step="0.01"
                   value={formData.cost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, cost: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Next Due Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Next Due Date
+                </label>
                 <input
                   type="date"
                   value={formData.next_due_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, next_due_date: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, next_due_date: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -502,7 +544,7 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               <textarea
                 rows={3}
                 value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Additional notes about this health record..."
               />

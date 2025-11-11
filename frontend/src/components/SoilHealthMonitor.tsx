@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSoilHealth } from '../hooks/useSoilHealth';
 import { useFarm } from '../hooks/useFarm';
 import { Button } from './ui/button';
-import { 
+import {
   TestTube,
   TrendingUp,
   TrendingDown,
@@ -17,7 +17,7 @@ import {
   Plus,
   Database,
   Leaf,
-  Droplets
+  Droplets,
 } from 'lucide-react';
 
 interface SoilHealthMonitorProps {
@@ -28,22 +28,24 @@ const SOIL_TYPE_DESCRIPTIONS = {
   sandy: { name: 'Sandy Soil', drainage: 'Good', water_retention: 'Low', fertility: 'Moderate' },
   clay: { name: 'Clay Soil', drainage: 'Poor', water_retention: 'High', fertility: 'High' },
   loam: { name: 'Loam Soil', drainage: 'Good', water_retention: 'Moderate', fertility: 'High' },
-  silt: { name: 'Silt Soil', drainage: 'Moderate', water_retention: 'Moderate', fertility: 'Moderate' },
-  peat: { name: 'Peat Soil', drainage: 'Poor', water_retention: 'High', fertility: 'High' }
+  silt: {
+    name: 'Silt Soil',
+    drainage: 'Moderate',
+    water_retention: 'Moderate',
+    fertility: 'Moderate',
+  },
+  peat: { name: 'Peat Soil', drainage: 'Poor', water_retention: 'High', fertility: 'High' },
 };
 
 export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
   const { currentFarm } = useFarm();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tests' | 'analytics' | 'recommendations'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'tests' | 'analytics' | 'recommendations'
+  >('overview');
   const [showNewTestForm, setShowNewTestForm] = useState(false);
 
   // Use the soil health hook
-  const { 
-    soilTests, 
-    isLoading,
-    error,
-    createSoilTest
-  } = useSoilHealth();
+  const { soilTests, isLoading, error, createSoilTest } = useSoilHealth();
 
   // Additional queries for specific features
   const { data: soilMetrics } = useQuery({
@@ -52,7 +54,7 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
       const response = await fetch('/api/crops/soil-health', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'metrics', farm_id: farmId })
+        body: JSON.stringify({ action: 'metrics', farm_id: farmId }),
       });
       if (!response.ok) throw new Error('Failed to fetch soil metrics');
       return await response.json();
@@ -66,7 +68,7 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
       const response = await fetch('/api/crops/soil-health', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'recommendations', farm_id: farmId })
+        body: JSON.stringify({ action: 'recommendations', farm_id: farmId }),
       });
       if (!response.ok) throw new Error('Failed to fetch recommendations');
       return await response.json();
@@ -127,19 +129,19 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
         { name: 'Tomatoes', ph_range: '6.0-7.0' },
         { name: 'Corn', ph_range: '5.8-7.0' },
         { name: 'Beans', ph_range: '6.0-7.0' },
-        { name: 'Carrots', ph_range: '6.0-6.8' }
+        { name: 'Carrots', ph_range: '6.0-6.8' },
       ];
     } else if (phLevel < 6.0) {
       return [
         { name: 'Potatoes', ph_range: '5.0-6.0' },
         { name: 'Blueberries', ph_range: '4.5-5.5' },
-        { name: 'Strawberries', ph_range: '5.5-6.5' }
+        { name: 'Strawberries', ph_range: '5.5-6.5' },
       ];
     } else {
       return [
         { name: 'Lettuce', ph_range: '6.0-7.0' },
         { name: 'Spinach', ph_range: '6.5-7.5' },
-        { name: 'Asparagus', ph_range: '7.0-8.0' }
+        { name: 'Asparagus', ph_range: '7.0-8.0' },
       ];
     }
   };
@@ -194,15 +196,18 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
               <TestTube className="h-5 w-5 text-blue-500" />
               <span className="font-medium">pH Balance</span>
             </div>
-            <p className={`text-lg font-bold capitalize ${
-              soilMetrics.ph_balance === 'neutral' ? 'text-green-600' : 
-              soilMetrics.ph_balance === 'acidic' ? 'text-red-600' : 'text-blue-600'
-            }`}>
+            <p
+              className={`text-lg font-bold capitalize ${
+                soilMetrics.ph_balance === 'neutral'
+                  ? 'text-green-600'
+                  : soilMetrics.ph_balance === 'acidic'
+                    ? 'text-red-600'
+                    : 'text-blue-600'
+              }`}
+            >
               {soilMetrics.ph_balance}
             </p>
-            <p className="text-sm text-gray-600">
-              {soilTests[0]?.ph_level?.toFixed(1) || 'N/A'}
-            </p>
+            <p className="text-sm text-gray-600">{soilTests[0]?.ph_level?.toFixed(1) || 'N/A'}</p>
           </div>
 
           <div className="border rounded-lg p-4">
@@ -210,10 +215,15 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
               <Database className="h-5 w-5 text-green-500" />
               <span className="font-medium">Nutrient Status</span>
             </div>
-            <p className={`text-lg font-bold capitalize ${
-              soilMetrics.nutrient_status === 'adequate' ? 'text-green-600' : 
-              soilMetrics.nutrient_status === 'deficient' ? 'text-red-600' : 'text-yellow-600'
-            }`}>
+            <p
+              className={`text-lg font-bold capitalize ${
+                soilMetrics.nutrient_status === 'adequate'
+                  ? 'text-green-600'
+                  : soilMetrics.nutrient_status === 'deficient'
+                    ? 'text-red-600'
+                    : 'text-yellow-600'
+              }`}
+            >
               {soilMetrics.nutrient_status}
             </p>
             <p className="text-sm text-gray-600">Overall level</p>
@@ -224,7 +234,9 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
               <Leaf className="h-5 w-5 text-purple-500" />
               <span className="font-medium">Organic Matter</span>
             </div>
-            <p className={`text-lg font-bold capitalize ${soilMetrics.organic_matter_status === 'high' ? 'text-green-600' : soilMetrics.organic_matter_status === 'moderate' ? 'text-yellow-600' : 'text-red-600'}`}>
+            <p
+              className={`text-lg font-bold capitalize ${soilMetrics.organic_matter_status === 'high' ? 'text-green-600' : soilMetrics.organic_matter_status === 'moderate' ? 'text-yellow-600' : 'text-red-600'}`}
+            >
               {soilMetrics.organic_matter_status}
             </p>
             <p className="text-sm text-gray-600">
@@ -238,10 +250,9 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
               <span className="font-medium">Next Test</span>
             </div>
             <p className="text-lg font-bold">
-              {soilMetrics.next_test_recommended ? 
-                new Date(soilMetrics.next_test_recommended).toLocaleDateString() : 
-                'Due soon'
-              }
+              {soilMetrics.next_test_recommended
+                ? new Date(soilMetrics.next_test_recommended).toLocaleDateString()
+                : 'Due soon'}
             </p>
             <p className="text-sm text-gray-600">Recommended date</p>
           </div>
@@ -256,11 +267,11 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
               { key: 'overview', label: 'Overview', icon: BarChart3 },
               { key: 'tests', label: 'Tests', icon: TestTube },
               { key: 'analytics', label: 'Analytics', icon: TrendingUp },
-              { key: 'recommendations', label: 'Recommendations', icon: CheckCircle }
+              { key: 'recommendations', label: 'Recommendations', icon: CheckCircle },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key as any)}
+                onClick={() => setActiveTab(key as unknown)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-1 ${
                   activeTab === key
                     ? 'border-blue-500 text-blue-600'
@@ -287,18 +298,16 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                     <p className="text-gray-600 mb-4">
                       Start monitoring your soil health with regular testing.
                     </p>
-                    <Button onClick={handleCreateTest}>
-                      Create First Test
-                    </Button>
+                    <Button onClick={handleCreateTest}>Create First Test</Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {soilTests.slice(0, 4).map((test) => {
+                    {soilTests.slice(0, 4).map(test => {
                       const phStatus = getPHStatus(test.ph_level);
                       const nitrogenStatus = getNutrientStatus(test.nitrogen_ppm, 'nitrogen');
                       const phosphorusStatus = getNutrientStatus(test.phosphorus_ppm, 'phosphorus');
                       const potassiumStatus = getNutrientStatus(test.potassium_ppm, 'potassium');
-                      
+
                       return (
                         <div key={test.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -308,7 +317,9 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                                 {new Date(test.test_date).toLocaleDateString()}
                               </p>
                             </div>
-                            <span className="text-sm text-gray-600 capitalize">{test.test_type}</span>
+                            <span className="text-sm text-gray-600 capitalize">
+                              {test.test_type}
+                            </span>
                           </div>
 
                           <div className="space-y-2 text-sm">
@@ -360,10 +371,15 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                         <TrendingUp className="h-4 w-4 text-green-500" />
                         <span className="font-medium">pH Trend</span>
                       </div>
-                      <p className={`text-lg font-bold capitalize ${
-                        soilMetrics?.trends?.ph_trend === 'improving' ? 'text-green-600' :
-                        soilMetrics?.trends?.ph_trend === 'stable' ? 'text-blue-600' : 'text-red-600'
-                      }`}>
+                      <p
+                        className={`text-lg font-bold capitalize ${
+                          soilMetrics?.trends?.ph_trend === 'improving'
+                            ? 'text-green-600'
+                            : soilMetrics?.trends?.ph_trend === 'stable'
+                              ? 'text-blue-600'
+                              : 'text-red-600'
+                        }`}
+                      >
                         {soilMetrics?.trends?.ph_trend || 'stable'}
                       </p>
                     </div>
@@ -373,10 +389,15 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                         <Leaf className="h-4 w-4 text-green-500" />
                         <span className="font-medium">Organic Matter</span>
                       </div>
-                      <p className={`text-lg font-bold capitalize ${
-                        soilMetrics?.trends?.organic_matter_trend === 'improving' ? 'text-green-600' :
-                        soilMetrics?.trends?.organic_matter_trend === 'stable' ? 'text-blue-600' : 'text-red-600'
-                      }`}>
+                      <p
+                        className={`text-lg font-bold capitalize ${
+                          soilMetrics?.trends?.organic_matter_trend === 'improving'
+                            ? 'text-green-600'
+                            : soilMetrics?.trends?.organic_matter_trend === 'stable'
+                              ? 'text-blue-600'
+                              : 'text-red-600'
+                        }`}
+                      >
                         {soilMetrics?.trends?.organic_matter_trend || 'stable'}
                       </p>
                     </div>
@@ -386,10 +407,15 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                         <Database className="h-4 w-4 text-purple-500" />
                         <span className="font-medium">Nutrients</span>
                       </div>
-                      <p className={`text-lg font-bold capitalize ${
-                        soilMetrics?.trends?.nutrient_trend === 'improving' ? 'text-green-600' :
-                        soilMetrics?.trends?.nutrient_trend === 'stable' ? 'text-blue-600' : 'text-red-600'
-                      }`}>
+                      <p
+                        className={`text-lg font-bold capitalize ${
+                          soilMetrics?.trends?.nutrient_trend === 'improving'
+                            ? 'text-green-600'
+                            : soilMetrics?.trends?.nutrient_trend === 'stable'
+                              ? 'text-blue-600'
+                              : 'text-red-600'
+                        }`}
+                      >
                         {soilMetrics?.trends?.nutrient_trend || 'stable'}
                       </p>
                     </div>
@@ -403,11 +429,12 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
             <div className="space-y-4">
               {/* Test Results */}
               <div className="space-y-4">
-                {soilTests.map((test) => {
+                {soilTests.map(test => {
                   const phStatus = getPHStatus(test.ph_level);
-                  const soilType = SOIL_TYPE_DESCRIPTIONS[test.soil_type as keyof typeof SOIL_TYPE_DESCRIPTIONS];
+                  const soilType =
+                    SOIL_TYPE_DESCRIPTIONS[test.soil_type as keyof typeof SOIL_TYPE_DESCRIPTIONS];
                   const optimalCrops = getOptimalCrops(test.ph_level);
-                  
+
                   return (
                     <div key={test.id} className="border rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
@@ -419,7 +446,9 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-gray-600">Soil Type</div>
-                          <div className="font-medium capitalize">{soilType?.name || test.soil_type}</div>
+                          <div className="font-medium capitalize">
+                            {soilType?.name || test.soil_type}
+                          </div>
                         </div>
                       </div>
 
@@ -427,27 +456,37 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                         <div>
                           <div className="text-sm text-gray-600 mb-1">pH Level</div>
                           <div className="text-2xl font-bold mb-1">{test.ph_level.toFixed(1)}</div>
-                          <div className={`text-sm capitalize ${phStatus.color}`}>{phStatus.status}</div>
+                          <div className={`text-sm capitalize ${phStatus.color}`}>
+                            {phStatus.status}
+                          </div>
                         </div>
-                        
+
                         <div>
                           <div className="text-sm text-gray-600 mb-1">Organic Matter</div>
-                          <div className="text-2xl font-bold mb-1">{test.organic_matter_percent.toFixed(1)}%</div>
-                          <div className="text-sm text-gray-600">{test.organic_matter_percent > 3 ? 'Good' : 'Needs improvement'}</div>
+                          <div className="text-2xl font-bold mb-1">
+                            {test.organic_matter_percent.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {test.organic_matter_percent > 3 ? 'Good' : 'Needs improvement'}
+                          </div>
                         </div>
-                        
+
                         <div>
                           <div className="text-sm text-gray-600 mb-1">Nitrogen</div>
                           <div className="text-2xl font-bold mb-1">{test.nitrogen_ppm} ppm</div>
-                          <div className={`text-sm ${getNutrientStatus(test.nitrogen_ppm, 'nitrogen').color}`}>
+                          <div
+                            className={`text-sm ${getNutrientStatus(test.nitrogen_ppm, 'nitrogen').color}`}
+                          >
                             {getNutrientStatus(test.nitrogen_ppm, 'nitrogen').status}
                           </div>
                         </div>
-                        
+
                         <div>
                           <div className="text-sm text-gray-600 mb-1">Phosphorus</div>
                           <div className="text-2xl font-bold mb-1">{test.phosphorus_ppm} ppm</div>
-                          <div className={`text-sm ${getNutrientStatus(test.phosphorus_ppm, 'phosphorus').color}`}>
+                          <div
+                            className={`text-sm ${getNutrientStatus(test.phosphorus_ppm, 'phosphorus').color}`}
+                          >
                             {getNutrientStatus(test.phosphorus_ppm, 'phosphorus').status}
                           </div>
                         </div>
@@ -456,10 +495,15 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                       {/* Optimal Crops */}
                       {optimalCrops.length > 0 && (
                         <div className="bg-green-50 rounded p-3 mb-4">
-                          <h5 className="font-medium text-green-800 mb-2">Optimal Crops for this pH</h5>
+                          <h5 className="font-medium text-green-800 mb-2">
+                            Optimal Crops for this pH
+                          </h5>
                           <div className="flex flex-wrap gap-2">
-                            {optimalCrops.map((crop) => (
-                              <span key={crop.name} className="px-2 py-1 text-xs bg-green-200 text-green-800 rounded">
+                            {optimalCrops.map(crop => (
+                              <span
+                                key={crop.name}
+                                className="px-2 py-1 text-xs bg-green-200 text-green-800 rounded"
+                              >
                                 {crop.name}
                               </span>
                             ))}
@@ -486,23 +530,34 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
               <div>
                 <h4 className="font-medium mb-4">Personalized Recommendations</h4>
                 <div className="space-y-4">
-                  {recommendations?.recommendations && recommendations.recommendations.length > 0 ? (
+                  {recommendations?.recommendations &&
+                  recommendations.recommendations.length > 0 ? (
                     <div className="space-y-4">
-                      {recommendations.recommendations.map((fieldRec: any) => (
+                      {recommendations.recommendations.map((fieldRec: unknown) => (
                         <div key={fieldRec.field_id} className="border rounded p-4">
                           <h5 className="font-medium mb-2">{fieldRec.field_name}</h5>
                           <div className="space-y-2">
-                            {fieldRec.recommendations.map((rec: any, index: number) => (
-                              <div key={index} className={`p-3 rounded ${
-                                rec.priority === 'high' ? 'bg-red-50 border border-red-200' :
-                                rec.priority === 'medium' ? 'bg-yellow-50 border border-yellow-200' :
-                                'bg-green-50 border border-green-200'
-                              }`}>
+                            {fieldRec.recommendations.map((rec: unknown, index: number) => (
+                              <div
+                                key={index}
+                                className={`p-3 rounded ${
+                                  rec.priority === 'high'
+                                    ? 'bg-red-50 border border-red-200'
+                                    : rec.priority === 'medium'
+                                      ? 'bg-yellow-50 border border-yellow-200'
+                                      : 'bg-green-50 border border-green-200'
+                                }`}
+                              >
                                 <div className="flex items-start gap-2">
-                                  <CheckCircle className={`h-5 w-5 mt-0.5 ${
-                                    rec.priority === 'high' ? 'text-red-500' :
-                                    rec.priority === 'medium' ? 'text-yellow-500' : 'text-green-500'
-                                  }`} />
+                                  <CheckCircle
+                                    className={`h-5 w-5 mt-0.5 ${
+                                      rec.priority === 'high'
+                                        ? 'text-red-500'
+                                        : rec.priority === 'medium'
+                                          ? 'text-yellow-500'
+                                          : 'text-green-500'
+                                    }`}
+                                  />
                                   <div>
                                     <p className="font-medium">{rec.description}</p>
                                     <p className="text-sm text-gray-600">
@@ -539,7 +594,7 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                       <li>• Test at the same time of year for consistency</li>
                     </ul>
                   </div>
-                  
+
                   <div className="border rounded p-4">
                     <h5 className="font-medium mb-3">Organic Matter</h5>
                     <ul className="text-sm space-y-2">
@@ -549,7 +604,7 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                       <li>• Avoid over-tilling</li>
                     </ul>
                   </div>
-                  
+
                   <div className="border rounded p-4">
                     <h5 className="font-medium mb-3">pH Management</h5>
                     <ul className="text-sm space-y-2">
@@ -559,7 +614,7 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
                       <li>• Retest after major amendments</li>
                     </ul>
                   </div>
-                  
+
                   <div className="border rounded p-4">
                     <h5 className="font-medium mb-3">Crop Rotation</h5>
                     <ul className="text-sm space-y-2">
@@ -581,17 +636,15 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h4 className="font-medium mb-4">New Soil Test Results</h4>
-            
+
             <div className="text-center py-8">
               <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                Soil test form would be implemented here
-              </p>
+              <p className="text-gray-600">Soil test form would be implemented here</p>
               <p className="text-sm text-gray-500 mt-2">
                 This would integrate with the createSoilTest function from the hook
               </p>
             </div>
-            
+
             <div className="flex justify-end space-x-2 mt-6">
               <Button variant="outline" onClick={() => setShowNewTestForm(false)}>
                 Close

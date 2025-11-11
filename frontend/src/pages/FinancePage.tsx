@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
-  Plus, 
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Plus,
   Search,
   Filter,
   Calendar,
@@ -21,7 +21,7 @@ import {
   Edit,
   Eye,
   Download,
-  Upload
+  Upload,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -109,7 +109,9 @@ interface FinanceFormData {
 export function FinancePage() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState<'overview' | 'entries' | 'budgets' | 'reports' | 'analytics'>('overview');
+  const [viewMode, setViewMode] = useState<
+    'overview' | 'entries' | 'budgets' | 'reports' | 'analytics'
+  >('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -124,28 +126,32 @@ export function FinancePage() {
     queryFn: async () => {
       const response = await fetch('/api/farms', {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch farms');
       return response.json();
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get enhanced finance entries
-  const { data: entries, isLoading, error } = useQuery({
+  const {
+    data: entries,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['finance', 'entries'],
     queryFn: async () => {
       const params = new URLSearchParams({
         analytics: 'true',
         ...(selectedType && { type: selectedType }),
         ...(selectedCategory && { category: selectedCategory }),
-        ...(selectedFarm && { farm_id: selectedFarm })
+        ...(selectedFarm && { farm_id: selectedFarm }),
       });
-      
+
       const response = await fetch(`/api/finance?${params}`, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -154,7 +160,7 @@ export function FinancePage() {
 
       return response.json() as Promise<FinanceEntry[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get budget categories
@@ -164,7 +170,7 @@ export function FinancePage() {
       const fiscalYear = new Date().getFullYear();
       const response = await fetch(`/api/finance/budgets?fiscal_year=${fiscalYear}`, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -173,7 +179,7 @@ export function FinancePage() {
 
       return response.json() as Promise<BudgetCategory[]>;
     },
-    enabled: isAuthenticated()
+    enabled: isAuthenticated(),
   });
 
   // Get financial analytics
@@ -181,11 +187,14 @@ export function FinancePage() {
     queryKey: ['finance', 'analytics'],
     queryFn: async () => {
       if (!farms || farms.length === 0) return null;
-      
-      const response = await fetch(`/api/finance/analytics?farm_id=${farms[0].id}&period=12months`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+
+      const response = await fetch(
+        `/api/finance/analytics?farm_id=${farms[0].id}&period=12months`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch analytics: ${response.statusText}`);
@@ -193,7 +202,7 @@ export function FinancePage() {
 
       return response.json();
     },
-    enabled: isAuthenticated() && farms && farms.length > 0
+    enabled: isAuthenticated() && farms && farms.length > 0,
   });
 
   const createEntryMutation = useMutation({
@@ -202,9 +211,9 @@ export function FinancePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify(entryData)
+        body: JSON.stringify(entryData),
       });
 
       if (!response.ok) {
@@ -216,7 +225,7 @@ export function FinancePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance'] });
       setShowCreateForm(false);
-    }
+    },
   });
 
   const updateEntryMutation = useMutation({
@@ -225,9 +234,9 @@ export function FinancePage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ id, ...entryData })
+        body: JSON.stringify({ id, ...entryData }),
       });
 
       if (!response.ok) {
@@ -239,18 +248,26 @@ export function FinancePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance'] });
       setEditingEntry(null);
-    }
+    },
   });
 
   const generateReportMutation = useMutation({
-    mutationFn: async ({ farm_id, report_type, report_period }: { farm_id: number; report_type: string; report_period: string }) => {
+    mutationFn: async ({
+      farm_id,
+      report_type,
+      report_period,
+    }: {
+      farm_id: number;
+      report_type: string;
+      report_period: string;
+    }) => {
       const response = await fetch('/api/finance/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ farm_id, report_type, report_period })
+        body: JSON.stringify({ farm_id, report_type, report_period }),
       });
 
       if (!response.ok) {
@@ -261,7 +278,7 @@ export function FinancePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance'] });
-    }
+    },
   });
 
   const handleCreateEntry = (entryData: FinanceFormData) => {
@@ -279,7 +296,7 @@ export function FinancePage() {
       generateReportMutation.mutate({
         farm_id: farms[0].id,
         report_type: 'monthly',
-        report_period: new Date().toISOString().substring(0, 7)
+        report_period: new Date().toISOString().substring(0, 7),
       });
     }
   };
@@ -295,39 +312,58 @@ export function FinancePage() {
     );
   }
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p>Loading finance data...</p>
-    </div>
-  </div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading finance data...</p>
+        </div>
+      </div>
+    );
 
-  if (error) return <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading finance data</h2>
-      <p className="text-gray-600">{error.message}</p>
-    </div>
-  </div>;
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading finance data</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
 
   // Calculate summary statistics
-  const totalRevenue = entries?.filter(entry => entry.type === 'income').reduce((sum, entry) => sum + entry.amount, 0) || 0;
-  const totalExpenses = entries?.filter(entry => entry.type === 'expense').reduce((sum, entry) => sum + entry.amount, 0) || 0;
-  const totalInvestments = entries?.filter(entry => entry.type === 'investment').reduce((sum, entry) => sum + entry.amount, 0) || 0;
+  const totalRevenue =
+    entries
+      ?.filter(entry => entry.type === 'income')
+      .reduce((sum, entry) => sum + entry.amount, 0) || 0;
+  const totalExpenses =
+    entries
+      ?.filter(entry => entry.type === 'expense')
+      .reduce((sum, entry) => sum + entry.amount, 0) || 0;
+  const totalInvestments =
+    entries
+      ?.filter(entry => entry.type === 'investment')
+      .reduce((sum, entry) => sum + entry.amount, 0) || 0;
   const netProfit = totalRevenue - totalExpenses;
   const grossMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
   // Filter entries
-  const filteredEntries = entries?.filter(entry => {
-    const matchesSearch = entry.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         entry.reference_id?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = !selectedType || entry.type === selectedType;
-    const matchesCategory = !selectedCategory || entry.budget_category === selectedCategory;
-    const matchesFarm = !selectedFarm || entry.farm_id.toString() === selectedFarm;
-    return matchesSearch && matchesType && matchesCategory && matchesFarm;
-  }) || [];
+  const filteredEntries =
+    entries?.filter(entry => {
+      const matchesSearch =
+        entry.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.reference_id?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = !selectedType || entry.type === selectedType;
+      const matchesCategory = !selectedCategory || entry.budget_category === selectedCategory;
+      const matchesFarm = !selectedFarm || entry.farm_id.toString() === selectedFarm;
+      return matchesSearch && matchesType && matchesCategory && matchesFarm;
+    }) || [];
 
   // Get unique categories for filter dropdown
-  const categories = [...new Set(entries?.map(entry => entry.budget_category).filter(Boolean) || [])];
+  const categories = [
+    ...new Set(entries?.map(entry => entry.budget_category).filter(Boolean) || []),
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -367,11 +403,11 @@ export function FinancePage() {
               { key: 'overview', label: 'Overview', icon: DollarSign },
               { key: 'entries', label: 'Entries', icon: Receipt },
               { key: 'budgets', label: 'Budgets', icon: Target },
-              { key: 'reports', label: 'Reports', icon: FileText }
+              { key: 'reports', label: 'Reports', icon: FileText },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as any)}
+                onClick={() => setViewMode(key as unknown)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-blue-500 text-blue-600'
@@ -399,9 +435,7 @@ export function FinancePage() {
                   <div className="text-2xl font-bold text-green-600">
                     ${totalRevenue.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    From all farms
-                  </p>
+                  <p className="text-xs text-muted-foreground">From all farms</p>
                 </CardContent>
               </Card>
 
@@ -414,9 +448,7 @@ export function FinancePage() {
                   <div className="text-2xl font-bold text-red-600">
                     ${totalExpenses.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Operating costs
-                  </p>
+                  <p className="text-xs text-muted-foreground">Operating costs</p>
                 </CardContent>
               </Card>
 
@@ -426,12 +458,12 @@ export function FinancePage() {
                   <DollarSign className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div
+                    className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                  >
                     ${netProfit.toLocaleString()}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    After expenses
-                  </p>
+                  <p className="text-xs text-muted-foreground">After expenses</p>
                 </CardContent>
               </Card>
 
@@ -441,12 +473,12 @@ export function FinancePage() {
                   <PieChart className="h-4 w-4 text-purple-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${grossMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div
+                    className={`text-2xl font-bold ${grossMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                  >
                     {grossMargin.toFixed(1)}%
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Profit margin
-                  </p>
+                  <p className="text-xs text-muted-foreground">Profit margin</p>
                 </CardContent>
               </Card>
             </div>
@@ -455,16 +487,16 @@ export function FinancePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Cash Flow Trends</CardTitle>
-                <CardDescription>
-                  Monthly income vs expenses over time
-                </CardDescription>
+                <CardDescription>Monthly income vs expenses over time</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                     <p className="text-gray-600">Cash flow chart would go here</p>
-                    <p className="text-sm text-gray-500">Integration with charting library needed</p>
+                    <p className="text-sm text-gray-500">
+                      Integration with charting library needed
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -474,38 +506,58 @@ export function FinancePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Financial Entries</CardTitle>
-                <CardDescription>
-                  Latest transactions and financial activities
-                </CardDescription>
+                <CardDescription>Latest transactions and financial activities</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {entries?.slice(0, 5).map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  {entries?.slice(0, 5).map(entry => (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          entry.type === 'income' ? 'bg-green-500' :
-                          entry.type === 'expense' ? 'bg-red-500' : 'bg-blue-500'
-                        }`} />
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            entry.type === 'income'
+                              ? 'bg-green-500'
+                              : entry.type === 'expense'
+                                ? 'bg-red-500'
+                                : 'bg-blue-500'
+                          }`}
+                        />
                         <div>
-                          <p className="text-sm font-medium">{entry.description || 'No description'}</p>
+                          <p className="text-sm font-medium">
+                            {entry.description || 'No description'}
+                          </p>
                           <p className="text-xs text-gray-600">
-                            {entry.farm_name} • {entry.type.toUpperCase()} • {new Date(entry.entry_date).toLocaleDateString()}
+                            {entry.farm_name} • {entry.type.toUpperCase()} •{' '}
+                            {new Date(entry.entry_date).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={
-                          entry.type === 'income' ? 'default' :
-                          entry.type === 'expense' ? 'secondary' : 'outline'
-                        }>
+                        <Badge
+                          variant={
+                            entry.type === 'income'
+                              ? 'default'
+                              : entry.type === 'expense'
+                                ? 'secondary'
+                                : 'outline'
+                          }
+                        >
                           {entry.type}
                         </Badge>
-                        <span className={`text-sm font-medium ${
-                          entry.type === 'income' ? 'text-green-600' : 
-                          entry.type === 'expense' ? 'text-red-600' : 'text-blue-600'
-                        }`}>
-                          {entry.type === 'income' ? '+' : entry.type === 'expense' ? '-' : ''}${entry.amount.toLocaleString()}
+                        <span
+                          className={`text-sm font-medium ${
+                            entry.type === 'income'
+                              ? 'text-green-600'
+                              : entry.type === 'expense'
+                                ? 'text-red-600'
+                                : 'text-blue-600'
+                          }`}
+                        >
+                          {entry.type === 'income' ? '+' : entry.type === 'expense' ? '-' : ''}$
+                          {entry.amount.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -522,21 +574,27 @@ export function FinancePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {budgets?.slice(0, 5).map((budget) => {
+                    {budgets?.slice(0, 5).map(budget => {
                       const spentPercentage = (budget.spent_amount / budget.budgeted_amount) * 100;
                       return (
                         <div key={budget.id}>
                           <div className="flex justify-between text-sm">
                             <span>{budget.category_name}</span>
-                            <span>${budget.spent_amount.toLocaleString()} / ${budget.budgeted_amount.toLocaleString()}</span>
+                            <span>
+                              ${budget.spent_amount.toLocaleString()} / $
+                              {budget.budgeted_amount.toLocaleString()}
+                            </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                            <div 
+                            <div
                               className={`h-2 rounded-full ${
-                                spentPercentage > 100 ? 'bg-red-500' : 
-                                spentPercentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                spentPercentage > 100
+                                  ? 'bg-red-500'
+                                  : spentPercentage > 80
+                                    ? 'bg-yellow-500'
+                                    : 'bg-green-500'
                               }`}
-                              style={{width: `${Math.min(spentPercentage, 100)}%`}}
+                              style={{ width: `${Math.min(spentPercentage, 100)}%` }}
                             ></div>
                           </div>
                         </div>
@@ -554,22 +612,35 @@ export function FinancePage() {
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Profitability</span>
-                      <span className={`text-sm font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span
+                        className={`text-sm font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
                         {grossMargin.toFixed(1)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Budget Utilization</span>
                       <span className="text-sm font-medium">
-                        {budgets && budgets.length > 0 ? 
-                          Math.round((budgets.reduce((sum, b) => sum + (b.spent_amount / b.budgeted_amount), 0) / budgets.length) * 100)
-                          : 0}%
+                        {budgets && budgets.length > 0
+                          ? Math.round(
+                              (budgets.reduce(
+                                (sum, b) => sum + b.spent_amount / b.budgeted_amount,
+                                0
+                              ) /
+                                budgets.length) *
+                                100
+                            )
+                          : 0}
+                        %
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Tax Deductible</span>
                       <span className="text-sm font-medium">
-                        ${entries?.filter(e => e.tax_deductible).reduce((sum, e) => sum + e.amount, 0) || 0}
+                        $
+                        {entries
+                          ?.filter(e => e.tax_deductible)
+                          .reduce((sum, e) => sum + e.amount, 0) || 0}
                       </span>
                     </div>
                   </div>
@@ -590,13 +661,13 @@ export function FinancePage() {
                   type="text"
                   placeholder="Search entries..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <select
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={e => setSelectedType(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Types</option>
@@ -606,12 +677,14 @@ export function FinancePage() {
               </select>
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={e => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Categories</option>
                 {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
                 ))}
               </select>
               <Button onClick={handleGenerateReport} variant="outline">
@@ -623,23 +696,28 @@ export function FinancePage() {
             {/* Entries List */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="divide-y divide-gray-200">
-                {filteredEntries.map((entry) => (
+                {filteredEntries.map(entry => (
                   <div key={entry.id} className="p-6 hover:bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full ${
-                          entry.type === 'income' ? 'bg-green-500' :
-                          entry.type === 'expense' ? 'bg-red-500' : 'bg-blue-500'
-                        }`} />
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            entry.type === 'income'
+                              ? 'bg-green-500'
+                              : entry.type === 'expense'
+                                ? 'bg-red-500'
+                                : 'bg-blue-500'
+                          }`}
+                        />
                         <div className="flex-1">
-                          <h3 className="text-lg font-medium text-gray-900">{entry.description || 'No description'}</h3>
+                          <h3 className="text-lg font-medium text-gray-900">
+                            {entry.description || 'No description'}
+                          </h3>
                           <div className="flex items-center gap-4 mt-1">
                             <span className="text-sm text-gray-500">
                               📅 {new Date(entry.entry_date).toLocaleDateString()}
                             </span>
-                            <span className="text-sm text-gray-500">
-                              🏢 {entry.farm_name}
-                            </span>
+                            <span className="text-sm text-gray-500">🏢 {entry.farm_name}</span>
                             {entry.budget_category && (
                               <span className="text-sm text-gray-500">
                                 🏷️ {entry.budget_category}
@@ -654,16 +732,26 @@ export function FinancePage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={
-                          entry.type === 'income' ? 'default' :
-                          entry.type === 'expense' ? 'secondary' : 'outline'
-                        }>
+                        <Badge
+                          variant={
+                            entry.type === 'income'
+                              ? 'default'
+                              : entry.type === 'expense'
+                                ? 'secondary'
+                                : 'outline'
+                          }
+                        >
                           {entry.type}
                         </Badge>
-                        <Badge variant={
-                          entry.approval_status === 'approved' ? 'default' :
-                          entry.approval_status === 'pending' ? 'secondary' : 'destructive'
-                        }>
+                        <Badge
+                          variant={
+                            entry.approval_status === 'approved'
+                              ? 'default'
+                              : entry.approval_status === 'pending'
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                        >
                           {entry.approval_status}
                         </Badge>
                         {entry.tax_deductible && (
@@ -671,11 +759,17 @@ export function FinancePage() {
                             Tax Deductible
                           </Badge>
                         )}
-                        <span className={`text-lg font-bold ${
-                          entry.type === 'income' ? 'text-green-600' : 
-                          entry.type === 'expense' ? 'text-red-600' : 'text-blue-600'
-                        }`}>
-                          {entry.type === 'income' ? '+' : entry.type === 'expense' ? '-' : ''}${entry.amount.toLocaleString()}
+                        <span
+                          className={`text-lg font-bold ${
+                            entry.type === 'income'
+                              ? 'text-green-600'
+                              : entry.type === 'expense'
+                                ? 'text-red-600'
+                                : 'text-blue-600'
+                          }`}
+                        >
+                          {entry.type === 'income' ? '+' : entry.type === 'expense' ? '-' : ''}$
+                          {entry.amount.toLocaleString()}
                         </span>
                         <div className="flex items-center gap-1">
                           <Button
@@ -704,10 +798,9 @@ export function FinancePage() {
                   <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No entries found</h4>
                   <p className="text-gray-600 mb-4">
-                    {searchTerm || selectedType || selectedCategory || selectedFarm 
-                      ? 'Try adjusting your search or filter criteria' 
-                      : 'Start by creating your first financial entry'
-                    }
+                    {searchTerm || selectedType || selectedCategory || selectedFarm
+                      ? 'Try adjusting your search or filter criteria'
+                      : 'Start by creating your first financial entry'}
                   </p>
                   <Button onClick={() => setShowCreateForm(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -731,53 +824,62 @@ export function FinancePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {budgets?.map((budget) => (
+              {budgets?.map(budget => (
                 <Card key={budget.id}>
                   <CardHeader>
                     <CardTitle className="text-lg">{budget.category_name}</CardTitle>
-                    <CardDescription>
-                      Fiscal Year {budget.fiscal_year}
-                    </CardDescription>
+                    <CardDescription>Fiscal Year {budget.fiscal_year}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Budgeted:</span>
-                        <span className="text-sm font-medium">${budget.budgeted_amount.toLocaleString()}</span>
+                        <span className="text-sm font-medium">
+                          ${budget.budgeted_amount.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Spent:</span>
-                        <span className="text-sm font-medium">${budget.spent_amount.toLocaleString()}</span>
+                        <span className="text-sm font-medium">
+                          ${budget.spent_amount.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Remaining:</span>
-                        <span className={`text-sm font-medium ${
-                          budget.remaining_budget >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <span
+                          className={`text-sm font-medium ${
+                            budget.remaining_budget >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}
+                        >
                           ${budget.remaining_budget.toLocaleString()}
                         </span>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Utilization</span>
-                          <span>{Math.round((budget.spent_amount / budget.budgeted_amount) * 100)}%</span>
+                          <span>
+                            {Math.round((budget.spent_amount / budget.budgeted_amount) * 100)}%
+                          </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className={`h-2 rounded-full ${
-                              budget.spent_amount / budget.budgeted_amount > 1 ? 'bg-red-500' : 
-                              budget.spent_amount / budget.budgeted_amount > 0.8 ? 'bg-yellow-500' : 'bg-green-500'
+                              budget.spent_amount / budget.budgeted_amount > 1
+                                ? 'bg-red-500'
+                                : budget.spent_amount / budget.budgeted_amount > 0.8
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
                             }`}
-                            style={{width: `${Math.min((budget.spent_amount / budget.budgeted_amount) * 100, 100)}%`}}
+                            style={{
+                              width: `${Math.min((budget.spent_amount / budget.budgeted_amount) * 100, 100)}%`,
+                            }}
                           ></div>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-2">
-                        <Badge variant="default">
-                          {budget.farm_name}
-                        </Badge>
+                        <Badge variant="default">{budget.farm_name}</Badge>
                         <div className="flex items-center gap-2">
                           <Button size="sm" variant="outline">
                             <Edit className="h-3 w-3" />
@@ -809,7 +911,7 @@ export function FinancePage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Financial Reports</h2>
-              <Button 
+              <Button
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={handleGenerateReport}
                 disabled={generateReportMutation.isPending}
@@ -826,7 +928,8 @@ export function FinancePage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600 mb-4">
-                    Comprehensive monthly financial summary including revenue, expenses, and profit analysis.
+                    Comprehensive monthly financial summary including revenue, expenses, and profit
+                    analysis.
                   </p>
                   <Button className="w-full" variant="outline">
                     <Download className="h-4 w-4 mr-2" />
@@ -872,7 +975,7 @@ export function FinancePage() {
         {viewMode === 'analytics' && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">Financial Analytics</h2>
-            
+
             {analytics && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
@@ -895,9 +998,13 @@ export function FinancePage() {
                       </div>
                       <div className="flex justify-between items-center border-t pt-2">
                         <span className="text-sm">Net Cash Flow</span>
-                        <span className={`text-lg font-bold ${
-                          (analytics.cash_flow?.net_flow || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <span
+                          className={`text-lg font-bold ${
+                            (analytics.cash_flow?.net_flow || 0) >= 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}
+                        >
                           ${analytics.cash_flow?.net_flow?.toLocaleString() || 0}
                         </span>
                       </div>
@@ -951,7 +1058,7 @@ export function FinancePage() {
 
 interface FinanceEntryModalProps {
   entry?: FinanceEntry | null;
-  farms: any[];
+  farms: unknown[];
   onSave: (data: FinanceFormData) => void;
   onClose: () => void;
   isLoading: boolean;
@@ -976,7 +1083,7 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
     recurring_pattern: entry?.recurring_pattern || '',
     budget_category: entry?.budget_category || '',
     tax_deductible: entry?.tax_deductible || false,
-    bank_account: entry?.bank_account || ''
+    bank_account: entry?.bank_account || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -995,41 +1102,37 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Farm *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm *</label>
                 <select
                   value={formData.farm_id}
-                  onChange={(e) => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
+                  onChange={e => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  {farms.map((farm) => (
-                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                  {farms.map(farm => (
+                    <option key={farm.id} value={farm.id}>
+                      {farm.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Entry Date *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Entry Date *</label>
                 <input
                   type="date"
                   value={formData.entry_date}
-                  onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
+                  onChange={e => setFormData({ ...formData, entry_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                  onChange={e => setFormData({ ...formData, type: e.target.value as unknown })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -1040,26 +1143,24 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                  onChange={e =>
+                    setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Currency
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
                 <select
                   value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  onChange={e => setFormData({ ...formData, currency: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="USD">USD</option>
@@ -1070,13 +1171,11 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Account</label>
                 <input
                   type="text"
                   value={formData.account}
-                  onChange={(e) => setFormData({ ...formData, account: e.target.value })}
+                  onChange={e => setFormData({ ...formData, account: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Bank account or cash"
                 />
@@ -1088,7 +1187,7 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
                 </label>
                 <select
                   value={formData.approval_status}
-                  onChange={(e) => setFormData({ ...formData, approval_status: e.target.value })}
+                  onChange={e => setFormData({ ...formData, approval_status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="pending">Pending</option>
@@ -1105,33 +1204,29 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
                 <input
                   type="text"
                   value={formData.budget_category}
-                  onChange={(e) => setFormData({ ...formData, budget_category: e.target.value })}
+                  onChange={e => setFormData({ ...formData, budget_category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Feed, Labor, Equipment"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tax Category
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tax Category</label>
                 <input
                   type="text"
                   value={formData.tax_category}
-                  onChange={(e) => setFormData({ ...formData, tax_category: e.target.value })}
+                  onChange={e => setFormData({ ...formData, tax_category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Operating, Capital, Deduction"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                 <input
                   type="text"
                   value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  onChange={e => setFormData({ ...formData, department: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Livestock, Crops, Admin"
                 />
@@ -1139,12 +1234,10 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Detailed description of the transaction..."
@@ -1159,7 +1252,7 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
                 <input
                   type="text"
                   value={formData.reference_id}
-                  onChange={(e) => setFormData({ ...formData, reference_id: e.target.value })}
+                  onChange={e => setFormData({ ...formData, reference_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Invoice, receipt, or check number"
                 />
@@ -1172,7 +1265,7 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
                 <input
                   type="text"
                   value={formData.receipt_number}
-                  onChange={(e) => setFormData({ ...formData, receipt_number: e.target.value })}
+                  onChange={e => setFormData({ ...formData, receipt_number: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Receipt or document number"
                 />
@@ -1181,26 +1274,22 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project ID
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project ID</label>
                 <input
                   type="text"
                   value={formData.project_id}
-                  onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
+                  onChange={e => setFormData({ ...formData, project_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Associated project"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bank Account
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account</label>
                 <input
                   type="text"
                   value={formData.bank_account}
-                  onChange={(e) => setFormData({ ...formData, bank_account: e.target.value })}
+                  onChange={e => setFormData({ ...formData, bank_account: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Specific bank account"
                 />
@@ -1212,31 +1301,20 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
                 <input
                   type="checkbox"
                   checked={formData.tax_deductible}
-                  onChange={(e) => setFormData({ ...formData, tax_deductible: e.target.checked })}
+                  onChange={e => setFormData({ ...formData, tax_deductible: e.target.checked })}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Tax Deductible</span>
               </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Check if this expense is tax deductible
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Check if this expense is tax deductible</p>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isLoading ? 'Saving...' : (entry ? 'Update Entry' : 'Create Entry')}
+              <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+                {isLoading ? 'Saving...' : entry ? 'Update Entry' : 'Create Entry'}
               </Button>
             </div>
           </form>

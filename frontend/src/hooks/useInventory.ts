@@ -27,7 +27,7 @@ export function useInventory() {
     isLoading,
     error,
     refetch,
-    isError
+    isError,
   } = useQuery({
     queryKey: ['inventory', currentFarm?.id],
     queryFn: async () => {
@@ -38,48 +38,44 @@ export function useInventory() {
     staleTime: cacheConfig.staleTime.medium,
     gcTime: cacheConfig.gcTime.medium,
     retry: 2,
-    select: (data) => {
+    select: data => {
       // Sort by stock status (critical first, then low, then normal)
       return [...data].sort((a, b) => {
         const statusOrder: Record<string, number> = {
           critical: 0,
           low: 1,
-          normal: 2
+          normal: 2,
         };
-        return (statusOrder[a.stock_status || 'normal'] || 2) - 
-               (statusOrder[b.stock_status || 'normal'] || 2);
+        return (
+          (statusOrder[a.stock_status || 'normal'] || 2) -
+          (statusOrder[b.stock_status || 'normal'] || 2)
+        );
       });
-    }
+    },
   });
 
   // Mutation: Create new inventory item
   const createItemMutation = useMutation({
     mutationFn: async (data: CreateInventoryForm) => {
-      return apiClient.post<InventoryItem>(
-        apiEndpoints.inventory.create,
-        {
-          farm_id: currentFarm?.id,
-          ...data
-        }
-      );
+      return apiClient.post<InventoryItem>(apiEndpoints.inventory.create, {
+        farm_id: currentFarm?.id,
+        ...data,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    }
+    },
   });
 
   // Mutation: Update inventory item
   const updateItemMutation = useMutation({
     mutationFn: async (item: Partial<InventoryItem> & { id: string }) => {
       const { id, ...data } = item;
-      return apiClient.put<InventoryItem>(
-        apiEndpoints.inventory.update,
-        { id, ...data }
-      );
+      return apiClient.put<InventoryItem>(apiEndpoints.inventory.update, { id, ...data });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    }
+    },
   });
 
   // Mutation: Delete inventory item
@@ -89,7 +85,7 @@ export function useInventory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    }
+    },
   });
 
   // Computed: Count items by status
@@ -105,7 +101,7 @@ export function useInventory() {
     return sum + value;
   }, 0);
 
-  // Computed: Check if any critical stock warnings
+  // Computed: Check if unknown critical stock warnings
   const hasCriticalStock = itemsByStatus.critical > 0;
 
   return {

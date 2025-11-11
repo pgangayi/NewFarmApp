@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from './ui/button';
-import { 
-  MapPin, 
-  ChevronDown, 
-  User, 
-  Settings, 
-  LogOut, 
+import GlobalSearch from './GlobalSearch';
+import {
+  MapPin,
+  ChevronDown,
+  User,
+  Settings,
+  LogOut,
   Plus,
   Bell,
+  Search,
   Sprout,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 
 interface Farm {
@@ -30,6 +32,7 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
   const { user, signOut } = useAuth();
   const [showFarmDropdown, setShowFarmDropdown] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -94,7 +97,7 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
                       <p className="text-xs text-gray-500">Choose a farm to manage</p>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
-                      {farms.map((farm) => (
+                      {farms.map(farm => (
                         <button
                           key={farm.id}
                           onClick={() => handleFarmSelect(farm)}
@@ -125,6 +128,10 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
           <div className="flex items-center space-x-3">
             {/* Quick Actions */}
             <div className="hidden md:flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={() => setShowGlobalSearch(true)}>
+                <Search className="h-4 w-4 mr-1" />
+                Search
+              </Button>
               <Button variant="outline" size="sm" onClick={onAddCrop}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Crop
@@ -134,6 +141,16 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
                 Reports
               </Button>
             </div>
+
+            {/* Mobile Search Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={() => setShowGlobalSearch(true)}
+            >
+              <Search className="h-5 w-5" />
+            </Button>
 
             {/* Notifications */}
             <Button variant="ghost" size="sm" className="relative">
@@ -151,12 +168,8 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
                   <User className="h-4 w-4 text-blue-600" />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user?.name || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {user?.email}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
                 <ChevronDown className="h-4 w-4" />
               </button>
@@ -164,12 +177,8 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
               {showUserMenu && (
                 <div className="absolute top-full right-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   <div className="p-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user?.name || 'User'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {user?.email}
-                    </p>
+                    <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
                   <div className="p-1">
                     <button
@@ -199,14 +208,21 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
 
       {/* Overlay to close dropdowns when clicking outside */}
       {(showFarmDropdown || showUserMenu) && (
-        <div 
-          className="fixed inset-0 z-40" 
+        <div
+          className="fixed inset-0 z-40"
           onClick={() => {
             setShowFarmDropdown(false);
             setShowUserMenu(false);
           }}
         />
       )}
+
+      {/* Global Search Modal */}
+      <GlobalSearch
+        isOpen={showGlobalSearch}
+        onClose={() => setShowGlobalSearch(false)}
+        currentFarmId={currentFarm ? parseInt(currentFarm.id) : undefined}
+      />
     </header>
   );
 }

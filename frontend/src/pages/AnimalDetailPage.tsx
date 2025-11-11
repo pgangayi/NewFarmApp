@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import _React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { ArrowLeft, Heart, TrendingUp, Baby, FileText } from 'lucide-react';
@@ -52,12 +52,16 @@ interface AnimalDetailPageProps {
 export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
   const { getAuthHeaders } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  
+
   // Get animal ID from URL params or props
   const urlParams = new URLSearchParams(window.location.search);
   const id = animalId || urlParams.get('id');
 
-  const { data: animal, isLoading, error } = useQuery({
+  const {
+    data: animal,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['animal', id],
     queryFn: async () => {
       const response = await fetch(`/api/animals/${id}`, {
@@ -77,10 +81,11 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
     if (!birthDate) return null;
     const birth = new Date(birthDate);
     const now = new Date();
-    const months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+    const months =
+      (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
     const years = Math.floor(months / 12);
     const remainingMonths = months % 12;
-    
+
     if (years > 0) {
       return remainingMonths > 0 ? `${years}y ${remainingMonths}m` : `${years}y`;
     }
@@ -134,7 +139,10 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Animal Not Found</h2>
-          <p className="text-gray-600 mb-4">The animal you're looking for doesn't exist or you don't have access to it.</p>
+          <p className="text-gray-600 mb-4">
+            The animal you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to
+            it.
+          </p>
           <a
             href="/animals"
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors inline-block"
@@ -189,7 +197,9 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
                 {animal.identification_tag && (
                   <div>
                     <span className="font-medium text-gray-700">ID Tag:</span>
-                    <span className="text-gray-600 ml-2 font-mono">{animal.identification_tag}</span>
+                    <span className="text-gray-600 ml-2 font-mono">
+                      {animal.identification_tag}
+                    </span>
                   </div>
                 )}
                 {animal.sex && (
@@ -269,7 +279,9 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
                     {animal.breed_purpose && (
                       <div>
                         <span className="font-medium text-gray-700">Purpose:</span>
-                        <span className="text-gray-600 ml-2 capitalize">{animal.breed_purpose.replace('_', ' ')}</span>
+                        <span className="text-gray-600 ml-2 capitalize">
+                          {animal.breed_purpose.replace('_', ' ')}
+                        </span>
                       </div>
                     )}
                     {animal.breed_avg_weight && (
@@ -281,7 +293,9 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
                     {animal.breed_temperament && (
                       <div>
                         <span className="font-medium text-gray-700">Temperament:</span>
-                        <span className="text-gray-600 ml-2 capitalize">{animal.breed_temperament}</span>
+                        <span className="text-gray-600 ml-2 capitalize">
+                          {animal.breed_temperament}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -293,20 +307,28 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Status</h3>
               <div className="space-y-3">
-                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getHealthStatusColor(animal.health_status)}`}>
+                <span
+                  className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getHealthStatusColor(animal.health_status)}`}
+                >
                   {animal.health_status.replace('_', ' ')}
                 </span>
-                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(animal.status)}`}>
+                <span
+                  className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(animal.status)}`}
+                >
                   {animal.status}
                 </span>
                 <div className="text-sm">
                   <span className="font-medium text-gray-700">Vaccination Status:</span>
-                  <span className="text-gray-600 ml-2 capitalize">{animal.vaccination_status.replace('_', ' ')}</span>
+                  <span className="text-gray-600 ml-2 capitalize">
+                    {animal.vaccination_status.replace('_', ' ')}
+                  </span>
                 </div>
                 {animal.last_vet_check && (
                   <div className="text-sm">
                     <span className="font-medium text-gray-700">Last Vet Check:</span>
-                    <span className="text-gray-600 ml-2">{new Date(animal.last_vet_check).toLocaleDateString()}</span>
+                    <span className="text-gray-600 ml-2">
+                      {new Date(animal.last_vet_check).toLocaleDateString()}
+                    </span>
                   </div>
                 )}
               </div>
@@ -322,7 +344,9 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
                   {animal.acquisition_date && (
                     <div className="text-sm">
                       <span className="font-medium text-gray-700">Acquired:</span>
-                      <span className="text-gray-600 ml-2">{new Date(animal.acquisition_date).toLocaleDateString()}</span>
+                      <span className="text-gray-600 ml-2">
+                        {new Date(animal.acquisition_date).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -338,15 +362,19 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
                     <Heart className="h-5 w-5 text-blue-600" />
                     <span className="text-sm font-medium text-blue-700">Health Records</span>
                   </div>
-                  <span className="text-lg font-bold text-blue-900">{animal.health_records_count}</span>
+                  <span className="text-lg font-bold text-blue-900">
+                    {animal.health_records_count}
+                  </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-600" />
                     <span className="text-sm font-medium text-green-700">Production Records</span>
                   </div>
-                  <span className="text-lg font-bold text-green-900">{animal.production_records_count}</span>
+                  <span className="text-lg font-bold text-green-900">
+                    {animal.production_records_count}
+                  </span>
                 </div>
 
                 {animal.sex === 'female' && (
@@ -355,7 +383,9 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
                       <Baby className="h-5 w-5 text-pink-600" />
                       <span className="text-sm font-medium text-pink-700">Breeding Records</span>
                     </div>
-                    <span className="text-lg font-bold text-pink-900">{animal.breeding_records_count}</span>
+                    <span className="text-lg font-bold text-pink-900">
+                      {animal.breeding_records_count}
+                    </span>
                   </div>
                 )}
               </div>
@@ -368,7 +398,7 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
       <div className="max-w-7xl mx-auto px-6">
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
-            {tabs.map((tab) => {
+            {tabs.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
@@ -402,24 +432,22 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
         )}
 
         {activeTab === 'production' && (
-          <AnimalProductionTracker 
-            animalId={animal.id} 
+          <AnimalProductionTracker
+            animalId={animal.id}
             animalName={animal.name}
             productionType={animal.production_type}
           />
         )}
 
         {activeTab === 'breeding' && animal.sex === 'female' && (
-          <AnimalBreedingManager 
-            animalId={animal.id} 
+          <AnimalBreedingManager
+            animalId={animal.id}
             animalName={animal.name}
             animalSex={animal.sex}
           />
         )}
 
-        {activeTab === 'analytics' && (
-          <AnimalAnalyticsDashboard farmId={animal.farm_id} />
-        )}
+        {activeTab === 'analytics' && <AnimalAnalyticsDashboard farmId={animal.farm_id} />}
       </div>
     </div>
   );

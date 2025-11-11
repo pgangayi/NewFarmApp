@@ -292,7 +292,7 @@ export interface ListOptions {
   pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -303,6 +303,6 @@ export interface ApiErrorResponse {
   error: string;
   message: string;
   statusCode: number;
-  details?: any;
+  details?: unknown;
   timestamp: string;
 }

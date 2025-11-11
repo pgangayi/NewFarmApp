@@ -3,16 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useRotation, useRotationByFarm } from '../hooks/useRotation';
 import { useFarm } from '../hooks/useFarm';
 import { Button } from './ui/button';
-import { 
-  RotateCcw, 
-  Plus, 
-  Calendar, 
-  CheckCircle, 
+import {
+  RotateCcw,
+  Plus,
+  Calendar,
+  CheckCircle,
   AlertTriangle,
   TrendingUp,
   Minus,
   Edit,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 interface CropRotationProps {
@@ -20,20 +20,20 @@ interface CropRotationProps {
 }
 
 const CROP_FAMILY_GROUPS = {
-  'Brassicas': ['cabbage', 'broccoli', 'cauliflower', 'kale'],
-  'Solanaceae': ['tomato', 'pepper', 'eggplant', 'potato'],
-  'Legumes': ['beans', 'peas', 'lentils', 'chickpeas'],
-  'Grains': ['corn', 'wheat', 'rice', 'barley'],
+  Brassicas: ['cabbage', 'broccoli', 'cauliflower', 'kale'],
+  Solanaceae: ['tomato', 'pepper', 'eggplant', 'potato'],
+  Legumes: ['beans', 'peas', 'lentils', 'chickpeas'],
+  Grains: ['corn', 'wheat', 'rice', 'barley'],
   'Root Crops': ['carrot', 'beet', 'radish', 'turnip'],
   'Leafy Greens': ['lettuce', 'spinach', 'arugula', 'kale'],
-  'Cucurbits': ['cucumber', 'squash', 'pumpkin', 'melon']
+  Cucurbits: ['cucumber', 'squash', 'pumpkin', 'melon'],
 };
 
 const DISEASE_PREVENTION = {
-  'Brassicas': ['Avoid root crops before', 'Rotate with legumes', '3+ year rotation'],
-  'Solanaceae': ['Avoid other solanaceae', 'Rotate with grasses', '4+ year rotation'],
-  'Legumes': ['Excellent nitrogen fixers', 'Follow with heavy feeders', '2-3 year rotation'],
-  'Grains': ['Break disease cycles', 'Soil building crops', '2-3 year rotation']
+  Brassicas: ['Avoid root crops before', 'Rotate with legumes', '3+ year rotation'],
+  Solanaceae: ['Avoid other solanaceae', 'Rotate with grasses', '4+ year rotation'],
+  Legumes: ['Excellent nitrogen fixers', 'Follow with heavy feeders', '2-3 year rotation'],
+  Grains: ['Break disease cycles', 'Soil building crops', '2-3 year rotation'],
 };
 
 export function CropRotationPlanner({ farmId }: CropRotationProps) {
@@ -43,13 +43,8 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
   const [isAddingPlan, setIsAddingPlan] = useState(false);
 
   // Use the rotation hook
-  const { 
-    rotationPlans, 
-    isLoading, 
-    error,
-    createRotationPlan,
-    isCreating
-  } = useRotationByFarm(farmId);
+  const { rotationPlans, isLoading, error, createRotationPlan, isCreating } =
+    useRotationByFarm(farmId);
 
   // Fetch fields for the farm
   const { data: fields } = useQuery({
@@ -62,7 +57,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
     enabled: !!farmId,
   });
 
-  const handleCreateRotationPlan = (plan: any) => {
+  const handleCreateRotationPlan = (plan: unknown) => {
     createRotationPlan(plan);
     setIsAddingPlan(false);
   };
@@ -76,17 +71,20 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
     return 'Other';
   };
 
-  const checkRotationHealth = (sequence: any[]) => {
+  const checkRotationHealth = (sequence: unknown[]) => {
     const issues = [];
     const recommendations = [];
-    
+
     // Check for crop family repetition
     const cropFamilies = sequence.map(crop => getCropFamily(crop.crop_type));
-    const familyCounts = cropFamilies.reduce((acc, family) => {
-      acc[family] = (acc[family] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
+    const familyCounts = cropFamilies.reduce(
+      (acc, family) => {
+        acc[family] = (acc[family] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
     // Flag families repeated within 3 years
     for (const [family, count] of Object.entries(familyCounts)) {
       if (count > 1 && family !== 'Other') {
@@ -96,19 +94,19 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
         }
       }
     }
-    
+
     // Check for legumes
     const hasLegumes = sequence.some(crop => getCropFamily(crop.crop_type) === 'Legumes');
     if (!hasLegumes) {
       recommendations.push('Consider including legumes to improve soil nitrogen');
     }
-    
+
     // Check for grain breaks
     const hasGrains = sequence.some(crop => getCropFamily(crop.crop_type) === 'Grains');
     if (!hasGrains) {
       recommendations.push('Include grains to break disease cycles');
     }
-    
+
     return { issues, recommendations };
   };
 
@@ -118,11 +116,11 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
       ['corn', 'beans', 'wheat'],
       ['tomato', 'beans', 'wheat'],
       ['cabbage', 'beans', 'carrot'],
-      ['potato', 'peas', 'corn']
+      ['potato', 'peas', 'corn'],
     ];
-    
+
     const randomRotation = commonRotations[Math.floor(Math.random() * commonRotations.length)];
-    
+
     const currentYear = new Date().getFullYear();
     for (let i = 0; i < years; i++) {
       suggestions.push({
@@ -130,23 +128,23 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
         crop_type: randomRotation[i % randomRotation.length],
         planting_date: `${currentYear + i}-03-01`,
         harvest_date: `${currentYear + i}-09-01`,
-        status: 'planned' as const
+        status: 'planned' as const,
       });
     }
-    
+
     return suggestions;
   };
 
   const handleCreatePlan = () => {
     if (!selectedField) return;
-    
+
     const plan = {
       farm_id: farmId,
       field_id: selectedField,
       crop_sequence: generateRotationSuggestions(rotationYears),
-      notes: `Generated ${rotationYears}-year rotation plan`
+      notes: `Generated ${rotationYears}-year rotation plan`,
     };
-    
+
     handleCreateRotationPlan(plan);
   };
 
@@ -197,37 +195,37 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
       {isAddingPlan && (
         <div className="border rounded-lg p-6 bg-white shadow">
           <h4 className="font-medium mb-4">Create New Rotation Plan</h4>
-          
+
           {isCreating && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded flex items-center">
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               <span className="text-blue-700">Creating rotation plan...</span>
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium mb-2">Select Field</label>
               <select
                 value={selectedField}
-                onChange={(e) => setSelectedField(e.target.value)}
+                onChange={e => setSelectedField(e.target.value)}
                 className="w-full p-2 border rounded"
                 disabled={isCreating}
               >
                 <option value="">Choose a field...</option>
-                {fields?.map((field: any) => (
+                {fields?.map((field: unknown) => (
                   <option key={field.id} value={field.id}>
                     {field.name}
                   </option>
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Rotation Period (Years)</label>
               <select
                 value={rotationYears}
-                onChange={(e) => setRotationYears(parseInt(e.target.value))}
+                onChange={e => setRotationYears(parseInt(e.target.value))}
                 className="w-full p-2 border rounded"
                 disabled={isCreating}
               >
@@ -245,24 +243,19 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
               {generateRotationSuggestions(rotationYears).map((crop, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  <span>Year {index + 1}: {crop.crop_type}</span>
+                  <span>
+                    Year {index + 1}: {crop.crop_type}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-          
+
           <div className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddingPlan(false)}
-              disabled={isCreating}
-            >
+            <Button variant="outline" onClick={() => setIsAddingPlan(false)} disabled={isCreating}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreatePlan}
-              disabled={!selectedField || isCreating}
-            >
+            <Button onClick={handleCreatePlan} disabled={!selectedField || isCreating}>
               {isCreating ? 'Creating...' : 'Create Plan'}
             </Button>
           </div>
@@ -277,17 +270,15 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
           <p className="text-gray-600 mb-4">
             Create your first crop rotation plan to maintain soil health and optimize yields.
           </p>
-          <Button onClick={() => setIsAddingPlan(true)}>
-            Create First Plan
-          </Button>
+          <Button onClick={() => setIsAddingPlan(true)}>Create First Plan</Button>
         </div>
       ) : (
         <div className="space-y-4">
-          {rotationPlans.map((plan) => {
+          {rotationPlans.map(plan => {
             const healthCheck = checkRotationHealth(plan.crop_sequence);
             const hasIssues = healthCheck.issues.length > 0;
             const hasRecommendations = healthCheck.recommendations.length > 0;
-            
+
             return (
               <div key={plan.id} className="border rounded-lg p-6 bg-white shadow">
                 <div className="flex items-center justify-between mb-4">
@@ -304,7 +295,11 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
                         <span className="text-sm">Rotation Issues</span>
                       </div>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => console.log('Edit rotation plan', plan.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => console.log('Edit rotation plan', plan.id)}
+                    >
                       <Edit className="h-3 w-3 mr-1" />
                       Edit
                     </Button>
@@ -319,16 +314,19 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
                       <div key={index} className="border rounded p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-medium">Year {crop.year}</span>
-                          <div className={`w-2 h-2 rounded-full ${
-                            crop.status === 'harvested' ? 'bg-green-500' :
-                            crop.status === 'planted' ? 'bg-blue-500' : 'bg-gray-400'
-                          }`}></div>
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              crop.status === 'harvested'
+                                ? 'bg-green-500'
+                                : crop.status === 'planted'
+                                  ? 'bg-blue-500'
+                                  : 'bg-gray-400'
+                            }`}
+                          ></div>
                         </div>
                         <div className="text-sm">
                           <div className="font-medium capitalize">{crop.crop_type}</div>
-                          {crop.variety && (
-                            <div className="text-gray-600">{crop.variety}</div>
-                          )}
+                          {crop.variety && <div className="text-gray-600">{crop.variety}</div>}
                           <div className="text-xs text-gray-500">{family}</div>
                         </div>
                       </div>
@@ -340,7 +338,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
                 {(hasIssues || hasRecommendations) && (
                   <div className="bg-gray-50 rounded p-4">
                     <h5 className="font-medium mb-2">Rotation Health Check</h5>
-                    
+
                     {hasIssues && (
                       <div className="mb-3">
                         <div className="flex items-center gap-2 mb-2">
@@ -354,7 +352,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
                         </ul>
                       </div>
                     )}
-                    
+
                     {hasRecommendations && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
@@ -368,7 +366,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
                         </ul>
                       </div>
                     )}
-                    
+
                     {!hasIssues && !hasRecommendations && (
                       <div className="flex items-center gap-2 text-green-600">
                         <CheckCircle className="h-4 w-4" />

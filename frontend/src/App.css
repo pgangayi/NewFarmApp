@@ -82,9 +82,9 @@ main {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group input[type="email"],
-.form-group input[type="password"],
-.form-group input[type="text"] {
+.form-group input[type='email'],
+.form-group input[type='password'],
+.form-group input[type='text'] {
   color: #333;
 }
 
@@ -92,7 +92,7 @@ main {
   color: #999;
 }
 
-.auth-container button[type="submit"] {
+.auth-container button[type='submit'] {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 14px 20px;
@@ -105,12 +105,12 @@ main {
   margin-top: 10px;
 }
 
-.auth-container button[type="submit"]:hover:not(:disabled) {
+.auth-container button[type='submit']:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
-.auth-container button[type="submit"]:disabled {
+.auth-container button[type='submit']:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -151,7 +151,7 @@ main {
     padding: 30px 20px;
     margin: 0 10px;
   }
-  
+
   .auth-container h1 {
     font-size: 24px;
   }

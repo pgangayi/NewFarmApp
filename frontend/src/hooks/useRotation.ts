@@ -47,13 +47,17 @@ export function useRotation() {
   const apiClient = getApiClient();
 
   // Fetch all rotation plans
-  const { data: rotationPlans, isLoading, error, refetch } = useQuery({
+  const {
+    data: rotationPlans,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['rotation-plans'],
     queryFn: async () => {
-      const response = await apiClient.post<RotationPlan[]>(
-        '/api/crops/rotation',
-        { action: 'list' }
-      );
+      const response = await apiClient.post<RotationPlan[]>('/api/crops/rotation', {
+        action: 'list',
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -62,7 +66,11 @@ export function useRotation() {
   });
 
   // Create rotation plan mutation
-  const { mutate: createRotationPlan, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createRotationPlan,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (rotationData: CreateRotationForm) => {
       const response = await apiClient.post<{ success: boolean; id: string }>(
         '/api/crops/rotation',
@@ -76,12 +84,17 @@ export function useRotation() {
   });
 
   // Update rotation plan mutation
-  const { mutate: updateRotationPlan, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateRotationPlan,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, ...rotationData }: UpdateRotationForm) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/rotation',
-        { action: 'update', id, ...rotationData }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/rotation', {
+        action: 'update',
+        id,
+        ...rotationData,
+      });
       return response;
     },
     onSuccess: () => {
@@ -90,12 +103,16 @@ export function useRotation() {
   });
 
   // Delete rotation plan mutation
-  const { mutate: deleteRotationPlan, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteRotationPlan,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.post<{ success: boolean }>(
-        '/api/crops/rotation',
-        { action: 'delete', id }
-      );
+      const response = await apiClient.post<{ success: boolean }>('/api/crops/rotation', {
+        action: 'delete',
+        id,
+      });
       return response;
     },
     onSuccess: () => {
@@ -126,13 +143,18 @@ export function useRotation() {
 export function useRotationByFarm(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: rotationPlans, isLoading, error, refetch } = useQuery({
+  const {
+    data: rotationPlans,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['rotation-plans', 'farm', farmId],
     queryFn: async () => {
-      const response = await apiClient.post<RotationPlan[]>(
-        '/api/crops/rotation',
-        { action: 'list', farm_id: farmId }
-      );
+      const response = await apiClient.post<RotationPlan[]>('/api/crops/rotation', {
+        action: 'list',
+        farm_id: farmId,
+      });
       return response;
     },
     staleTime: cacheConfig.staleTime.medium,
@@ -150,16 +172,18 @@ export function useRotationByFarm(farmId: string) {
 export function useRotationRecommendations(farmId: string) {
   const apiClient = getApiClient();
 
-  const { data: recommendations, isLoading, error, refetch } = useQuery({
+  const {
+    data: recommendations,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['rotation-recommendations', farmId],
     queryFn: async () => {
       const response = await apiClient.post<{
-        current_crops: any[];
-        recommendations: any[];
-      }>(
-        '/api/crops/rotation',
-        { action: 'recommendations', farm_id: farmId }
-      );
+        current_crops: unknown[];
+        recommendations: unknown[];
+      }>('/api/crops/rotation', { action: 'recommendations', farm_id: farmId });
       return response;
     },
     staleTime: cacheConfig.staleTime.long,
@@ -176,19 +200,21 @@ export function useRotationRecommendations(farmId: string) {
 export function useRotationHealthCheck(rotationId: string) {
   const apiClient = getApiClient();
 
-  const { data: healthCheck, isLoading, error, refetch } = useQuery({
+  const {
+    data: healthCheck,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['rotation-health', rotationId],
     queryFn: async () => {
       const response = await apiClient.post<{
-        score: any;
+        score: unknown;
         issues: string[];
         recommendations: string[];
         cropFamilies: Record<string, number>;
-        summary: any;
-      }>(
-        '/api/crops/rotation',
-        { action: 'health_check', rotation_id: rotationId }
-      );
+        summary: unknown;
+      }>('/api/crops/rotation', { action: 'health_check', rotation_id: rotationId });
       return response;
     },
     staleTime: cacheConfig.staleTime.short,

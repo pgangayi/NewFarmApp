@@ -34,12 +34,12 @@ export function SignupPage() {
       setError('Password must be at least 6 characters');
       return;
     }
-    
+
     setLoading(true);
     setError('');
 
-  const { error: signupError } = await signUp(email, password, name);
-    
+    const { error: signupError } = await signUp(email, password, name);
+
     if (signupError) {
       setError(signupError.message);
       setLoading(false);
@@ -95,13 +95,20 @@ export function SignupPage() {
               data-testid="signup-password"
             />
           </div>
-          {error && <div className="error" data-testid="signup-error">{error}</div>}
+          {error && (
+            <div className="error" data-testid="signup-error">
+              {error}
+            </div>
+          )}
           <button type="submit" disabled={loading} data-testid="signup-submit-button">
             {loading ? 'Signing up...' : 'Sign up'}
           </button>
         </form>
         <p>
-          Already have an account? <a href="/login" data-testid="login-link">Login</a>
+          Already have an account?{' '}
+          <a href="/login" data-testid="login-link">
+            Login
+          </a>
         </p>
       </div>
     </div>

@@ -32,13 +32,10 @@ export function LandingPage() {
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          Welcome to Farmers Boot
-        </h1>
+        <h1 className="text-5xl font-bold text-gray-900 mb-6">Welcome to Farmers Boot</h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
-          A comprehensive farm management platform designed to streamline your
-          agricultural operations. Manage farms, fields, animals, tasks, and inventory
-          all in one place.
+          A comprehensive farm management platform designed to streamline your agricultural
+          operations. Manage farms, fields, animals, tasks, and inventory all in one place.
         </p>
         <div className="flex items-center justify-center space-x-4">
           <button
@@ -64,9 +61,7 @@ export function LandingPage() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <MapPin className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Farm Management
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Farm Management</h3>
             <p className="text-gray-600">
               Organize and monitor your farms and fields with detailed mapping and tracking.
             </p>
@@ -77,9 +72,7 @@ export function LandingPage() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <Sprout className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Animal Tracking
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Animal Tracking</h3>
             <p className="text-gray-600">
               Keep detailed records of your livestock, health treatments, and breeding cycles.
             </p>
@@ -90,9 +83,7 @@ export function LandingPage() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <CheckSquare className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Task Management
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Task Management</h3>
             <p className="text-gray-600">
               Schedule and track farm tasks, assign responsibilities, and monitor progress.
             </p>
@@ -103,9 +94,7 @@ export function LandingPage() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <Package className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Inventory Control
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Inventory Control</h3>
             <p className="text-gray-600">
               Track supplies, equipment, and resources with real-time inventory management.
             </p>
@@ -116,9 +105,7 @@ export function LandingPage() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <Users className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Team Collaboration
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Team Collaboration</h3>
             <p className="text-gray-600">
               Coordinate with your team, assign roles, and manage permissions effectively.
             </p>
@@ -129,9 +116,7 @@ export function LandingPage() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <Tractor className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Offline Support
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Offline Support</h3>
             <p className="text-gray-600">
               Work seamlessly even without internet connection with our PWA technology.
             </p>

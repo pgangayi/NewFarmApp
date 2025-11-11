@@ -2,7 +2,20 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useAnimals } from '../hooks/useAnimals';
 import { useFarm } from '../hooks/useFarm';
-import { Plus, Search, Filter, Edit, Trash2, Eye, Heart, Baby, TrendingUp, Loader2, AlertTriangle, X } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
+  Eye,
+  Heart,
+  Baby,
+  TrendingUp,
+  Loader2,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 
@@ -29,7 +42,7 @@ const defaultFilters: FilterState = {
   status: '',
   location: '',
   sort_by: 'created_at',
-  sort_order: 'desc'
+  sort_order: 'desc',
 };
 
 const speciesOptions = [
@@ -38,7 +51,7 @@ const speciesOptions = [
   { value: 'chicken', label: 'Chicken' },
   { value: 'pig', label: 'Pig' },
   { value: 'sheep', label: 'Sheep' },
-  { value: 'goat', label: 'Goat' }
+  { value: 'goat', label: 'Goat' },
 ];
 
 const healthStatusOptions = [
@@ -47,13 +60,13 @@ const healthStatusOptions = [
   { value: 'sick', label: 'Sick' },
   { value: 'injured', label: 'Injured' },
   { value: 'under_treatment', label: 'Under Treatment' },
-  { value: 'quarantine', label: 'Quarantine' }
+  { value: 'quarantine', label: 'Quarantine' },
 ];
 
 const sexOptions = [
   { value: '', label: 'All Sex' },
   { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' }
+  { value: 'female', label: 'Female' },
 ];
 
 const productionTypeOptions = [
@@ -63,7 +76,7 @@ const productionTypeOptions = [
   { value: 'eggs', label: 'Eggs' },
   { value: 'wool', label: 'Wool' },
   { value: 'breeding', label: 'Breeding' },
-  { value: 'companion', label: 'Companion' }
+  { value: 'companion', label: 'Companion' },
 ];
 
 const statusOptions = [
@@ -73,7 +86,7 @@ const statusOptions = [
   { value: 'sold', label: 'Sold' },
   { value: 'deceased', label: 'Deceased' },
   { value: 'slaughtered', label: 'Slaughtered' },
-  { value: 'retired', label: 'Retired' }
+  { value: 'retired', label: 'Retired' },
 ];
 
 export function AnimalsPage() {
@@ -83,19 +96,19 @@ export function AnimalsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<unknown>(null);
 
   // Use custom hooks for live data
-  const { 
-    animals, 
-    isLoading, 
-    error, 
-    createAnimal, 
-    updateAnimal, 
+  const {
+    animals,
+    isLoading,
+    error,
+    createAnimal,
+    updateAnimal,
     deleteAnimal,
     isCreating,
     isUpdating,
-    isDeleting 
+    isDeleting,
   } = useAnimals();
 
   if (!isAuthenticated()) {
@@ -117,26 +130,27 @@ export function AnimalsPage() {
             <Heart className="h-8 w-8 text-blue-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">No Farm Selected</h2>
-          <p className="text-gray-600 mb-4">Please select or create a farm to access animal management features.</p>
-          <Button onClick={() => window.location.href = '/farms'}>
-            Go to Farms
-          </Button>
+          <p className="text-gray-600 mb-4">
+            Please select or create a farm to access animal management features.
+          </p>
+          <Button onClick={() => (window.location.href = '/farms')}>Go to Farms</Button>
         </div>
       </div>
     );
   }
 
   // Filter animals for current farm
-  const farmAnimals = animals.filter((animal) => animal.farm_id === currentFarm.id);
-  const filteredAnimals = farmAnimals.filter((animal) => {
-    const matchesSearch = filters.search === '' || 
+  const farmAnimals = animals.filter(animal => animal.farm_id === currentFarm.id);
+  const filteredAnimals = farmAnimals.filter(animal => {
+    const matchesSearch =
+      filters.search === '' ||
       animal.identification?.toLowerCase().includes(filters.search.toLowerCase()) ||
       animal.animal_type?.toLowerCase().includes(filters.search.toLowerCase());
-    
+
     const matchesSpecies = filters.species === '' || animal.animal_type === filters.species;
     const matchesBreed = filters.breed === '' || animal.breed === filters.breed;
     const matchesStatus = filters.status === '' || animal.status === filters.status;
-    
+
     return matchesSearch && matchesSpecies && matchesBreed && matchesStatus;
   });
 
@@ -148,13 +162,15 @@ export function AnimalsPage() {
     setFilters(defaultFilters);
   };
 
-  const handleEdit = (animal: any) => {
+  const handleEdit = (animal: unknown) => {
     setSelectedAnimal(animal);
     setShowEditModal(true);
   };
 
-  const handleDelete = async (animal: any) => {
-    if (window.confirm(`Are you sure you want to delete ${animal.identification || 'this animal'}?`)) {
+  const handleDelete = async (animal: unknown) => {
+    if (
+      window.confirm(`Are you sure you want to delete ${animal.identification || 'this animal'}?`)
+    ) {
       try {
         await deleteAnimal(animal.id);
       } catch (error) {
@@ -168,7 +184,7 @@ export function AnimalsPage() {
     total: farmAnimals.length,
     active: farmAnimals.filter(a => a.status === 'active').length,
     healthy: farmAnimals.length, // Default to healthy as we don't have health data in the basic Animal type
-    needsAttention: farmAnimals.filter(a => a.status === 'sold' || a.status === 'deceased').length
+    needsAttention: farmAnimals.filter(a => a.status === 'sold' || a.status === 'deceased').length,
   };
 
   // Loading state
@@ -191,20 +207,28 @@ export function AnimalsPage() {
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Animals</h2>
           <p className="text-gray-600 mb-4">
-            We're having trouble loading your animal data. Please check your connection and try again.
+            We&apos;re having trouble loading your animal data. Please check your connection and try
+            again.
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 bg-cover bg-center bg-fixed relative"
+      style={{
+        backgroundImage: `url('/Livestock Wallpaper.png')`,
+        backgroundBlendMode: 'soft-light',
+      }}
+    >
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-[0.5px]"></div>
+
       {/* Breadcrumbs */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Breadcrumbs className="mb-0" />
         </div>
@@ -232,7 +256,7 @@ export function AnimalsPage() {
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Analytics
               </Button>
-              <Button 
+              <Button
                 onClick={() => setShowCreateModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
@@ -306,14 +330,16 @@ export function AnimalsPage() {
                 type="text"
                 placeholder="Search animals by ID or type..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={e => handleFilterChange('search', e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors ${
-                showFilters ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                showFilters
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               <Filter className="h-5 w-5" />
@@ -328,24 +354,30 @@ export function AnimalsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Species</label>
                 <select
                   value={filters.species}
-                  onChange={(e) => handleFilterChange('species', e.target.value)}
+                  onChange={e => handleFilterChange('species', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {speciesOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {speciesOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Health Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Health Status
+                </label>
                 <select
                   value={filters.health_status}
-                  onChange={(e) => handleFilterChange('health_status', e.target.value)}
+                  onChange={e => handleFilterChange('health_status', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {healthStatusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {healthStatusOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -354,11 +386,13 @@ export function AnimalsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
                 <select
                   value={filters.sex}
-                  onChange={(e) => handleFilterChange('sex', e.target.value)}
+                  onChange={e => handleFilterChange('sex', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {sexOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {sexOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -367,11 +401,13 @@ export function AnimalsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  onChange={e => handleFilterChange('status', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -390,7 +426,7 @@ export function AnimalsPage() {
 
         {/* Animals Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          {filteredAnimals.map((animal) => (
+          {filteredAnimals.map(animal => (
             <AnimalCard
               key={animal.id}
               animal={animal}
@@ -408,13 +444,12 @@ export function AnimalsPage() {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No animals found</h3>
             <p className="text-gray-600 mb-6">
-              {filteredAnimals.length === 0 && farmAnimals.length > 0 
+              {filteredAnimals.length === 0 && farmAnimals.length > 0
                 ? 'Try adjusting your search filters.'
-                : 'Get started by adding your first animal to track'
-              }
+                : 'Get started by adding your first animal to track'}
             </p>
             {filteredAnimals.length === 0 && farmAnimals.length === 0 && (
-              <Button 
+              <Button
                 onClick={() => setShowCreateModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
@@ -431,7 +466,7 @@ export function AnimalsPage() {
         <AnimalFormModal
           farmId={currentFarm.id}
           onClose={() => setShowCreateModal(false)}
-          onSubmit={(data) => createAnimal(data)}
+          onSubmit={data => createAnimal(data)}
           isLoading={isCreating}
         />
       )}
@@ -443,7 +478,7 @@ export function AnimalsPage() {
             setShowEditModal(false);
             setSelectedAnimal(null);
           }}
-          onSubmit={(data) => updateAnimal({ id: selectedAnimal.id, ...data })}
+          onSubmit={data => updateAnimal({ id: selectedAnimal.id, ...data })}
           isLoading={isUpdating}
         />
       )}
@@ -453,9 +488,9 @@ export function AnimalsPage() {
 
 // Animal Card Component
 interface AnimalCardProps {
-  animal: any;
-  onEdit: (animal: any) => void;
-  onDelete: (animal: any) => void;
+  animal: unknown;
+  onEdit: (animal: unknown) => void;
+  onDelete: (animal: unknown) => void;
 }
 
 function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
@@ -480,10 +515,11 @@ function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
     if (!acquisitionDate) return null;
     const birth = new Date(acquisitionDate);
     const now = new Date();
-    const months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+    const months =
+      (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
     const years = Math.floor(months / 12);
     const remainingMonths = months % 12;
-    
+
     if (years > 0) {
       return remainingMonths > 0 ? `${years}y ${remainingMonths}m` : `${years}y`;
     }
@@ -547,7 +583,9 @@ function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
 
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Status:</span>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(animal.status)}`}>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(animal.status)}`}
+          >
             {animal.status || 'Unknown'}
           </span>
         </div>
@@ -568,9 +606,9 @@ function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
 // Animal Form Modal Component
 interface AnimalFormModalProps {
   farmId?: string;
-  animal?: any;
+  animal?: unknown;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: unknown) => void;
   isLoading: boolean;
 }
 
@@ -611,16 +649,20 @@ function AnimalFormModal({ farmId, animal, onClose, onSubmit, isLoading }: Anima
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Animal Type *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Animal Type *
+                </label>
                 <select
                   required
                   value={formData.animal_type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, animal_type: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, animal_type: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Type</option>
-                  {speciesOptions.slice(1).map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {speciesOptions.slice(1).map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -630,30 +672,36 @@ function AnimalFormModal({ farmId, animal, onClose, onSubmit, isLoading }: Anima
                 <input
                   type="text"
                   value={formData.breed}
-                  onChange={(e) => setFormData(prev => ({ ...prev, breed: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, breed: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter breed"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Identification *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Identification *
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.identification}
-                  onChange={(e) => setFormData(prev => ({ ...prev, identification: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, identification: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter ID or tag"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Acquisition Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Acquisition Date
+                </label>
                 <input
                   type="date"
                   value={formData.acquisition_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, acquisition_date: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, acquisition_date: e.target.value }))
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -662,11 +710,13 @@ function AnimalFormModal({ farmId, animal, onClose, onSubmit, isLoading }: Anima
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {statusOptions.slice(1).map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {statusOptions.slice(1).map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -690,8 +740,10 @@ function AnimalFormModal({ farmId, animal, onClose, onSubmit, isLoading }: Anima
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Saving...
                   </>
+                ) : animal ? (
+                  'Update Animal'
                 ) : (
-                  animal ? 'Update Animal' : 'Create Animal'
+                  'Create Animal'
                 )}
               </button>
             </div>

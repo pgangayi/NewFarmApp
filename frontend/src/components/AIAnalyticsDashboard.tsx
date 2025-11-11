@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
   Activity,
   Brain,
@@ -38,7 +38,7 @@ import {
   Star,
   Shield,
   Leaf,
-  Timer
+  Timer,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -52,45 +52,55 @@ interface ComprehensiveAnalytics {
     sustainability_score: number;
   };
   modules: {
-    animals: any;
-    crops: any;
-    fields: any;
-    inventory: any;
-    tasks: any;
-    finance: any;
-    weather: any;
+    animals: unknown;
+    crops: unknown;
+    fields: unknown;
+    inventory: unknown;
+    tasks: unknown;
+    finance: unknown;
+    weather: unknown;
   };
-  insights: any[];
-  benchmarks: any;
-  recommendations: any[];
-  trends: any;
+  insights: unknown[];
+  benchmarks: unknown;
+  recommendations: unknown[];
+  trends: unknown;
 }
 
 interface PredictiveAnalytics {
-  yield_predictions: any;
-  demand_forecasting: any;
-  risk_assessment: any;
-  maintenance_predictions: any;
-  financial_projections: any;
-  weather_impact_analysis: any;
+  yield_predictions: unknown;
+  demand_forecasting: unknown;
+  risk_assessment: unknown;
+  maintenance_predictions: unknown;
+  financial_projections: unknown;
+  weather_impact_analysis: unknown;
 }
 
 export function AIAnalyticsDashboard() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [selectedFarm, setSelectedFarm] = useState<number>(1);
-  const [viewMode, setViewMode] = useState<'comprehensive' | 'predictive' | 'optimization' | 'trends' | 'roi' | 'efficiency'>('comprehensive');
+  const [viewMode, setViewMode] = useState<
+    'comprehensive' | 'predictive' | 'optimization' | 'trends' | 'roi' | 'efficiency'
+  >('comprehensive');
   const [timeframe, setTimeframe] = useState<'6months' | '12months' | '24months'>('12months');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Get comprehensive analytics
-  const { data: comprehensiveData, isLoading, error, refetch } = useQuery({
+  const {
+    data: comprehensiveData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['analytics', 'comprehensive', selectedFarm, timeframe],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics-engine?farm_id=${selectedFarm}&type=comprehensive&timeframe=${timeframe}`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(
+        `/api/analytics-engine?farm_id=${selectedFarm}&type=comprehensive&timeframe=${timeframe}`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch comprehensive analytics');
@@ -106,10 +116,13 @@ export function AIAnalyticsDashboard() {
   const { data: predictiveData } = useQuery({
     queryKey: ['analytics', 'predictive', selectedFarm],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics-engine?farm_id=${selectedFarm}&type=predictive`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(
+        `/api/analytics-engine?farm_id=${selectedFarm}&type=predictive`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch predictive analytics');
@@ -124,10 +137,13 @@ export function AIAnalyticsDashboard() {
   const { data: optimizationData } = useQuery({
     queryKey: ['analytics', 'optimization', selectedFarm],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics-engine?farm_id=${selectedFarm}&type=optimization`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(
+        `/api/analytics-engine?farm_id=${selectedFarm}&type=optimization`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch optimization data');
@@ -144,13 +160,13 @@ export function AIAnalyticsDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           farm_id: selectedFarm,
           analysis_type: reportType,
-          parameters: { timeframe }
-        })
+          parameters: { timeframe },
+        }),
       });
 
       if (!response.ok) {
@@ -161,7 +177,7 @@ export function AIAnalyticsDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
-    }
+    },
   });
 
   if (!isAuthenticated()) {
@@ -175,28 +191,30 @@ export function AIAnalyticsDashboard() {
     );
   }
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading AI analytics...</p>
-        <p className="text-sm text-gray-500">Analyzing farm data and generating insights</p>
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading AI analytics...</p>
+          <p className="text-sm text-gray-500">Analyzing farm data and generating insights</p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  if (error) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading analytics</h2>
-        <p className="text-gray-600">{error.message}</p>
-        <Button onClick={() => refetch()} className="mt-4">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
-        </Button>
+  if (error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading analytics</h2>
+          <p className="text-gray-600">{error.message}</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -211,8 +229,10 @@ export function AIAnalyticsDashboard() {
   };
 
   const getTrendIcon = (trend: string) => {
-    if (trend === 'up' || trend === 'improving') return <ArrowUpRight className="h-4 w-4 text-green-500" />;
-    if (trend === 'down' || trend === 'declining') return <ArrowDownRight className="h-4 w-4 text-red-500" />;
+    if (trend === 'up' || trend === 'improving')
+      return <ArrowUpRight className="h-4 w-4 text-green-500" />;
+    if (trend === 'down' || trend === 'declining')
+      return <ArrowDownRight className="h-4 w-4 text-red-500" />;
     return <Activity className="h-4 w-4 text-blue-500" />;
   };
 
@@ -228,7 +248,9 @@ export function AIAnalyticsDashboard() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">AI Analytics Dashboard</h1>
-                <p className="text-gray-600 mt-1">Advanced insights and optimization powered by machine learning</p>
+                <p className="text-gray-600 mt-1">
+                  Advanced insights and optimization powered by machine learning
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-4 mt-3">
@@ -245,7 +267,11 @@ export function AIAnalyticsDashboard() {
                   onClick={() => setAutoRefresh(!autoRefresh)}
                   className={autoRefresh ? 'bg-green-50 border-green-200' : ''}
                 >
-                  {autoRefresh ? <Timer className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
+                  {autoRefresh ? (
+                    <Timer className="h-3 w-3 mr-1" />
+                  ) : (
+                    <Clock className="h-3 w-3 mr-1" />
+                  )}
                   {autoRefresh ? 'Live Mode' : 'Manual'}
                 </Button>
               </div>
@@ -254,7 +280,7 @@ export function AIAnalyticsDashboard() {
           <div className="flex items-center space-x-4">
             <select
               value={selectedFarm}
-              onChange={(e) => setSelectedFarm(parseInt(e.target.value))}
+              onChange={e => setSelectedFarm(parseInt(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value={1}>Main Farm</option>
@@ -270,16 +296,46 @@ export function AIAnalyticsDashboard() {
         <div className="bg-white/80 backdrop-blur-sm border-b mb-8 rounded-lg shadow-sm">
           <nav className="-mb-px flex space-x-8 px-6">
             {[
-              { key: 'comprehensive', label: 'Comprehensive', icon: BarChart3, description: 'Overall performance' },
-              { key: 'predictive', label: 'Predictive', icon: Brain, description: 'AI predictions' },
-              { key: 'optimization', label: 'Optimization', icon: Target, description: 'Improvement suggestions' },
-              { key: 'trends', label: 'Trends', icon: TrendingUp, description: 'Historical patterns' },
-              { key: 'roi', label: 'ROI Analysis', icon: DollarSign, description: 'Return on investment' },
-              { key: 'efficiency', label: 'Efficiency', icon: Zap, description: 'Operational efficiency' }
+              {
+                key: 'comprehensive',
+                label: 'Comprehensive',
+                icon: BarChart3,
+                description: 'Overall performance',
+              },
+              {
+                key: 'predictive',
+                label: 'Predictive',
+                icon: Brain,
+                description: 'AI predictions',
+              },
+              {
+                key: 'optimization',
+                label: 'Optimization',
+                icon: Target,
+                description: 'Improvement suggestions',
+              },
+              {
+                key: 'trends',
+                label: 'Trends',
+                icon: TrendingUp,
+                description: 'Historical patterns',
+              },
+              {
+                key: 'roi',
+                label: 'ROI Analysis',
+                icon: DollarSign,
+                description: 'Return on investment',
+              },
+              {
+                key: 'efficiency',
+                label: 'Efficiency',
+                icon: Zap,
+                description: 'Operational efficiency',
+              },
             ].map(({ key, label, icon: Icon, description }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as any)}
+                onClick={() => setViewMode(key as unknown)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-purple-500 text-purple-600'
@@ -304,22 +360,28 @@ export function AIAnalyticsDashboard() {
               <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-blue-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-600">Overall Score</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      Overall Score
+                    </CardTitle>
                     <Trophy className="h-4 w-4 text-yellow-500" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-3xl font-bold ${getScoreColor(comprehensiveData.summary.overall_score)}`}>
+                  <div
+                    className={`text-3xl font-bold ${getScoreColor(comprehensiveData.summary.overall_score)}`}
+                  >
                     {comprehensiveData.summary.overall_score}/100
                   </div>
                   <div className="flex items-center gap-1 mt-2">
                     {getTrendIcon(comprehensiveData.summary.performance_trend)}
-                    <span className="text-sm text-gray-600">{comprehensiveData.summary.performance_trend}</span>
+                    <span className="text-sm text-gray-600">
+                      {comprehensiveData.summary.performance_trend}
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                    <div 
+                    <div
                       className={`bg-gradient-to-r ${getScoreGradient(comprehensiveData.summary.overall_score)} h-2 rounded-full transition-all duration-500`}
-                      style={{width: `${comprehensiveData.summary.overall_score}%`}}
+                      style={{ width: `${comprehensiveData.summary.overall_score}%` }}
                     ></div>
                   </div>
                 </CardContent>
@@ -328,12 +390,16 @@ export function AIAnalyticsDashboard() {
               <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-green-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-600">Efficiency Rating</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      Efficiency Rating
+                    </CardTitle>
                     <Zap className="h-4 w-4 text-green-500" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-3xl font-bold ${getScoreColor(comprehensiveData.summary.efficiency_rating)}`}>
+                  <div
+                    className={`text-3xl font-bold ${getScoreColor(comprehensiveData.summary.efficiency_rating)}`}
+                  >
                     {comprehensiveData.summary.efficiency_rating}/100
                   </div>
                   <div className="flex items-center gap-1 mt-2">
@@ -341,9 +407,9 @@ export function AIAnalyticsDashboard() {
                     <span className="text-sm text-gray-600">High performance</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                    <div 
+                    <div
                       className={`bg-gradient-to-r ${getScoreGradient(comprehensiveData.summary.efficiency_rating)} h-2 rounded-full transition-all duration-500`}
-                      style={{width: `${comprehensiveData.summary.efficiency_rating}%`}}
+                      style={{ width: `${comprehensiveData.summary.efficiency_rating}%` }}
                     ></div>
                   </div>
                 </CardContent>
@@ -352,12 +418,16 @@ export function AIAnalyticsDashboard() {
               <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-purple-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-600">Sustainability</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      Sustainability
+                    </CardTitle>
                     <Leaf className="h-4 w-4 text-green-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-3xl font-bold ${getScoreColor(comprehensiveData.summary.sustainability_score)}`}>
+                  <div
+                    className={`text-3xl font-bold ${getScoreColor(comprehensiveData.summary.sustainability_score)}`}
+                  >
                     {comprehensiveData.summary.sustainability_score}/100
                   </div>
                   <div className="flex items-center gap-1 mt-2">
@@ -365,9 +435,9 @@ export function AIAnalyticsDashboard() {
                     <span className="text-sm text-gray-600">Eco-friendly</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                    <div 
+                    <div
                       className={`bg-gradient-to-r ${getScoreGradient(comprehensiveData.summary.sustainability_score)} h-2 rounded-full transition-all duration-500`}
-                      style={{width: `${comprehensiveData.summary.sustainability_score}%`}}
+                      style={{ width: `${comprehensiveData.summary.sustainability_score}%` }}
                     ></div>
                   </div>
                 </CardContent>
@@ -412,21 +482,36 @@ export function AIAnalyticsDashboard() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Health Score</span>
-                        <span className={`font-bold ${getScoreColor(comprehensiveData.modules.animals.performance_score)}`}>
+                        <span
+                          className={`font-bold ${getScoreColor(comprehensiveData.modules.animals.performance_score)}`}
+                        >
                           {comprehensiveData.modules.animals.performance_score}/100
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Total Animals</span>
                         <span className="font-medium">
-                          {comprehensiveData.modules.animals.overview?.reduce((sum: number, a: any) => sum + a.total_count, 0) || 0}
+                          {comprehensiveData.modules.animals.overview?.reduce(
+                            (sum: number, a: unknown) => sum + a.total_count,
+                            0
+                          ) || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Vaccination Rate</span>
                         <span className="font-medium">
-                          {Math.round((comprehensiveData.modules.animals.overview?.reduce((sum: number, a: any) => sum + a.vaccinated_count, 0) || 0) /
-                                     (comprehensiveData.modules.animals.overview?.reduce((sum: number, a: any) => sum + a.total_count, 1) || 1) * 100)}%
+                          {Math.round(
+                            ((comprehensiveData.modules.animals.overview?.reduce(
+                              (sum: number, a: unknown) => sum + a.vaccinated_count,
+                              0
+                            ) || 0) /
+                              (comprehensiveData.modules.animals.overview?.reduce(
+                                (sum: number, a: unknown) => sum + a.total_count,
+                                1
+                              ) || 1)) *
+                              100
+                          )}
+                          %
                         </span>
                       </div>
                     </div>
@@ -447,21 +532,32 @@ export function AIAnalyticsDashboard() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Growth Score</span>
-                        <span className={`font-bold ${getScoreColor(comprehensiveData.modules.crops.performance_score)}`}>
+                        <span
+                          className={`font-bold ${getScoreColor(comprehensiveData.modules.crops.performance_score)}`}
+                        >
                           {comprehensiveData.modules.crops.performance_score}/100
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Mature Crops</span>
                         <span className="font-medium">
-                          {comprehensiveData.modules.crops.overview?.reduce((sum: number, c: any) => sum + c.mature_crops, 0) || 0}
+                          {comprehensiveData.modules.crops.overview?.reduce(
+                            (sum: number, c: unknown) => sum + c.mature_crops,
+                            0
+                          ) || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Yield Efficiency</span>
                         <span className="font-medium">
-                          {Math.round(comprehensiveData.modules.crops.yield_performance?.reduce((sum: number, y: any) => sum + (y.yield_efficiency || 0), 0) /
-                                     (comprehensiveData.modules.crops.yield_performance?.length || 1) || 0)}%
+                          {Math.round(
+                            comprehensiveData.modules.crops.yield_performance?.reduce(
+                              (sum: number, y: unknown) => sum + (y.yield_efficiency || 0),
+                              0
+                            ) / (comprehensiveData.modules.crops.yield_performance?.length || 1) ||
+                              0
+                          )}
+                          %
                         </span>
                       </div>
                     </div>
@@ -482,22 +578,34 @@ export function AIAnalyticsDashboard() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Profitability</span>
-                        <span className={`font-bold ${getScoreColor(comprehensiveData.modules.finance.performance_score)}`}>
+                        <span
+                          className={`font-bold ${getScoreColor(comprehensiveData.modules.finance.performance_score)}`}
+                        >
                           {comprehensiveData.modules.finance.performance_score}/100
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Net Profit</span>
-                        <span className={`font-medium ${
-                          (comprehensiveData.modules.finance.overview?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          ${(comprehensiveData.modules.finance.overview?.net_profit || 0).toLocaleString()}
+                        <span
+                          className={`font-medium ${
+                            (comprehensiveData.modules.finance.overview?.net_profit || 0) >= 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}
+                        >
+                          $
+                          {(
+                            comprehensiveData.modules.finance.overview?.net_profit || 0
+                          ).toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Tax Deductions</span>
                         <span className="font-medium">
-                          ${(comprehensiveData.modules.finance.overview?.tax_deductible_amount || 0).toLocaleString()}
+                          $
+                          {(
+                            comprehensiveData.modules.finance.overview?.tax_deductible_amount || 0
+                          ).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -520,7 +628,10 @@ export function AIAnalyticsDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {comprehensiveData.recommendations?.map((rec, index) => (
-                    <div key={index} className="p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-purple-100">
+                    <div
+                      key={index}
+                      className="p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-purple-100"
+                    >
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
                           <Lightbulb className="h-4 w-4 text-white" />
@@ -540,7 +651,9 @@ export function AIAnalyticsDashboard() {
                   )) || (
                     <div className="col-span-full text-center py-8">
                       <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">AI is analyzing your data to generate recommendations...</p>
+                      <p className="text-gray-600">
+                        AI is analyzing your data to generate recommendations...
+                      </p>
                     </div>
                   )}
                 </div>
@@ -564,17 +677,30 @@ export function AIAnalyticsDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <Thermometer className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                      <div className="text-lg font-bold">{Math.round(comprehensiveData.modules.weather?.overview?.avg_temperature || 0)}°C</div>
+                      <div className="text-lg font-bold">
+                        {Math.round(
+                          comprehensiveData.modules.weather?.overview?.avg_temperature || 0
+                        )}
+                        °C
+                      </div>
                       <div className="text-sm text-gray-600">Avg Temperature</div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
                       <CloudRain className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                      <div className="text-lg font-bold">{Math.round(comprehensiveData.modules.weather?.overview?.total_precipitation || 0)}mm</div>
+                      <div className="text-lg font-bold">
+                        {Math.round(
+                          comprehensiveData.modules.weather?.overview?.total_precipitation || 0
+                        )}
+                        mm
+                      </div>
                       <div className="text-sm text-gray-600">Total Rainfall</div>
                     </div>
                     <div className="text-center p-4 bg-purple-50 rounded-lg">
                       <Wind className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                      <div className="text-lg font-bold">{Math.round(comprehensiveData.modules.weather?.overview?.avg_humidity || 0)}%</div>
+                      <div className="text-lg font-bold">
+                        {Math.round(comprehensiveData.modules.weather?.overview?.avg_humidity || 0)}
+                        %
+                      </div>
                       <div className="text-sm text-gray-600">Humidity</div>
                     </div>
                   </div>
@@ -583,22 +709,30 @@ export function AIAnalyticsDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <Package className="h-6 w-6 text-orange-500 mx-auto mb-1" />
-                      <div className="text-sm font-bold">{comprehensiveData.modules.inventory?.performance_score || 0}/100</div>
+                      <div className="text-sm font-bold">
+                        {comprehensiveData.modules.inventory?.performance_score || 0}/100
+                      </div>
                       <div className="text-xs text-gray-600">Inventory Health</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
-                      <div className="text-sm font-bold">{comprehensiveData.modules.tasks?.performance_score || 0}/100</div>
+                      <div className="text-sm font-bold">
+                        {comprehensiveData.modules.tasks?.performance_score || 0}/100
+                      </div>
                       <div className="text-xs text-gray-600">Task Efficiency</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <MapPin className="h-6 w-6 text-blue-500 mx-auto mb-1" />
-                      <div className="text-sm font-bold">{comprehensiveData.modules.fields?.performance_score || 0}/100</div>
+                      <div className="text-sm font-bold">
+                        {comprehensiveData.modules.fields?.performance_score || 0}/100
+                      </div>
                       <div className="text-xs text-gray-600">Field Utilization</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <Gauge className="h-6 w-6 text-purple-500 mx-auto mb-1" />
-                      <div className="text-sm font-bold">{comprehensiveData.summary.overall_score}/100</div>
+                      <div className="text-sm font-bold">
+                        {comprehensiveData.summary.overall_score}/100
+                      </div>
                       <div className="text-xs text-gray-600">Overall Rating</div>
                     </div>
                   </div>
@@ -623,7 +757,9 @@ export function AIAnalyticsDashboard() {
                   <CardContent>
                     <div className="text-center py-4">
                       <div className="text-2xl font-bold text-purple-600 mb-2">AI Prediction</div>
-                      <p className="text-sm text-gray-600">Machine learning analysis in progress...</p>
+                      <p className="text-sm text-gray-600">
+                        Machine learning analysis in progress...
+                      </p>
                       <div className="mt-4">
                         <Badge variant="outline">🤖 AI Generated</Badge>
                       </div>
@@ -640,7 +776,10 @@ export function AIAnalyticsDashboard() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Object.entries(optimizationData).map(([key, value]) => (
-                <Card key={key} className="border-0 shadow-lg bg-gradient-to-br from-white to-green-50">
+                <Card
+                  key={key}
+                  className="border-0 shadow-lg bg-gradient-to-br from-white to-green-50"
+                >
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-green-500" />
@@ -650,7 +789,9 @@ export function AIAnalyticsDashboard() {
                   <CardContent>
                     <div className="text-center py-4">
                       <div className="text-2xl font-bold text-green-600 mb-2">Optimization</div>
-                      <p className="text-sm text-gray-600">AI-powered optimization recommendations...</p>
+                      <p className="text-sm text-gray-600">
+                        AI-powered optimization recommendations...
+                      </p>
                       <div className="mt-4">
                         <Badge variant="outline" className="bg-green-100 text-green-800">
                           🎯 Optimization Ready
@@ -678,10 +819,30 @@ export function AIAnalyticsDashboard() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { type: 'comprehensive', label: 'Comprehensive Report', icon: BarChart3, description: 'Complete farm analysis' },
-                { type: 'performance', label: 'Performance Report', icon: TrendingUp, description: 'KPI and metrics analysis' },
-                { type: 'predictive', label: 'Predictive Report', icon: Brain, description: 'AI forecasting' },
-                { type: 'optimization', label: 'Optimization Report', icon: Target, description: 'Improvement recommendations' }
+                {
+                  type: 'comprehensive',
+                  label: 'Comprehensive Report',
+                  icon: BarChart3,
+                  description: 'Complete farm analysis',
+                },
+                {
+                  type: 'performance',
+                  label: 'Performance Report',
+                  icon: TrendingUp,
+                  description: 'KPI and metrics analysis',
+                },
+                {
+                  type: 'predictive',
+                  label: 'Predictive Report',
+                  icon: Brain,
+                  description: 'AI forecasting',
+                },
+                {
+                  type: 'optimization',
+                  label: 'Optimization Report',
+                  icon: Target,
+                  description: 'Improvement recommendations',
+                },
               ].map(({ type, label, icon: Icon, description }) => (
                 <Button
                   key={type}

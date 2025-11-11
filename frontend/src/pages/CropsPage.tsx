@@ -4,8 +4,8 @@ import { useFarm } from '../hooks/useFarm';
 import { useCrops, useCropsStats } from '../hooks/useCrops';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
-import { 
-  Leaf, 
+import {
+  Leaf,
   Sprout,
   Droplets,
   Bug,
@@ -20,7 +20,7 @@ import {
   Plus,
   X,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 
 import { CropRotationPlanner } from '../components/CropRotationPlanner';
@@ -31,7 +31,9 @@ import { SoilHealthMonitor } from '../components/SoilHealthMonitor';
 export function CropsPage() {
   const { user, getAuthHeaders, isAuthenticated } = useAuth();
   const { currentFarm } = useFarm();
-  const [activeTab, setActiveTab] = useState<'overview' | 'rotation' | 'irrigation' | 'pests' | 'soil'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'rotation' | 'irrigation' | 'pests' | 'soil'
+  >('overview');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<{
@@ -74,20 +76,21 @@ export function CropsPage() {
         <div className="text-center">
           <Leaf className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">No Farm Selected</h2>
-          <p className="text-gray-600 mb-4">Please select or create a farm to access crop management features.</p>
-          <Button onClick={() => window.location.href = '/farms'}>
-            Go to Farms
-          </Button>
+          <p className="text-gray-600 mb-4">
+            Please select or create a farm to access crop management features.
+          </p>
+          <Button onClick={() => (window.location.href = '/farms')}>Go to Farms</Button>
         </div>
       </div>
     );
   }
 
   // Filter crops for current farm
-  const farmCrops = crops.filter((c) => c.farm_id === currentFarm.id);
-  const filteredCrops = farmCrops.filter((crop) =>
-    crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    crop.crop_type.toLowerCase().includes(searchQuery.toLowerCase())
+  const farmCrops = crops.filter(c => c.farm_id === currentFarm.id);
+  const filteredCrops = farmCrops.filter(
+    crop =>
+      crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      crop.crop_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateCrop = async (e: React.FormEvent) => {
@@ -110,9 +113,18 @@ export function CropsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-gray-50 bg-cover bg-center bg-fixed relative"
+      style={{
+        backgroundImage: `url('/Crop Wallpaper.jpg')`,
+        backgroundBlendMode: 'soft-light',
+      }}
+    >
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-gray-50/80 backdrop-blur-[0.5px]"></div>
+
       {/* Breadcrumbs */}
-      <div className="bg-white border-b">
+      <div className="bg-white/90 backdrop-blur-sm border-b relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Breadcrumbs className="mb-0" />
         </div>
@@ -225,9 +237,7 @@ export function CropsPage() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Active Crops</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {stats.activeCount}
-                    </p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.activeCount}</p>
                   </div>
                 </div>
               </div>
@@ -239,9 +249,7 @@ export function CropsPage() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Planned</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {stats.byStatus.planned}
-                    </p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.byStatus.planned}</p>
                   </div>
                 </div>
               </div>
@@ -253,9 +261,7 @@ export function CropsPage() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Harvested</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {stats.byStatus.harvested}
-                    </p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.byStatus.harvested}</p>
                   </div>
                 </div>
               </div>
@@ -267,9 +273,7 @@ export function CropsPage() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Failed</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {stats.byStatus.failed}
-                    </p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.byStatus.failed}</p>
                   </div>
                 </div>
               </div>
@@ -285,7 +289,7 @@ export function CropsPage() {
                       {farmCrops.length} {farmCrops.length === 1 ? 'crop' : 'crops'}
                     </p>
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => setShowCreateForm(true)}
                     className="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700"
                   >
@@ -301,7 +305,7 @@ export function CropsPage() {
                       type="text"
                       placeholder="Search crops..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={e => setSearchQuery(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                     {searchQuery && (
@@ -339,7 +343,7 @@ export function CropsPage() {
 
               {filteredCrops.length > 0 ? (
                 <div className="divide-y">
-                  {filteredCrops.map((crop) => (
+                  {filteredCrops.map(crop => (
                     <div key={crop.id} className="p-6 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -355,12 +359,17 @@ export function CropsPage() {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
                           <div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              crop.status === 'active' ? 'bg-green-100 text-green-800' :
-                              crop.status === 'planned' ? 'bg-yellow-100 text-yellow-800' :
-                              crop.status === 'harvested' ? 'bg-blue-100 text-blue-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                crop.status === 'active'
+                                  ? 'bg-green-100 text-green-800'
+                                  : crop.status === 'planned'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : crop.status === 'harvested'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : 'bg-red-100 text-red-800'
+                              }`}
+                            >
                               {crop.status}
                             </span>
                           </div>
@@ -385,7 +394,7 @@ export function CropsPage() {
                       <Leaf className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h4 className="text-lg font-medium text-gray-900 mb-2">No crops yet</h4>
                       <p className="text-gray-600 mb-4">Start by adding your first crop.</p>
-                      <Button 
+                      <Button
                         onClick={() => setShowCreateForm(true)}
                         className="inline-flex items-center bg-green-600 text-white hover:bg-green-700"
                       >
@@ -400,21 +409,13 @@ export function CropsPage() {
           </div>
         )}
 
-        {activeTab === 'rotation' && (
-          <CropRotationPlanner farmId={currentFarm.id} />
-        )}
+        {activeTab === 'rotation' && <CropRotationPlanner farmId={currentFarm.id} />}
 
-        {activeTab === 'irrigation' && (
-          <IrrigationOptimizer farmId={currentFarm.id} />
-        )}
+        {activeTab === 'irrigation' && <IrrigationOptimizer farmId={currentFarm.id} />}
 
-        {activeTab === 'pests' && (
-          <PestDiseaseManager farmId={currentFarm.id} />
-        )}
+        {activeTab === 'pests' && <PestDiseaseManager farmId={currentFarm.id} />}
 
-        {activeTab === 'soil' && (
-          <SoilHealthMonitor farmId={currentFarm.id} />
-        )}
+        {activeTab === 'soil' && <SoilHealthMonitor farmId={currentFarm.id} />}
       </div>
 
       {/* Create Crop Modal */}
@@ -422,9 +423,7 @@ export function CropsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Add New Crop
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Add New Crop</h2>
 
               <form onSubmit={handleCreateCrop} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -434,18 +433,20 @@ export function CropsPage() {
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Crop Type *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Crop Type *
+                    </label>
                     <input
                       type="text"
                       required
                       value={formData.crop_type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, crop_type: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, crop_type: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
@@ -455,27 +456,35 @@ export function CropsPage() {
                     <input
                       type="text"
                       value={formData.variety}
-                      onChange={(e) => setFormData(prev => ({ ...prev, variety: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, variety: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Planting Date
+                    </label>
                     <input
                       type="date"
                       value={formData.planting_date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, planting_date: e.target.value }))}
+                      onChange={e =>
+                        setFormData(prev => ({ ...prev, planting_date: e.target.value }))
+                      }
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Expected Harvest Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expected Harvest Date
+                    </label>
                     <input
                       type="date"
                       value={formData.expected_harvest_date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, expected_harvest_date: e.target.value }))}
+                      onChange={e =>
+                        setFormData(prev => ({ ...prev, expected_harvest_date: e.target.value }))
+                      }
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
@@ -484,7 +493,12 @@ export function CropsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'planned' | 'active' | 'harvested' | 'failed' }))}
+                      onChange={e =>
+                        setFormData(prev => ({
+                          ...prev,
+                          status: e.target.value as 'planned' | 'active' | 'harvested' | 'failed',
+                        }))
+                      }
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       <option value="planned">Planned</option>

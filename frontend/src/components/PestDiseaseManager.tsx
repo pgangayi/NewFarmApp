@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePestDisease } from '../hooks/usePestDisease';
 import { useFarm } from '../hooks/useFarm';
 import { Button } from './ui/button';
-import { 
+import {
   Bug,
   Shield,
   AlertTriangle,
@@ -14,7 +14,7 @@ import {
   Loader2,
   Plus,
   Eye,
-  Clock
+  Clock,
 } from 'lucide-react';
 
 interface PestDiseaseManagerProps {
@@ -25,7 +25,7 @@ const SEVERITY_COLORS = {
   low: 'bg-green-100 text-green-800',
   medium: 'bg-yellow-100 text-yellow-800',
   high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800'
+  critical: 'bg-red-100 text-red-800',
 };
 
 const STATUS_COLORS = {
@@ -33,22 +33,18 @@ const STATUS_COLORS = {
   treating: 'bg-blue-100 text-blue-800',
   controlled: 'bg-green-100 text-green-800',
   resolved: 'bg-gray-100 text-gray-800',
-  monitoring: 'bg-yellow-100 text-yellow-800'
+  monitoring: 'bg-yellow-100 text-yellow-800',
 };
 
 export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
   const { currentFarm } = useFarm();
-  const [activeTab, setActiveTab] = useState<'overview' | 'issues' | 'outbreaks' | 'prevention'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'issues' | 'outbreaks' | 'prevention'>(
+    'overview'
+  );
 
   // Use the pest disease hook
-  const { 
-    pestIssues, 
-    diseaseOutbreaks, 
-    isLoading,
-    error,
-    createIssue,
-    updateIssue
-  } = usePestDisease();
+  const { pestIssues, diseaseOutbreaks, isLoading, error, createIssue, updateIssue } =
+    usePestDisease();
 
   // Additional queries for specific features
   const { data: preventionTasks } = useQuery({
@@ -57,7 +53,7 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
       const response = await fetch('/api/crops/pests-diseases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'prevention_calendar', farm_id: farmId })
+        body: JSON.stringify({ action: 'prevention_calendar', farm_id: farmId }),
       });
       if (!response.ok) throw new Error('Failed to fetch prevention calendar');
       return await response.json();
@@ -71,7 +67,7 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
       const response = await fetch('/api/crops/pests-diseases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'disease_risk_assessment', farm_id: farmId })
+        body: JSON.stringify({ action: 'disease_risk_assessment', farm_id: farmId }),
       });
       if (!response.ok) throw new Error('Failed to fetch risk assessment');
       return await response.json();
@@ -80,19 +76,9 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
   });
 
   const handleCreateIssue = () => {
-    // Mock create issue for now
-    const mockIssue = {
-      farm_id: farmId,
-      field_id: '1',
-      issue_type: 'pest' as const,
-      crop_type: 'corn',
-      pest_name: 'Corn Borer',
-      severity: 'medium' as const,
-      affected_area_percent: 25,
-      description: 'Sample pest issue for demonstration',
-      status: 'active' as const
-    };
-    createIssue(mockIssue);
+    // Create a new pest issue - user will fill in the form
+    console.log('Opening pest issue creation form for farm:', farmId);
+    // In a real implementation, this would open a modal or navigate to a form
   };
 
   if (isLoading) {
@@ -145,11 +131,11 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
               { key: 'overview', label: 'Overview', icon: TrendingUp },
               { key: 'issues', label: 'Pest Issues', icon: Bug },
               { key: 'outbreaks', label: 'Disease Outbreaks', icon: Shield },
-              { key: 'prevention', label: 'Prevention', icon: Calendar }
+              { key: 'prevention', label: 'Prevention', icon: Calendar },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key as any)}
+                onClick={() => setActiveTab(key as unknown)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-1 ${
                   activeTab === key
                     ? 'border-red-500 text-red-600'
@@ -174,11 +160,15 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                       <AlertTriangle className="h-5 w-5 text-red-500" />
                       <span className="font-medium">Overall Risk</span>
                     </div>
-                    <p className={`text-2xl font-bold ${
-                      riskAssessment.risk_assessment?.overall_risk === 'high' ? 'text-red-600' :
-                      riskAssessment.risk_assessment?.overall_risk === 'medium' ? 'text-yellow-600' :
-                      'text-green-600'
-                    }`}>
+                    <p
+                      className={`text-2xl font-bold ${
+                        riskAssessment.risk_assessment?.overall_risk === 'high'
+                          ? 'text-red-600'
+                          : riskAssessment.risk_assessment?.overall_risk === 'medium'
+                            ? 'text-yellow-600'
+                            : 'text-green-600'
+                      }`}
+                    >
                       {riskAssessment.risk_assessment?.overall_risk || 'Low'}
                     </p>
                     <p className="text-sm text-gray-600">Current level</p>
@@ -208,21 +198,28 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
               <div className="border rounded-lg p-6">
                 <h4 className="font-medium mb-4">Recent Activity</h4>
                 <div className="space-y-3">
-                  {pestIssues.slice(0, 3).map((issue) => (
-                    <div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  {pestIssues.slice(0, 3).map(issue => (
+                    <div
+                      key={issue.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                    >
                       <div className="flex items-center gap-3">
                         <Bug className="h-4 w-4 text-orange-500" />
                         <div>
                           <p className="font-medium">{issue.pest_name}</p>
-                          <p className="text-sm text-gray-600">{issue.crop_type} • {issue.field_name}</p>
+                          <p className="text-sm text-gray-600">
+                            {issue.crop_type} • {issue.field_name}
+                          </p>
                         </div>
                       </div>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${SEVERITY_COLORS[issue.severity]}`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${SEVERITY_COLORS[issue.severity]}`}
+                      >
                         {issue.severity}
                       </span>
                     </div>
                   ))}
-                  
+
                   {pestIssues.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -250,7 +247,7 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pestIssues.map((issue) => (
+                  {pestIssues.map(issue => (
                     <div key={issue.id} className="border rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -260,10 +257,14 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[issue.severity]}`}>
+                          <span
+                            className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[issue.severity]}`}
+                          >
                             {issue.severity}
                           </span>
-                          <span className={`px-3 py-1 rounded text-sm font-medium ${STATUS_COLORS[issue.status]}`}>
+                          <span
+                            className={`px-3 py-1 rounded text-sm font-medium ${STATUS_COLORS[issue.status]}`}
+                          >
                             {issue.status}
                           </span>
                         </div>
@@ -320,7 +321,7 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {diseaseOutbreaks.map((outbreak) => (
+                  {diseaseOutbreaks.map(outbreak => (
                     <div key={outbreak.id} className="border rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -330,10 +331,14 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[outbreak.severity]}`}>
+                          <span
+                            className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[outbreak.severity]}`}
+                          >
                             {outbreak.severity}
                           </span>
-                          <span className={`px-3 py-1 rounded text-sm font-medium ${STATUS_COLORS[outbreak.status]}`}>
+                          <span
+                            className={`px-3 py-1 rounded text-sm font-medium ${STATUS_COLORS[outbreak.status]}`}
+                          >
                             {outbreak.status}
                           </span>
                         </div>
@@ -369,22 +374,30 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                 <h4 className="font-medium mb-4">Upcoming Prevention Tasks</h4>
                 {preventionTasks?.upcoming && preventionTasks.upcoming.length > 0 ? (
                   <div className="space-y-3">
-                    {preventionTasks.upcoming.map((task: any) => (
-                      <div key={task.id} className="flex items-center justify-between p-3 bg-blue-50 rounded">
+                    {preventionTasks.upcoming.map((task: unknown) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center justify-between p-3 bg-blue-50 rounded"
+                      >
                         <div className="flex items-center gap-3">
                           <Clock className="h-4 w-4 text-blue-500" />
                           <div>
                             <p className="font-medium">{task.task_name}</p>
                             <p className="text-sm text-gray-600">
-                              {task.field_name} • Due {new Date(task.scheduled_date).toLocaleDateString()}
+                              {task.field_name} • Due{' '}
+                              {new Date(task.scheduled_date).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                          task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            task.priority === 'high'
+                              ? 'bg-red-100 text-red-800'
+                              : task.priority === 'medium'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-green-100 text-green-800'
+                          }`}
+                        >
                           {task.priority}
                         </span>
                       </div>

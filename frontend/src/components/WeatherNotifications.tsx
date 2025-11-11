@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { Bell, CheckCircle, X, AlertTriangle, Info, Settings, Loader2, AlertCircle, BellRing } from 'lucide-react';
+import {
+  Bell,
+  CheckCircle,
+  X,
+  AlertTriangle,
+  Info,
+  Settings,
+  Loader2,
+  AlertCircle,
+  BellRing,
+} from 'lucide-react';
 
 interface WeatherNotification {
   id: string;
@@ -23,7 +33,7 @@ interface WeatherNotificationsProps {
 export function WeatherNotifications({
   farmId,
   enablePush = false,
-  onNotificationClick
+  onNotificationClick,
 }: WeatherNotificationsProps) {
   const { getAuthHeaders } = useAuth();
   const [showAll, setShowAll] = useState(false);
@@ -43,18 +53,23 @@ export function WeatherNotifications({
     }
   };
 
-  const { data: notifications, isLoading, error, refetch } = useQuery({
+  const {
+    data: notifications,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['weather-notifications', farmId],
     queryFn: async () => {
       const response = await fetch('/api/weather/recommendations', {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error('Failed to fetch notifications');
-      
+
       const recommendations = await response.json();
-      
+
       // Convert recommendations to notifications
-      const notifications: WeatherNotification[] = recommendations.map((rec: any) => ({
+      const notifications: WeatherNotification[] = recommendations.map((rec: unknown) => ({
         id: rec.id,
         type: rec.priority === 'urgent' || rec.priority === 'high' ? 'alert' : 'recommendation',
         title: rec.title,
@@ -62,9 +77,9 @@ export function WeatherNotifications({
         severity: rec.priority,
         timestamp: rec.created_at,
         acknowledged: false,
-        actions: rec.action_items
+        actions: rec.action_items,
       }));
-      
+
       return notifications;
     },
     enabled: !!farmId,
@@ -78,16 +93,16 @@ export function WeatherNotifications({
         headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'acknowledge_alert',
-          alert_id: notificationId
-        })
+          alert_id: notificationId,
+        }),
       });
-      
+
       if (!response.ok) throw new Error('Failed to acknowledge notification');
       return response.json();
     },
     onSuccess: () => {
       refetch();
-    }
+    },
   });
 
   const handleNotificationClick = (notification: WeatherNotification) => {
@@ -101,11 +116,12 @@ export function WeatherNotifications({
   useEffect(() => {
     if (enablePush && permissionStatus === 'granted' && notifications) {
       // Check for new critical alerts
-      const criticalAlerts = notifications.filter(n => 
-        n.type === 'alert' && 
-        n.severity === 'critical' && 
-        !n.acknowledged &&
-        Date.now() - new Date(n.timestamp).getTime() < 5 * 60 * 1000 // Last 5 minutes
+      const criticalAlerts = notifications.filter(
+        n =>
+          n.type === 'alert' &&
+          n.severity === 'critical' &&
+          !n.acknowledged &&
+          Date.now() - new Date(n.timestamp).getTime() < 5 * 60 * 1000 // Last 5 minutes
       );
 
       criticalAlerts.forEach(alert => {
@@ -114,7 +130,7 @@ export function WeatherNotifications({
             body: alert.message,
             icon: '/favicon.ico',
             badge: '/badge-icon.png',
-            tag: alert.id
+            tag: alert.id,
           });
         }
       });
@@ -122,7 +138,9 @@ export function WeatherNotifications({
   }, [notifications, enablePush, permissionStatus]);
 
   const unacknowledgedNotifications = notifications?.filter(n => !n.acknowledged) || [];
-  const displayedNotifications = showAll ? (notifications || []) : unacknowledgedNotifications.slice(0, 5);
+  const displayedNotifications = showAll
+    ? notifications || []
+    : unacknowledgedNotifications.slice(0, 5);
 
   const getNotificationIcon = (type: string, severity?: string) => {
     switch (type) {
@@ -137,10 +155,14 @@ export function WeatherNotifications({
 
   const getSeverityColor = (severity?: string) => {
     switch (severity) {
-      case 'critical': return 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50';
-      case 'high': return 'border-orange-500 bg-gradient-to-r from-orange-50 to-yellow-50';
-      case 'medium': return 'border-yellow-500 bg-gradient-to-r from-yellow-50 to-amber-50';
-      default: return 'border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50';
+      case 'critical':
+        return 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50';
+      case 'high':
+        return 'border-orange-500 bg-gradient-to-r from-orange-50 to-yellow-50';
+      case 'medium':
+        return 'border-yellow-500 bg-gradient-to-r from-yellow-50 to-amber-50';
+      default:
+        return 'border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50';
     }
   };
 
@@ -164,10 +186,11 @@ export function WeatherNotifications({
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Notifications Unavailable</h2>
           <p className="text-gray-600 mb-4">
-            We're having trouble loading weather notifications. Please check your connection and try again.
+            We&apos;re having trouble loading weather notifications. Please check your connection
+            and try again.
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry
@@ -190,11 +213,13 @@ export function WeatherNotifications({
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">Weather Notifications</h1>
-                  <p className="text-sm text-gray-600 mt-1">Stay informed about weather alerts and recommendations</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Stay informed about weather alerts and recommendations
+                  </p>
                 </div>
               </div>
             </div>
-            
+
             {/* Notification Permission Button */}
             {enablePush && permissionStatus === 'default' && (
               <button
@@ -220,7 +245,7 @@ export function WeatherNotifications({
             </div>
           ) : (
             <div className="space-y-4">
-              {displayedNotifications.map((notification) => (
+              {displayedNotifications.map(notification => (
                 <div
                   key={notification.id}
                   className={`border rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg ${getSeverityColor(notification.severity)}`}
@@ -230,29 +255,37 @@ export function WeatherNotifications({
                     <div className="flex-shrink-0 mt-1 p-2 bg-white rounded-lg shadow-sm">
                       {getNotificationIcon(notification.type, notification.severity)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900 truncate">{notification.title}</h4>
+                        <h4 className="font-semibold text-gray-900 truncate">
+                          {notification.title}
+                        </h4>
                         <div className="flex items-center gap-2 ml-3">
                           {notification.severity && (
-                            <span className={`text-xs px-2 py-1 rounded-full text-white font-medium ${
-                              notification.severity === 'critical' ? 'bg-red-600' :
-                              notification.severity === 'high' ? 'bg-orange-500' :
-                              notification.severity === 'medium' ? 'bg-yellow-500' : 'bg-gray-500'
-                            }`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full text-white font-medium ${
+                                notification.severity === 'critical'
+                                  ? 'bg-red-600'
+                                  : notification.severity === 'high'
+                                    ? 'bg-orange-500'
+                                    : notification.severity === 'medium'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-gray-500'
+                              }`}
+                            >
                               {notification.severity.toUpperCase()}
                             </span>
                           )}
-                          
+
                           {!notification.acknowledged && (
                             <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
                           )}
                         </div>
                       </div>
-                      
+
                       <p className="text-sm text-gray-700 mb-3">{notification.message}</p>
-                      
+
                       {notification.actions && notification.actions.length > 0 && (
                         <div className="text-xs text-gray-600 mb-3">
                           <span className="font-semibold">Recommended Actions: </span>
@@ -260,12 +293,12 @@ export function WeatherNotifications({
                           {notification.actions.length > 2 && '...'}
                         </div>
                       )}
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="text-xs text-gray-500">
                           {new Date(notification.timestamp).toLocaleString()}
                         </div>
-                        
+
                         {notification.acknowledged && (
                           <div className="flex items-center gap-1 text-green-600">
                             <CheckCircle className="h-4 w-4" />
@@ -277,7 +310,7 @@ export function WeatherNotifications({
                   </div>
                 </div>
               ))}
-              
+
               {notifications && notifications.length > 5 && !showAll && (
                 <button
                   onClick={() => setShowAll(true)}
@@ -286,7 +319,7 @@ export function WeatherNotifications({
                   View all {notifications.length} notifications
                 </button>
               )}
-              
+
               {showAll && notifications && notifications.length > 5 && (
                 <button
                   onClick={() => setShowAll(false)}

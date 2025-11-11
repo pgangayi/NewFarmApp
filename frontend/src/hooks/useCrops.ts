@@ -27,7 +27,12 @@ export function useCrops() {
   const apiClient = getApiClient();
 
   // Fetch all crops
-  const { data: crops, isLoading, error, refetch } = useQuery({
+  const {
+    data: crops,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['crops'],
     queryFn: async () => {
       const response = await apiClient.get<Crop[]>(apiEndpoints.crops.list);
@@ -39,12 +44,13 @@ export function useCrops() {
   });
 
   // Create crop mutation
-  const { mutate: createCrop, isPending: isCreating, error: createError } = useMutation({
+  const {
+    mutate: createCrop,
+    isPending: isCreating,
+    error: createError,
+  } = useMutation({
     mutationFn: async (cropData: CreateCropForm) => {
-      const response = await apiClient.post<Crop>(
-        apiEndpoints.crops.create,
-        cropData
-      );
+      const response = await apiClient.post<Crop>(apiEndpoints.crops.create, cropData);
       return response;
     },
     onSuccess: () => {
@@ -53,12 +59,13 @@ export function useCrops() {
   });
 
   // Update crop mutation
-  const { mutate: updateCrop, isPending: isUpdating, error: updateError } = useMutation({
+  const {
+    mutate: updateCrop,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async ({ id, ...cropData }: UpdateCropForm) => {
-      const response = await apiClient.put<Crop>(
-        apiEndpoints.crops.update(id),
-        cropData
-      );
+      const response = await apiClient.put<Crop>(apiEndpoints.crops.update(id), cropData);
       return response;
     },
     onSuccess: () => {
@@ -67,7 +74,11 @@ export function useCrops() {
   });
 
   // Delete crop mutation
-  const { mutate: deleteCrop, isPending: isDeleting, error: deleteError } = useMutation({
+  const {
+    mutate: deleteCrop,
+    isPending: isDeleting,
+    error: deleteError,
+  } = useMutation({
     mutationFn: async (id: string) => {
       await apiClient.delete(apiEndpoints.crops.delete(id));
     },
@@ -99,7 +110,12 @@ export function useCrops() {
 export function useCropsByField(fieldId: number) {
   const apiClient = getApiClient();
 
-  const { data: crops, isLoading, error, refetch } = useQuery({
+  const {
+    data: crops,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['crops', 'field', fieldId],
     queryFn: async () => {
       const response = await apiClient.get<Crop[]>(
@@ -125,12 +141,12 @@ export function useCropsStats() {
   const stats = {
     total: crops.length,
     byStatus: {
-      planned: crops.filter((c) => c.status === 'planned').length,
-      active: crops.filter((c) => c.status === 'active').length,
-      harvested: crops.filter((c) => c.status === 'harvested').length,
-      failed: crops.filter((c) => c.status === 'failed').length,
+      planned: crops.filter(c => c.status === 'planned').length,
+      active: crops.filter(c => c.status === 'active').length,
+      harvested: crops.filter(c => c.status === 'harvested').length,
+      failed: crops.filter(c => c.status === 'failed').length,
     },
-    activeCount: crops.filter((c) => c.status === 'active').length,
+    activeCount: crops.filter(c => c.status === 'active').length,
   };
 
   return stats;

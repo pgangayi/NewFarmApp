@@ -4,13 +4,14 @@
  */
 
 export class ApiError extends Error {
-  constructor(
-    public statusCode: number,
-    public message: string,
-    public details?: any
-  ) {
+  public statusCode: number;
+  public details?: unknown;
+
+  constructor(statusCode: number, message: string, details?: unknown) {
     super(message);
     this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.details = details;
   }
 }
 
@@ -21,8 +22,8 @@ export interface ApiClientConfig {
 }
 
 export interface RequestOptions extends RequestInit {
-  data?: any;
-  params?: Record<string, any>;
+  data?: unknown;
+  params?: Record<string, unknown>;
   skipAuth?: boolean;
 }
 
@@ -36,7 +37,8 @@ export class ApiClient {
   private getAuthHeaders: (() => Record<string, string>) | null = null;
 
   constructor(config: ApiClientConfig = {}) {
-    const browserBase = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+    const browserBase =
+      typeof window !== 'undefined' && window.location ? window.location.origin : '';
     this.baseUrl = config.baseUrl ?? browserBase;
     this.timeout = config.timeout || 30000;
     this.retryAttempts = config.retryAttempts || 3;
@@ -52,9 +54,11 @@ export class ApiClient {
   /**
    * Build the full URL with query parameters
    */
-  private buildUrl(endpoint: string, params?: Record<string, any>): string {
+  private buildUrl(endpoint: string, params?: Record<string, unknown>): string {
     const isAbsolute = /^https?:\/\//i.test(endpoint);
-    const base = this.baseUrl || (typeof window !== 'undefined' && window.location ? window.location.origin : '');
+    const base =
+      this.baseUrl ||
+      (typeof window !== 'undefined' && window.location ? window.location.origin : '');
 
     let urlString: string;
 
@@ -96,7 +100,7 @@ export class ApiClient {
    */
   private getHeaders(options: RequestOptions = {}): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     if (options.headers && typeof options.headers === 'object') {
@@ -113,10 +117,7 @@ export class ApiClient {
   /**
    * Perform request with retry logic and error handling
    */
-  async request<T>(
-    endpoint: string,
-    options: RequestOptions = {}
-  ): Promise<T> {
+  async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= this.retryAttempts; attempt++) {
@@ -127,19 +128,24 @@ export class ApiClient {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-        const response = await fetch(url, {
+        const fetchOptions: RequestInit = {
           ...options,
-          body,
           headers: this.getHeaders(options),
-          signal: controller.signal
-        });
+          signal: controller.signal,
+        };
+
+        if (body !== undefined) {
+          fetchOptions.body = body;
+        }
+
+        const response = await fetch(url, fetchOptions);
 
         clearTimeout(timeoutId);
 
         // Handle successful response
         if (response.ok) {
           const contentType = response.headers.get('content-type');
-          
+
           // Return empty response for 204 No Content
           if (response.status === 204) {
             return {} as T;
@@ -151,16 +157,19 @@ export class ApiClient {
           }
 
           // Parse other content types
-          return await response.text() as any;
+          return (await response.text()) as T;
         }
 
         // Handle error responses
         let errorMessage = response.statusText || 'Unknown error';
-        let errorDetails: any = {};
+        let errorDetails: unknown = {};
 
         try {
           errorDetails = await response.json();
-          errorMessage = errorDetails.error || errorDetails.message || errorMessage;
+          if (typeof errorDetails === 'object' && errorDetails !== null) {
+            const errorObj = errorDetails as Record<string, unknown>;
+            errorMessage = String(errorObj['error'] || errorObj['message'] || errorMessage);
+          }
         } catch {
           // Response is not JSON, use status text
         }
@@ -181,7 +190,7 @@ export class ApiClient {
       } catch (error) {
         if (error instanceof ApiError) {
           lastError = error;
-        } else if (error instanceof TypeError && (error as any).name === 'AbortError') {
+        } else if (error instanceof TypeError && error.name === 'AbortError') {
           lastError = new ApiError(408, 'Request timeout');
         } else {
           lastError = new ApiError(500, 'Network error', error);
@@ -209,40 +218,52 @@ export class ApiClient {
   async get<T>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'GET'
+      method: 'GET',
     });
   }
 
   /**
    * POST request
    */
-  async post<T>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+  async post<T>(
+    endpoint: string,
+    data?: unknown,
+    options?: Omit<RequestOptions, 'method' | 'body'>
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      data
+      data,
     });
   }
 
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+  async put<T>(
+    endpoint: string,
+    data?: unknown,
+    options?: Omit<RequestOptions, 'method' | 'body'>
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
-      data
+      data,
     });
   }
 
   /**
    * PATCH request
    */
-  async patch<T>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+  async patch<T>(
+    endpoint: string,
+    data?: unknown,
+    options?: Omit<RequestOptions, 'method' | 'body'>
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
-      data
+      data,
     });
   }
 
@@ -252,7 +273,7 @@ export class ApiClient {
   async delete<T>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'DELETE'
+      method: 'DELETE',
     });
   }
 }

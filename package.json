@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test:unit": "node ./functions/api/operations/test_apply_treatment.js",
-    "test:integration": "node ./functions/api/operations/test_integration.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "deploy": "./deploy.sh",
@@ -12,15 +10,10 @@
     "build": "cd frontend && npm run build",
     "build:ci": "cd frontend && VITE_MAPBOX_TOKEN=dummy_token npm run build",
     "dev": "cd frontend && npm run dev",
-    "dev:local": "wrangler pages dev frontend --local --port 8788 --env local",
-    "dev:functions": "wrangler dev --local --port 8787 --env local",
+    "dev:local": "wrangler pages dev frontend --local --port 8788",
+    "dev:functions": "wrangler dev --local --port 8787",
     "setup:local": "echo 'Setting up local development environment...' && echo '1. Install Wrangler CLI: npm install -g wrangler' && echo '2. Start Cloudflare D1 locally: wrangler d1 start' && echo '3. Copy .env.example to .env and fill in local values' && echo '4. Run migrations: wrangler d1 execute db --local --file=./migrations/0001_d1_complete_schema.sql' && echo '5. Run: npm run dev:local'",
     "setup:local:windows": "powershell -ExecutionPolicy Bypass -File ./setup-local.ps1",
     "setup:local:unix": "bash ./setup-local.sh"
-  },
-  "dependencies": {
-    "pg": "^8.11.0",
-    "dotenv": "^16.0.0",
-    "@sentry/cloudflare": "^8.0.0"
   }
 }

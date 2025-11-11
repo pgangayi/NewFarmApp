@@ -1,100 +1,103 @@
-// Rate limiting middleware for Pages Functions
-// Uses Cloudflare KV for distributed rate limiting
+// Cloudflare Workers Rate Limiting
+// Simple in-memory rate limiter for authentication endpoints
+
+const RATE_LIMIT_STORE = new Map();
+
+// Rate limit configurations (development-friendly limits)
+const RATE_LIMITS = {
+  login: { requests: 20, window: 60000 }, // 20 requests per minute
+  signup: { requests: 10, window: 3600000 }, // 10 requests per hour
+  forgotPassword: { requests: 10, window: 3600000 }, // 10 requests per hour
+  resetPassword: { requests: 15, window: 300000 }, // 15 requests per 5 minutes
+};
 
 export class RateLimiter {
-  constructor(state, env) {
-    this.state = state;
-    this.env = env;
+  static getClientIP(request) {
+    return (
+      request.headers.get("CF-Connecting-IP") ||
+      request.headers.get("X-Forwarded-For") ||
+      "unknown"
+    );
   }
 
-  async checkLimit(identifier, limit = 100, windowMs = 60000) { // 100 requests per minute default
-    const key = `rate_limit:${identifier}`;
+  static isRateLimited(endpoint, clientIP) {
+    const config = RATE_LIMITS[endpoint];
+    if (!config) return false;
+
+    const key = `${endpoint}:${clientIP}`;
     const now = Date.now();
-    const windowStart = now - windowMs;
+    const windowStart = now - config.window;
 
-    // Get current requests in window
-    const requests = await this.env.RATE_LIMIT_KV?.get(key);
-    let requestData = requests ? JSON.parse(requests) : { count: 0, resetTime: now + windowMs };
-
-    // Reset if window has passed
-    if (now > requestData.resetTime) {
-      requestData = { count: 0, resetTime: now + windowMs };
+    // Get or create rate limit record
+    let record = RATE_LIMIT_STORE.get(key);
+    if (!record || record.windowStart < windowStart) {
+      record = { count: 0, windowStart: now };
     }
 
-    // Check if limit exceeded
-    if (requestData.count >= limit) {
+    // Reset if outside window
+    if (record.windowStart < windowStart) {
+      record.count = 0;
+      record.windowStart = now;
+    }
+
+    // Check limit
+    if (record.count >= config.requests) {
       return {
-        allowed: false,
-        remaining: 0,
-        resetTime: requestData.resetTime,
-        retryAfter: Math.ceil((requestData.resetTime - now) / 1000)
+        limited: true,
+        retryAfter: Math.ceil(
+          (record.windowStart + config.window - now) / 1000
+        ),
       };
     }
 
     // Increment counter
-    requestData.count++;
+    record.count++;
+    RATE_LIMIT_STORE.set(key, record);
 
-    // Store updated data
-    await this.env.RATE_LIMIT_KV?.put(key, JSON.stringify(requestData), {
-      expirationTtl: Math.ceil(windowMs / 1000)
-    });
+    return { limited: false, remaining: config.requests - record.count };
+  }
+
+  static getRateLimitHeaders(endpoint, clientIP) {
+    const config = RATE_LIMITS[endpoint];
+    if (!config) return {};
+
+    const key = `${endpoint}:${clientIP}`;
+    const record = RATE_LIMIT_STORE.get(key) || {
+      count: 0,
+      windowStart: Date.now(),
+    };
+    const resetTime = new Date(
+      record.windowStart + config.window
+    ).toISOString();
 
     return {
-      allowed: true,
-      remaining: limit - requestData.count,
-      resetTime: requestData.resetTime
+      "X-RateLimit-Limit": config.requests.toString(),
+      "X-RateLimit-Remaining": Math.max(
+        0,
+        config.requests - record.count
+      ).toString(),
+      "X-RateLimit-Reset": resetTime,
     };
   }
-}
 
-export function withRateLimit(handler, options = {}) {
-  const {
-    limit = 100, // requests per window
-    windowMs = 60000, // 1 minute
-    identifierFn = (request) => {
-      // Default: rate limit by IP address
-      return request.headers.get('CF-Connecting-IP') ||
-             request.headers.get('X-Forwarded-For') ||
-             'unknown';
-    },
-    skipFn = () => false // function to skip rate limiting
-  } = options;
-
-  return async (context) => {
-    const { request, env } = context;
-
-    if (skipFn(request)) {
-      return handler(context);
-    }
-
-    const identifier = identifierFn(request);
-    const rateLimiter = new RateLimiter(null, env);
-
-    const result = await rateLimiter.checkLimit(identifier, limit, windowMs);
-
-    if (!result.allowed) {
-      return new Response(JSON.stringify({
-        error: 'Rate limit exceeded',
-        retryAfter: result.retryAfter
-      }), {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'Retry-After': result.retryAfter.toString(),
-          'X-RateLimit-Remaining': result.remaining.toString(),
-          'X-RateLimit-Reset': new Date(result.resetTime).toISOString()
+  static createRateLimitResponse(endpoint, clientIP) {
+    const limited = this.isRateLimited(endpoint, clientIP);
+    if (limited.limited) {
+      return new Response(
+        JSON.stringify({
+          error: "Too many requests",
+          retryAfter: limited.retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": limited.retryAfter.toString(),
+            ...this.getRateLimitHeaders(endpoint, clientIP),
+          },
         }
-      });
+      );
     }
-
-    // Add rate limit headers to response
-    const response = await handler(context);
-
-    // Clone response to add headers
-    const newResponse = new Response(response.body, response);
-    newResponse.headers.set('X-RateLimit-Remaining', result.remaining.toString());
-    newResponse.headers.set('X-RateLimit-Reset', new Date(result.resetTime).toISOString());
-
-    return newResponse;
-  };
+    return null;
+  }
 }

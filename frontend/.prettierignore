@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+node_modules._bak_*
+
+# Build outputs
+dist
+build
+.output
+.vite
+
+# Coverage and test results
+coverage
+.nyc_output
+test-results
+playwright-report
+
+# Logs
+*.log
+logs
+
+# Environment files
+.env
+.env.*
+
+# Auto-generated files
+*.gen.ts
+*.generated.*
+routeTree.gen.ts
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
