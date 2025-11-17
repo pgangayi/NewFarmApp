@@ -114,7 +114,7 @@ export function CropsPage() {
       };
 
       // Awaitable create
-      const created = await createCropAsync ? createCropAsync(payload) : Promise.resolve(null);
+      const created = (await createCropAsync) ? createCropAsync(payload) : Promise.resolve(null);
 
       // Optionally inspect created result here
       setFormData({

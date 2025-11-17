@@ -66,7 +66,8 @@ export function useOfflineQueue() {
     switch (op.type) {
       case 'create_inventory_item': {
         const p: any = op.payload as any;
-        if (!p.name || (!p.qty && p.qty !== 0)) return { valid: false, error: 'Invalid create payload: name and qty required' };
+        if (!p.name || (!p.qty && p.qty !== 0))
+          return { valid: false, error: 'Invalid create payload: name and qty required' };
         return { valid: true };
       }
       case 'update_inventory_item':
@@ -77,7 +78,8 @@ export function useOfflineQueue() {
       }
       case 'apply_treatment': {
         const p: any = op.payload as any;
-        if (!p.items || !Array.isArray(p.items) || p.items.length === 0) return { valid: false, error: 'Invalid treatment payload: items required' };
+        if (!p.items || !Array.isArray(p.items) || p.items.length === 0)
+          return { valid: false, error: 'Invalid treatment payload: items required' };
         return { valid: true };
       }
       default:
@@ -157,7 +159,8 @@ export function useOfflineQueue() {
   const processOperation = async (op: OfflineOperation) => {
     // Prefer centralized headers getter (keeps in sync with AuthContext)
     const storedHeaders = getAuthHeadersFromStorage();
-    if (!storedHeaders || !storedHeaders.Authorization) return { success: false, error: 'No auth token' };
+    if (!storedHeaders || !storedHeaders.Authorization)
+      return { success: false, error: 'No auth token' };
     const headers = {
       'Content-Type': 'application/json',
       ...storedHeaders,

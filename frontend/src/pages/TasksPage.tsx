@@ -156,7 +156,10 @@ export function TasksPage() {
   const startTimer = async (task: Task) => {
     const now = new Date().toISOString();
     try {
-      const res = await apiClient.post('/api/tasks/time-logs', { task_id: task.id, start_time: now });
+      const res = await apiClient.post('/api/tasks/time-logs', {
+        task_id: task.id,
+        start_time: now,
+      });
       // expect res.id or res.data.id
       const id = (res && (res.id || (res.data && res.data.id))) as number | undefined;
       setActiveLogMap(prev => ({ ...prev, [task.id]: id || null }));

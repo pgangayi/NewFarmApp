@@ -1,6 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AuthResponse } from '../types/entities';
-import { setAuth, getAuth, clearAuth, getAccessToken, getAuthHeadersFromStorage } from '../lib/authStorage';
+import {
+  setAuth,
+  getAuth,
+  clearAuth,
+  getAccessToken,
+  getAuthHeadersFromStorage,
+} from '../lib/authStorage';
 
 interface AuthSession {
   access_token: string;
