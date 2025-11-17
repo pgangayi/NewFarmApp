@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
+import { useTasks } from '../hooks/useTasks';
+import { useApiClient } from '../hooks/useApiClient';
+import { useFarm } from '../hooks/useFarm';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import {
   CheckSquare,
@@ -143,171 +146,46 @@ export function TasksPage() {
     startTime: Date;
   } | null>(null);
 
-  // Get farms for dropdown
-  const { data: farms } = useQuery({
-    queryKey: ['farms'],
-    queryFn: async () => {
-      const response = await fetch('/api/farms', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch farms');
-      return response.json();
-    },
-    enabled: isAuthenticated(),
-  });
+  const { tasks, isLoading, error, refetch, createTask, updateTask, deleteTask } = useTasks();
+  const apiClient = useApiClient();
+  const { currentFarm } = useFarm();
+  const [activeLogMap, setActiveLogMap] = useState<Record<number, number | null>>({});
 
-  // Get enhanced tasks
-  const {
-    data: tasks,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['tasks', 'enhanced'],
-    queryFn: async () => {
-      const response = await fetch('/api/tasks?analytics=true', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+  // We'll use useTasks' create/update/delete which already invalidate ['tasks']
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch tasks: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<Task[]>;
-    },
-    enabled: isAuthenticated(),
-  });
-
-  // Get task templates
-  const { data: templates } = useQuery({
-    queryKey: ['tasks', 'templates'],
-    queryFn: async () => {
-      const response = await fetch('/api/tasks/templates', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch templates: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<TaskTemplate[]>;
-    },
-    enabled: isAuthenticated(),
-  });
-
-  // Get users for assignment
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const response = await fetch('/api/users', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      return response.json();
-    },
-    enabled: isAuthenticated(),
-  });
-
-  const createTaskMutation = useMutation({
-    mutationFn: async (taskData: TaskFormData) => {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(taskData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create task');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
+  const startTimer = async (task: Task) => {
+    const now = new Date().toISOString();
+    try {
+      const res = await apiClient.post('/api/tasks/time-logs', { task_id: task.id, start_time: now });
+      // expect res.id or res.data.id
+      const id = (res && (res.id || (res.data && res.data.id))) as number | undefined;
+      setActiveLogMap(prev => ({ ...prev, [task.id]: id || null }));
+      setTimerActive(prev => ({ ...prev, [task.id]: true }));
+      setCurrentTimer({ taskId: task.id, startTime: new Date() });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setShowCreateForm(false);
-    },
-  });
+    } catch (err) {
+      console.error('Failed to start timer', err);
+    }
+  };
 
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ id, ...taskData }: TaskFormData & { id: number }) => {
-      const response = await fetch('/api/tasks', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ id, ...taskData }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update task');
+  const stopTimer = async (task: Task) => {
+    const now = new Date().toISOString();
+    const logId = activeLogMap[task.id];
+    try {
+      if (logId) {
+        await apiClient.patch(`/api/tasks/time-logs/${logId}`, { end_time: now });
+      } else {
+        // fallback: send end by task id
+        await apiClient.post('/api/tasks/time-logs', { task_id: task.id, end_time: now });
       }
-
-      return response.json();
-    },
-    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setEditingTask(null);
-    },
-  });
-
-  const startTimerMutation = useMutation({
-    mutationFn: async ({ taskId, startTime }: { taskId: number; startTime: string }) => {
-      const response = await fetch('/api/tasks/time-logs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({
-          task_id: taskId,
-          start_time: startTime,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start timer');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-
-  const stopTimerMutation = useMutation({
-    mutationFn: async ({ taskId, endTime }: { taskId: number; endTime: string }) => {
-      const response = await fetch('/api/tasks/time-logs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({
-          task_id: taskId,
-          end_time: endTime,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to stop timer');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setTimerActive(prev => ({ ...prev, [currentTimer?.taskId || 0]: false }));
+      setTimerActive(prev => ({ ...prev, [task.id]: false }));
       setCurrentTimer(null);
-    },
-  });
+      setActiveLogMap(prev => ({ ...prev, [task.id]: null }));
+    } catch (err) {
+      console.error('Failed to stop timer', err);
+    }
+  };
 
   const handleCreateTask = (taskData: TaskFormData) => {
     createTaskMutation.mutate(taskData);

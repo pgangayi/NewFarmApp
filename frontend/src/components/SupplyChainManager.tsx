@@ -631,11 +631,19 @@ export default function SupplyChainManager() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => alert('Vendor details view coming soon!')}
+                        >
                           <Eye className="h-3 w-3 mr-1" />
                           View
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => alert('Vendor editing coming soon!')}
+                        >
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
                         </Button>
@@ -740,24 +748,40 @@ export default function SupplyChainManager() {
                     <div className="border-t pt-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => alert('Order details view coming soon!')}
+                          >
                             <Eye className="h-3 w-3 mr-1" />
                             View Details
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => alert('PDF download coming soon!')}
+                          >
                             <Download className="h-3 w-3 mr-1" />
                             Download PDF
                           </Button>
                         </div>
                         <div className="flex items-center gap-2">
                           {order.status === 'draft' && (
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => alert('Order editing coming soon!')}
+                            >
                               <Edit className="h-3 w-3 mr-1" />
                               Edit
                             </Button>
                           )}
                           {order.approval_status === 'pending' && (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => alert('Order approval coming soon!')}
+                            >
                               <Check className="h-3 w-3 mr-1" />
                               Approve
                             </Button>

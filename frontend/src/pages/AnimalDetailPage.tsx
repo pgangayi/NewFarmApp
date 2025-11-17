@@ -1,7 +1,17 @@
 import _React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
-import { ArrowLeft, Heart, TrendingUp, Baby, FileText } from 'lucide-react';
+import { useAuth } from '../hooks/AuthContext';
+import { useAnimalPedigree, useAnimalMovements } from '../hooks/useAnimals';
+import {
+  ArrowLeft,
+  Heart,
+  TrendingUp,
+  Baby,
+  FileText,
+  GitBranch,
+  MapPin,
+  Calendar,
+} from 'lucide-react';
 import { AnimalHealthManager } from '../components/AnimalHealthManager';
 import { AnimalProductionTracker } from '../components/AnimalProductionTracker';
 import { AnimalBreedingManager } from '../components/AnimalBreedingManager';
@@ -56,6 +66,10 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
   // Get animal ID from URL params or props
   const urlParams = new URLSearchParams(window.location.search);
   const id = animalId || urlParams.get('id');
+
+  // Fetch pedigree and movement data
+  const { pedigree, isLoading: pedigreeLoading } = useAnimalPedigree(id || '');
+  const { movements, isLoading: movementsLoading } = useAnimalMovements(id || '');
 
   const {
     data: animal,
@@ -159,6 +173,8 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
     { id: 'health', name: 'Health Records', icon: Heart },
     { id: 'production', name: 'Production', icon: TrendingUp },
     ...(animal.sex === 'female' ? [{ id: 'breeding', name: 'Breeding', icon: Baby }] : []),
+    { id: 'pedigree', name: 'Pedigree', icon: GitBranch },
+    { id: 'movements', name: 'Movements', icon: MapPin },
     { id: 'analytics', name: 'Analytics', icon: TrendingUp },
   ];
 
@@ -423,6 +439,41 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
       <div className="max-w-7xl mx-auto px-6 py-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Recent Movements */}
+            {movements && movements.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                  Recent Movements
+                </h3>
+                <div className="space-y-3">
+                  {movements.slice(0, 3).map(movement => (
+                    <div
+                      key={movement.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            Location {movement.destination_location_id}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(movement.movement_date).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      {movement.notes && (
+                        <div className="text-xs text-gray-600 max-w-xs truncate">
+                          {movement.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <AnimalAnalyticsDashboard farmId={animal.farm_id} />
           </div>
         )}
@@ -445,6 +496,121 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
             animalName={animal.name}
             animalSex={animal.sex}
           />
+        )}
+
+        {activeTab === 'pedigree' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <GitBranch className="h-5 w-5 text-blue-600" />
+                Pedigree Tree
+              </h3>
+              {pedigreeLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : pedigree ? (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="inline-block p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                      <div className="font-semibold text-blue-900">{animal.name}</div>
+                      <div className="text-sm text-blue-700">
+                        {animal.species} • {animal.breed}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-500 mb-2">Father</div>
+                      {pedigree.parents?.father ? (
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="font-medium text-gray-900">
+                            {pedigree.parents.father.name}
+                          </div>
+                          <div className="text-sm text-gray-600">{pedigree.parents.father.sex}</div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-400">
+                          Unknown
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-gray-500 mb-2">Mother</div>
+                      {pedigree.parents?.mother ? (
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="font-medium text-gray-900">
+                            {pedigree.parents.mother.name}
+                          </div>
+                          <div className="text-sm text-gray-600">{pedigree.parents.mother.sex}</div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-400">
+                          Unknown
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No pedigree information available
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'movements' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-green-600" />
+                Movement Timeline
+              </h3>
+              {movementsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                </div>
+              ) : movements && movements.length > 0 ? (
+                <div className="space-y-4">
+                  {movements.map((movement, index) => (
+                    <div
+                      key={movement.id}
+                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {new Date(movement.movement_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {movement.source_location_id
+                            ? `From: Location ${movement.source_location_id}`
+                            : 'Initial location'}
+                          {' → '}
+                          To: Location {movement.destination_location_id}
+                        </div>
+                        {movement.notes && (
+                          <div className="text-sm text-gray-500 mt-1">{movement.notes}</div>
+                        )}
+                        <div className="text-xs text-gray-400 mt-1">
+                          Recorded by: {movement.recorded_by}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No movement records available</div>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'analytics' && <AnimalAnalyticsDashboard farmId={animal.farm_id} />}

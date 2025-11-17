@@ -2,10 +2,38 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
+import type { Plugin } from 'vite';
+
+// Plugin to fix chrome-extension:// URL issues
+const fixChromeExtensionPlugin = (): Plugin => ({
+  name: 'fix-chrome-extension',
+  configureServer(server) {
+    // Add middleware to handle chrome-extension URLs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    server.middlewares.use((req: any, res: any, next: any) => {
+      if (req.url && req.url.includes('chrome-extension://')) {
+        console.warn('Blocked chrome-extension URL:', req.url);
+        // Don't rewrite - just block to prevent infinite loops
+        res.statusCode = 404;
+        res.end('Not found');
+        return;
+      }
+      next();
+    });
+  },
+  // Also handle during build
+  resolveId(id) {
+    if (id.includes('chrome-extension://')) {
+      return null;
+    }
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/',
   plugins: [
+    fixChromeExtensionPlugin(),
     react({
       jsxRuntime: 'automatic',
     }),
@@ -74,6 +102,8 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: 'localhost',
+    strictPort: false,
     fs: {
       strict: true,
     },
@@ -81,8 +111,18 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8787',
         changeOrigin: true,
+        secure: false,
+        rewrite: path => path,
       },
     },
+    hmr: {
+      overlay: true,
+      protocol: 'ws',
+      host: 'localhost',
+    },
+  },
+  optimizeDeps: {
+    exclude: ['@vite/client', '@vite/env'],
   },
   preview: {
     port: 4173,

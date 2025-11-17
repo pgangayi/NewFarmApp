@@ -2,9 +2,15 @@
 // Provides standardized create, read, update, delete operations with caching, validation, and error handling
 
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  UseMutationResult,
+} from '@tanstack/react-query';
 import { z } from 'zod';
-import { useSmartDataValidation } from './useSmartDataValidation';
+import { useSmartDataValidation } from './useSmartDataValidation'; // Assuming this hook exists
 
 export type CRUDOperation = 'create' | 'read' | 'update' | 'delete' | 'list' | 'bulk' | 'infinite';
 export type QueryStrategy =
@@ -20,7 +26,7 @@ export interface CRUDConfig<T> {
   validationSchema?: z.ZodSchema<T>;
   defaultSort?: { field: keyof T; order: 'asc' | 'desc' };
   defaultPageSize?: number;
-  queryKey: (filters?: unknown) => string[];
+  // queryKey: (filters?: unknown) => string[]; // Removed, hook generates query keys internally
   optimisticUpdates?: boolean;
   gcTime?: number;
   staleTime?: number;
@@ -37,17 +43,15 @@ export interface CRUDFilters {
   status?: string[];
 }
 
-export interface CRUDResult<T> {
-  data: T | null;
+// Simplified CRUDResult for the consumer, using TanStack Query's types internally
+export type CRUDListResult<T> = {
   items: T[];
   total: number;
   page: number;
   pageSize: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
-  isLoading: boolean;
-  error: Error | null;
-}
+};
 
 export interface CRUDState<T> {
   selectedItems: Set<string>;
@@ -63,12 +67,16 @@ export interface CRUDState<T> {
   operationError: Error | null;
 }
 
-export interface OptimisticUpdate<T> {
-  type: 'create' | 'update' | 'delete' | 'bulk';
-  data: T | T[];
-  previousData?: T | T[];
-  timestamp: number;
-}
+// Type for the mutation variables
+type CreateItemData<T> = Omit<T, 'id' | 'created_at' | 'updated_at'>;
+type UpdateItemData<T> = { id: string; data: Partial<T> };
+type BulkOperationData = {
+  operation: 'delete' | 'update' | 'export';
+  ids: string[];
+  data?: unknown;
+};
+
+// Optimistic Update interface is internal, so we can omit it here.
 
 export function useUnifiedCRUD<T extends { id: string; created_at?: Date; updated_at?: Date }>(
   config: CRUDConfig<T>
@@ -82,7 +90,12 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
     isDeleting: false,
     isBulkOperating: false,
     filters: {},
-    sort: config.defaultSort || { field: 'created_at' as string, order: 'desc' },
+    sort:
+      config.defaultSort &&
+      typeof config.defaultSort.field === 'string' &&
+      typeof config.defaultSort.order === 'string'
+        ? { field: config.defaultSort.field, order: config.defaultSort.order as 'asc' | 'desc' }
+        : { field: 'created_at' as string, order: 'desc' as const },
     viewMode: 'list',
     lastOperation: null,
     operationError: null,
@@ -91,15 +104,20 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
   // Hooks and utilities
   const queryClient = useQueryClient();
   const { validateData } = useSmartDataValidation();
-  const operationCache = useRef<Map<string, Promise<unknown>>>(new Map());
 
   // Query key factory
   const getQueryKey = useCallback(
-    (operation: CRUDOperation, filters?: CRUDFilters): string[] => {
+    (operation: CRUDOperation, filters: CRUDFilters = {}): string[] => {
+      // Use explicit filters if provided, otherwise use internal state filters for the UI list
+      const currentFilters =
+        operation === 'list' || operation === 'infinite'
+          ? { ...state.filters, ...filters }
+          : filters;
+
       return [
         config.entityType,
         operation,
-        JSON.stringify(filters || state.filters),
+        JSON.stringify(currentFilters),
         JSON.stringify(state.sort),
       ];
     },
@@ -108,31 +126,38 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
 
   // Base query function
   const queryFunction = useCallback(
-    async (key: string[], variables?: unknown) => {
+    async (key: string[], filters: CRUDFilters = {}) => {
       const endpoint = config.endpoint;
-      const filters = variables || state.filters;
 
       // Build query parameters
       const params = new URLSearchParams();
-      if (filters.search) params.set('search', filters.search);
-      if (filters.page) params.set('page', filters.page.toString());
-      if (filters.pageSize) params.set('pageSize', filters.pageSize.toString());
-      if (filters.sort) {
-        params.set('sort', filters.sort.field);
-        params.set('order', filters.sort.order);
-      }
+
+      // Prioritize passed filters over state.filters for the actual fetch
+      const currentFilters = { ...state.filters, ...filters };
+
+      if (currentFilters.search) params.set('search', currentFilters.search);
+      if (currentFilters.page) params.set('page', currentFilters.page.toString());
+      if (currentFilters.pageSize) params.set('pageSize', currentFilters.pageSize.toString());
+
+      const currentSort = currentFilters.sort || state.sort;
+      params.set('sort', currentSort.field);
+      params.set('order', currentSort.order);
 
       // Add custom filters
-      Object.entries(filters.filters || {}).forEach(([key, value]) => {
+      Object.entries(currentFilters.filters || {}).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           params.set(key, Array.isArray(value) ? value.join(',') : value.toString());
         }
       });
 
       // Add date range
-      if (filters.dateRange) {
-        params.set('startDate', filters.dateRange.start.toISOString());
-        params.set('endDate', filters.dateRange.end.toISOString());
+      if (currentFilters.dateRange) {
+        params.set('startDate', currentFilters.dateRange.start.toISOString());
+        params.set('endDate', currentFilters.dateRange.end.toISOString());
+      }
+
+      if (currentFilters.status) {
+        params.set('status', currentFilters.status.join(','));
       }
 
       const url = `${endpoint}?${params.toString()}`;
@@ -142,194 +167,163 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
         throw new Error(`Failed to fetch ${config.entityType}: ${response.statusText}`);
       }
 
-      return response.json();
+      return response.json() as Promise<CRUDListResult<T>>;
     },
-    [config.endpoint, state.filters]
+    [config.endpoint, state.filters, state.sort]
   );
 
-  // Get single item
-  const getItem = useCallback(
-    (id: string) => {
-      return useQuery({
-        queryKey: [config.entityType, 'item', id],
-        queryFn: async () => {
-          const response = await fetch(`${config.endpoint}/${id}`);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch ${config.entityType} item: ${response.statusText}`);
-          }
-          return response.json();
-        },
-        enabled: !!id,
-        staleTime: config.staleTime || 5 * 60 * 1000, // 5 minutes
-        gcTime: config.gcTime || 30 * 60 * 1000, // 30 minutes
-        retry: config.retryAttempts || 3,
-      });
-    },
-    [config]
-  );
+  // --- QUERIES ---
 
-  // Get list of items
-  const getItems = useCallback(
-    (filters?: CRUDFilters) => {
-      return useQuery({
-        queryKey: getQueryKey('list', filters),
-        queryFn: () => queryFunction(getQueryKey('list', filters), filters),
-        staleTime: config.staleTime || 5 * 60 * 1000,
-        gcTime: config.gcTime || 30 * 60 * 1000,
-        retry: config.retryAttempts || 3,
-      });
-    },
-    [queryFunction, getQueryKey, config.staleTime, config.gcTime, config.retryAttempts]
-  );
-
-  // Infinite scroll for large lists
-  const getInfiniteItems = useCallback(
-    (filters?: CRUDFilters) => {
-      return useInfiniteQuery({
-        queryKey: getQueryKey('infinite', filters),
-        queryFn: ({ pageParam = 1 }) =>
-          queryFunction(getQueryKey('infinite', filters), { ...filters, page: pageParam }),
-        getNextPageParam: (lastPage: unknown) => {
-          if (lastPage.hasNextPage) {
-            return (lastPage.page || 1) + 1;
-          }
-          return undefined;
-        },
-        staleTime: config.staleTime || 5 * 60 * 1000,
-        gcTime: config.gcTime || 30 * 60 * 1000,
-      });
-    },
-    [queryFunction, getQueryKey, config.staleTime, config.gcTime]
-  );
-
-  // Create item mutation
-  const createItemMutation = useCallback(() => {
-    return useMutation({
-      mutationFn: async (itemData: Omit<T, 'id' | 'created_at' | 'updated_at'>) => {
-        // Validate data if schema provided
-        if (config.validationSchema) {
-          try {
-            config.validationSchema.parse(itemData);
-          } catch (error) {
-            if (error instanceof z.ZodError) {
-              throw new Error(`Validation failed: ${error.errors.map(e => e.message).join(', ')}`);
-            }
-            throw error;
-          }
-        }
-
-        // Smart validation if available
-        try {
-          const validationResult = await validateData(itemData, {
-            entityType: config.entityType as unknown,
-            operation: 'create',
-            data: itemData,
-            timestamp: new Date(),
-          });
-
-          if (!validationResult.isValid) {
-            throw new Error(
-              `Data validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`
-            );
-          }
-        } catch (error) {
-          console.warn('Smart validation failed:', error);
-          // Continue with creation even if smart validation fails
-        }
-
-        const response = await fetch(config.endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(itemData),
-        });
-
+  const useGetItem = (id: string) => {
+    return useQuery<T>({
+      queryKey: [config.entityType, 'item', id],
+      queryFn: async () => {
+        const response = await fetch(`${config.endpoint}/${id}`);
         if (!response.ok) {
-          throw new Error(`Failed to create ${config.entityType}: ${response.statusText}`);
+          throw new Error(`Failed to fetch ${config.entityType} item: ${response.statusText}`);
         }
-
-        return response.json();
+        return (await response.json()) as T;
       },
-      onMutate: async newItem => {
-        if (!config.optimisticUpdates) return;
+      enabled: !!id,
+      staleTime: config.staleTime || 5 * 60 * 1000,
+      gcTime: config.gcTime || 30 * 60 * 1000,
+      retry: config.retryAttempts || 3,
+    });
+  };
 
-        // Cancel outgoing refetches
-        await queryClient.cancelQueries({ queryKey: [config.entityType] });
+  const useGetItems = (filters?: CRUDFilters) => {
+    const key = getQueryKey('list', filters);
+    return useQuery<CRUDListResult<T>>({
+      queryKey: key,
+      queryFn: () => queryFunction(key, filters),
+      staleTime: config.staleTime || 5 * 60 * 1000,
+      gcTime: config.gcTime || 30 * 60 * 1000,
+      retry: config.retryAttempts || 3,
+    });
+  };
 
-        // Snapshot the previous value
-        const previousItems = queryClient.getQueryData(getQueryKey('list'));
+  const useGetInfiniteItems = (filters?: CRUDFilters) => {
+    const key = getQueryKey('infinite', filters);
+    return useInfiniteQuery<CRUDListResult<T>>({
+      queryKey: key,
+      queryFn: ({ pageParam = 1 }) => queryFunction(key, { ...filters, page: pageParam as number }),
+      getNextPageParam: lastPage => {
+        if (lastPage.hasNextPage) {
+          return (lastPage.page || 1) + 1;
+        }
+        return undefined;
+      },
+      initialPageParam: 1,
+      staleTime: config.staleTime || 5 * 60 * 1000,
+      gcTime: config.gcTime || 30 * 60 * 1000,
+    });
+  };
 
-        // Optimistically update to the new value
-        const optimisticItem = {
-          ...newItem,
-          id: `temp-${Date.now()}`,
-          created_at: new Date(),
-          updated_at: new Date(),
-        };
+  // --- MUTATIONS ---
 
-        queryClient.setQueryData(getQueryKey('list'), (old: unknown) => {
-          if (!old) return { items: [optimisticItem], total: 1 };
-          return {
-            ...old,
-            items: [optimisticItem, ...old.items],
-            total: (old.total || 0) + 1,
-          };
+  const createItemMutation: UseMutationResult<T, Error, CreateItemData<T>> = useMutation({
+    mutationFn: async itemData => {
+      // Zod Validation
+      if (config.validationSchema) {
+        try {
+          config.validationSchema.parse(itemData);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            throw new Error(`Validation failed: ${error.errors.map(e => e.message).join(', ')}`);
+          }
+          throw error;
+        }
+      }
+
+      // Smart validation
+      try {
+        const validationResult = await validateData(itemData, {
+          entityType: config.entityType,
+          operation: 'create',
+          data: itemData,
+          timestamp: new Date(),
         });
 
-        setState(prev => ({ ...prev, isCreating: true, lastOperation: 'create' }));
-
-        return { previousItems };
-      },
-      onError: (err, newItem, context) => {
-        // Rollback the optimistic update
-        if (context?.previousItems) {
-          queryClient.setQueryData(getQueryKey('list'), context.previousItems);
+        if (!validationResult.isValid) {
+          throw new Error(
+            `Data validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`
+          );
         }
+      } catch (error) {
+        console.warn('Smart validation failed:', error);
+      }
 
-        setState(prev => ({
-          ...prev,
-          isCreating: false,
-          operationError: err as Error,
-          lastOperation: null,
-        }));
-      },
-      onSuccess: data => {
-        // Invalidate and refetch
-        queryClient.invalidateQueries({ queryKey: [config.entityType] });
+      const response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(itemData),
+      });
 
-        setState(prev => ({
-          ...prev,
-          isCreating: false,
-          operationError: null,
-          lastOperation: null,
-        }));
-      },
-    });
-  }, [config, queryClient, validateData, getQueryKey]);
+      if (!response.ok) {
+        throw new Error(`Failed to create ${config.entityType}: ${response.statusText}`);
+      }
 
-  // Update item mutation
-  const updateItemMutation = useCallback(() => {
-    return useMutation({
-      mutationFn: async ({ id, data }: { id: string; data: Partial<T> }) => {
-        // Validate data if schema provided
-        if (config.validationSchema) {
-          try {
-            const partialSchema = config.validationSchema.partial();
-            partialSchema.parse(data);
-          } catch (error) {
-            if (error instanceof z.ZodError) {
-              throw new Error(`Validation failed: ${error.errors.map(e => e.message).join(', ')}`);
-            }
-            throw error;
-          }
-        }
+      return (await response.json()) as T;
+    },
+    onMutate: async newItem => {
+      if (!config.optimisticUpdates) return;
 
+      await queryClient.cancelQueries({ queryKey: [config.entityType] });
+
+      const listQueryKey = getQueryKey('list');
+      const previousItems = queryClient.getQueryData<CRUDListResult<T>>(listQueryKey);
+
+      const optimisticItem = {
+        ...newItem,
+        id: `temp-${Date.now()}`,
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as T;
+
+      queryClient.setQueryData<CRUDListResult<T>>(listQueryKey, old => {
+        if (!old)
+          return {
+            items: [optimisticItem],
+            total: 1,
+            page: 1,
+            pageSize: config.defaultPageSize || 10,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          };
+        return {
+          ...old,
+          items: [optimisticItem, ...old.items].slice(0, old.pageSize), // Ensure list size is maintained
+          total: (old.total || 0) + 1,
+        };
+      });
+
+      setState(prev => ({ ...prev, isCreating: true, lastOperation: 'create' }));
+
+      return { previousItems };
+    },
+    onError: (err, newItem, context) => {
+      if (context?.previousItems) {
+        queryClient.setQueryData(getQueryKey('list'), context.previousItems);
+      }
+      setState(prev => ({ ...prev, operationError: err, isCreating: false }));
+    },
+    onSuccess: () => {
+      setState(prev => ({ ...prev, isCreating: false, lastOperation: 'create' }));
+      queryClient.invalidateQueries({ queryKey: [config.entityType] });
+    },
+  });
+
+  // --- ACTIONS ---
+
+  const actions = {
+    createItem: createItemMutation.mutateAsync,
+    updateItem: useCallback(
+      async (id: string, data: Partial<T>) => {
         const response = await fetch(`${config.endpoint}/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
 
@@ -337,66 +331,13 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
           throw new Error(`Failed to update ${config.entityType}: ${response.statusText}`);
         }
 
-        return response.json();
+        return response.json() as Promise<T>;
       },
-      onMutate: async ({ id, data }) => {
-        if (!config.optimisticUpdates) return;
+      [config.endpoint]
+    ),
 
-        // Cancel outgoing refetches
-        await queryClient.cancelQueries({ queryKey: [config.entityType] });
-
-        // Snapshot the previous value
-        const previousItems = queryClient.getQueryData(getQueryKey('list'));
-
-        // Optimistically update
-        queryClient.setQueryData(getQueryKey('list'), (old: unknown) => {
-          if (!old) return old;
-          return {
-            ...old,
-            items: old.items.map((item: T) =>
-              item.id === id ? { ...item, ...data, updated_at: new Date() } : item
-            ),
-          };
-        });
-
-        setState(prev => ({
-          ...prev,
-          isUpdating: true,
-          editingItem: null,
-          lastOperation: 'update',
-        }));
-
-        return { previousItems };
-      },
-      onError: (err, { id }, context) => {
-        if (context?.previousItems) {
-          queryClient.setQueryData(getQueryKey('list'), context.previousItems);
-        }
-
-        setState(prev => ({
-          ...prev,
-          isUpdating: false,
-          operationError: err as Error,
-          lastOperation: null,
-        }));
-      },
-      onSuccess: data => {
-        queryClient.invalidateQueries({ queryKey: [config.entityType] });
-
-        setState(prev => ({
-          ...prev,
-          isUpdating: false,
-          operationError: null,
-          lastOperation: null,
-        }));
-      },
-    });
-  }, [config, queryClient, getQueryKey]);
-
-  // Delete item mutation
-  const deleteItemMutation = useCallback(() => {
-    return useMutation({
-      mutationFn: async (id: string) => {
+    deleteItem: useCallback(
+      async (id: string) => {
         const response = await fetch(`${config.endpoint}/${id}`, {
           method: 'DELETE',
         });
@@ -404,145 +345,21 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
         if (!response.ok) {
           throw new Error(`Failed to delete ${config.entityType}: ${response.statusText}`);
         }
-
-        return response.json();
       },
-      onMutate: async id => {
-        if (!config.optimisticUpdates) return;
+      [config.endpoint]
+    ),
+  };
 
-        await queryClient.cancelQueries({ queryKey: [config.entityType] });
+  // --- STATE MANAGEMENT ---
 
-        const previousItems = queryClient.getQueryData(getQueryKey('list'));
+  const setFilters = useCallback((filters: CRUDFilters) => {
+    setState(prev => ({ ...prev, filters }));
+  }, []);
 
-        queryClient.setQueryData(getQueryKey('list'), (old: unknown) => {
-          if (!old) return old;
-          return {
-            ...old,
-            items: old.items.filter((item: T) => item.id !== id),
-            total: Math.max(0, (old.total || 1) - 1),
-          };
-        });
+  const setSort = useCallback((sort: { field: string; order: 'asc' | 'desc' }) => {
+    setState(prev => ({ ...prev, sort }));
+  }, []);
 
-        setState(prev => ({
-          ...prev,
-          isDeleting: true,
-          selectedItems: new Set([...prev.selectedItems].filter(itemId => itemId !== id)),
-          lastOperation: 'delete',
-        }));
-
-        return { previousItems };
-      },
-      onError: (err, id, context) => {
-        if (context?.previousItems) {
-          queryClient.setQueryData(getQueryKey('list'), context.previousItems);
-        }
-
-        setState(prev => ({
-          ...prev,
-          isDeleting: false,
-          operationError: err as Error,
-          lastOperation: null,
-        }));
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [config.entityType] });
-
-        setState(prev => ({
-          ...prev,
-          isDeleting: false,
-          operationError: null,
-          lastOperation: null,
-        }));
-      },
-    });
-  }, [config, queryClient, getQueryKey]);
-
-  // Bulk operations
-  const bulkOperationMutation = useCallback(() => {
-    return useMutation({
-      mutationFn: async ({
-        operation,
-        ids,
-        data,
-      }: {
-        operation: 'delete' | 'update' | 'export';
-        ids: string[];
-        data?: unknown;
-      }) => {
-        const response = await fetch(`${config.endpoint}/bulk`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            operation,
-            ids,
-            data,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to perform bulk ${operation}: ${response.statusText}`);
-        }
-
-        return response.json();
-      },
-      onMutate: async ({ operation, ids }) => {
-        if (!config.optimisticUpdates) return;
-
-        await queryClient.cancelQueries({ queryKey: [config.entityType] });
-
-        const previousItems = queryClient.getQueryData(getQueryKey('list'));
-
-        queryClient.setQueryData(getQueryKey('list'), (old: unknown) => {
-          if (!old) return old;
-
-          if (operation === 'delete') {
-            return {
-              ...old,
-              items: old.items.filter((item: T) => !ids.includes(item.id)),
-              total: Math.max(0, (old.total || ids.length) - ids.length),
-            };
-          }
-
-          return old;
-        });
-
-        setState(prev => ({
-          ...prev,
-          isBulkOperating: true,
-          selectedItems: new Set(),
-          lastOperation: 'bulk',
-        }));
-
-        return { previousItems };
-      },
-      onError: (err, { operation }, context) => {
-        if (context?.previousItems) {
-          queryClient.setQueryData(getQueryKey('list'), context.previousItems);
-        }
-
-        setState(prev => ({
-          ...prev,
-          isBulkOperating: false,
-          operationError: err as Error,
-          lastOperation: null,
-        }));
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [config.entityType] });
-
-        setState(prev => ({
-          ...prev,
-          isBulkOperating: false,
-          operationError: null,
-          lastOperation: null,
-        }));
-      },
-    });
-  }, [config, queryClient, getQueryKey]);
-
-  // State management actions
   const selectItem = useCallback((id: string) => {
     setState(prev => ({
       ...prev,
@@ -551,137 +368,41 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
   }, []);
 
   const deselectItem = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      selectedItems: new Set([...prev.selectedItems].filter(itemId => itemId !== id)),
-    }));
-  }, []);
-
-  const selectAll = useCallback((items: T[]) => {
-    setState(prev => ({
-      ...prev,
-      selectedItems: new Set(items.map(item => item.id)),
-    }));
-  }, []);
-
-  const deselectAll = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      selectedItems: new Set(),
-    }));
-  }, []);
-
-  const toggleSelection = useCallback((id: string) => {
     setState(prev => {
       const newSelected = new Set(prev.selectedItems);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
-      }
-      return {
-        ...prev,
-        selectedItems: newSelected,
-      };
+      newSelected.delete(id);
+      return { ...prev, selectedItems: newSelected };
     });
   }, []);
 
-  const setEditingItem = useCallback((item: T | null) => {
-    setState(prev => ({ ...prev, editingItem: item }));
+  const clearSelection = useCallback(() => {
+    setState(prev => ({ ...prev, selectedItems: new Set() }));
   }, []);
 
-  const setFilters = useCallback((filters: Partial<CRUDFilters>) => {
-    setState(prev => ({
-      ...prev,
-      filters: { ...prev.filters, ...filters },
-      selectedItems: new Set(), // Clear selection when filters change
-    }));
-  }, []);
+  // --- RETURN ---
 
-  const setSort = useCallback((sort: { field: string; order: 'asc' | 'desc' }) => {
-    setState(prev => ({ ...prev, sort }));
-  }, []);
-
-  const setViewMode = useCallback((viewMode: 'list' | 'grid' | 'table') => {
-    setState(prev => ({ ...prev, viewMode }));
-  }, []);
-
-  const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, operationError: null }));
-  }, []);
-
-  // Utility functions
-  const refresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: [config.entityType] });
-  }, [queryClient, config.entityType]);
-
-  const refetch = useCallback(() => {
-    queryClient.refetchQueries({ queryKey: [config.entityType] });
-  }, [queryClient, config.entityType]);
-
-  const clearCache = useCallback(() => {
-    queryClient.removeQueries({ queryKey: [config.entityType] });
-  }, [queryClient, config.entityType]);
-
-  // Computed values
-  const isOperationPending = useMemo(
-    () => state.isCreating || state.isUpdating || state.isDeleting || state.isBulkOperating,
-    [state]
-  );
-
-  const hasSelection = useMemo(() => state.selectedItems.size > 0, [state.selectedItems]);
-
-  const selectedCount = useMemo(() => state.selectedItems.size, [state.selectedItems]);
-
-  const isFiltered = useMemo(() => {
-    const { search, filters, dateRange, status } = state.filters;
-    return !!(
-      search ||
-      (filters && Object.keys(filters).length > 0) ||
-      dateRange ||
-      (status && status.length > 0)
-    );
-  }, [state.filters]);
-
-  // Return comprehensive interface
   return {
-    // Data queries
-    getItem,
-    getItems,
-    getInfiniteItems,
-
-    // Mutations
-    createItem: createItemMutation(),
-    updateItem: updateItemMutation(),
-    deleteItem: deleteItemMutation(),
-    bulkOperation: bulkOperationMutation(),
-
     // State
     state,
 
-    // Actions
-    selectItem,
-    deselectItem,
-    selectAll,
-    deselectAll,
-    toggleSelection,
-    setEditingItem,
+    // Queries
+    useGetItem,
+    useGetItems,
+    useGetInfiniteItems,
+
+    // Mutations
+    createItem: actions.createItem,
+    updateItem: actions.updateItem,
+    deleteItem: actions.deleteItem,
+
+    // State actions
     setFilters,
     setSort,
-    setViewMode,
-    clearError,
+    selectItem,
+    deselectItem,
+    clearSelection,
 
     // Utilities
-    refresh,
-    refetch,
-    clearCache,
-
-    // Computed
-    isOperationPending,
-    hasSelection,
-    selectedCount,
-    isFiltered,
+    getQueryKey,
   };
 }
-
-export default useUnifiedCRUD;

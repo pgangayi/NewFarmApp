@@ -1,3 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: |
+          npm run type-check
+
+      - name: Run unit tests (Vitest)
+        working-directory: frontend
+        run: |
+          npm run test:run
+
+      - name: Run lint
+        working-directory: frontend
+        run: |
+          npm run lint || true
 name: CI - root / frontend / backend
 
 on:

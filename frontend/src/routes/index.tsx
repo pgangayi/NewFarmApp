@@ -1,6 +1,3 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { LandingPage } from '../pages/LandingPage';
-
-export const Route = createFileRoute('/')({
-  component: LandingPage,
-});
+// This file is intentionally left empty
+// The application uses React Router in main.tsx
+// The TanStack Router files are not being used

@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
+import { useInventory, useLowStockItems } from '../hooks/useInventory';
+import { useApiClient } from '../hooks/useApiClient';
+import { useFarm } from '../hooks/useFarm';
 import {
   Package,
   AlertTriangle,
@@ -125,6 +128,8 @@ interface InventoryFormData {
 export function InventoryPage() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const apiClient = useApiClient();
+  const { currentFarm } = useFarm();
   const [viewMode, setViewMode] = useState<
     'overview' | 'items' | 'alerts' | 'suppliers' | 'analytics'
   >('overview');
@@ -134,189 +139,65 @@ export function InventoryPage() {
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<InventoryAlert | null>(null);
 
-  // Get farms for dropdown
-  const { data: farms } = useQuery({
-    queryKey: ['farms'],
-    queryFn: async () => {
-      const response = await fetch('/api/farms', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch farms');
-      return response.json();
-    },
-    enabled: isAuthenticated(),
-  });
+  // Use shared inventory hooks
+  const { items: inventoryItems, isLoading, error, refetch, createItemAsync } = useInventory();
+  const { data: lowStockItems } = useLowStockItems();
 
-  // Get enhanced inventory items
-  const {
-    data: inventoryItems,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['inventory', 'enhanced'],
-    queryFn: async () => {
-      const response = await fetch('/api/inventory?analytics=true', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch inventory: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<InventoryItem[]>;
-    },
-    enabled: isAuthenticated(),
-  });
-
-  // Get inventory alerts
-  const { data: alerts } = useQuery({
-    queryKey: ['inventory', 'alerts'],
-    queryFn: async () => {
-      const response = await fetch('/api/inventory/alerts', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch alerts: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<InventoryAlert[]>;
-    },
-    enabled: isAuthenticated(),
-  });
-
-  // Get suppliers
+  // Suppliers and alerts via apiClient
   const { data: suppliers } = useQuery({
-    queryKey: ['inventory', 'suppliers'],
+    queryKey: ['inventory', 'suppliers', currentFarm?.id],
     queryFn: async () => {
-      const response = await fetch('/api/inventory/suppliers', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch suppliers: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<Supplier[]>;
+      if (!currentFarm?.id) return [] as Supplier[];
+      return apiClient.get<Supplier[]>('/api/inventory/suppliers');
     },
-    enabled: isAuthenticated(),
+    enabled: !!currentFarm?.id && isAuthenticated(),
   });
 
-  // Get low stock items
-  const { data: lowStockItems } = useQuery({
-    queryKey: ['inventory', 'low-stock'],
+  const { data: alerts } = useQuery({
+    queryKey: ['inventory', 'alerts', currentFarm?.id],
     queryFn: async () => {
-      const response = await fetch('/api/inventory?low_stock=true', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch low stock items: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<InventoryItem[]>;
+      if (!currentFarm?.id) return [] as InventoryAlert[];
+      return apiClient.get<InventoryAlert[]>('/api/inventory/alerts');
     },
-    enabled: isAuthenticated(),
+    enabled: !!currentFarm?.id && isAuthenticated(),
   });
 
-  const createItemMutation = useMutation({
-    mutationFn: async (itemData: InventoryFormData) => {
-      const response = await fetch('/api/inventory', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(itemData),
-      });
+  // Use createItemAsync from hook so we can await and show errors
 
-      if (!response.ok) {
-        throw new Error('Failed to create inventory item');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+  const handleCreateItem = async (itemData: InventoryFormData) => {
+    try {
+      await createItemAsync(itemData);
       setShowCreateForm(false);
-    },
-  });
-
-  const updateItemMutation = useMutation({
-    mutationFn: async ({ id, ...itemData }: InventoryFormData & { id: number }) => {
-      const response = await fetch('/api/inventory', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ id, ...itemData }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update inventory item');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      setEditingItem(null);
-    },
-  });
-
-  const resolveAlertMutation = useMutation({
-    mutationFn: async ({
-      alert_id,
-      resolved,
-      notes,
-    }: {
-      alert_id: number;
-      resolved: boolean;
-      notes?: string;
-    }) => {
-      const response = await fetch('/api/inventory/alerts', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ alert_id, resolved, notes }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to resolve alert');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory', 'alerts'] });
-      setSelectedAlert(null);
-    },
-  });
-
-  const handleCreateItem = (itemData: InventoryFormData) => {
-    createItemMutation.mutate(itemData);
-  };
-
-  const handleUpdateItem = (itemData: InventoryFormData) => {
-    if (editingItem) {
-      updateItemMutation.mutate({ id: editingItem.id, ...itemData });
+    } catch (err) {
+      console.error('Create item failed', err);
+      // TODO: surface error to UI (toast/modal)
     }
   };
 
-  const handleResolveAlert = (alert: InventoryAlert, resolved: boolean, notes?: string) => {
-    resolveAlertMutation.mutate({
-      alert_id: alert.id,
-      resolved,
-      notes: notes || `Alert ${resolved ? 'resolved' : 'reopened'} by user`,
-    });
+  const handleUpdateItem = async (itemData: InventoryFormData) => {
+    try {
+      // For now call API directly via apiClient (could be added to hook)
+      if (!editingItem) return;
+      await apiClient.put('/api/inventory', { id: editingItem.id, ...itemData });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      setEditingItem(null);
+    } catch (err) {
+      console.error('Update item failed', err);
+    }
+  };
+
+  const handleResolveAlert = async (alert: InventoryAlert, resolved: boolean, notes?: string) => {
+    try {
+      await apiClient.put('/api/inventory/alerts', {
+        alert_id: alert.id,
+        resolved,
+        notes: notes || `Alert ${resolved ? 'resolved' : 'reopened'} by user`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['inventory', 'alerts'] });
+      setSelectedAlert(null);
+    } catch (err) {
+      console.error('Resolve alert failed', err);
+    }
   };
 
   if (!isAuthenticated()) {

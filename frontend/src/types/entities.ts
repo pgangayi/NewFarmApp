@@ -25,9 +25,31 @@ export interface AuthResponse {
   };
 }
 
-// ============================================================================
-// FARMS & FIELDS
-// ============================================================================
+export interface Field {
+  id: string;
+  farm_id: string;
+  name: string;
+  area_hectares: number;
+  crop_type?: string;
+  soil_type?: string;
+  field_number?: string;
+  irrigation_system?: string;
+  drainage_quality?: string;
+  accessibility_score?: number;
+  environmental_factors?: string;
+  maintenance_schedule?: string;
+  current_cover_crop?: string;
+  field_capacity?: number;
+  notes?: string;
+  farm_name?: string;
+  crop_count?: number;
+  avg_profitability?: number;
+  best_yield_per_hectare?: number;
+  avg_ph_level?: number;
+  pending_tasks?: number;
+  created_at: string;
+  updated_at?: string;
+}
 
 export interface Farm {
   id: string;
@@ -38,18 +60,6 @@ export interface Farm {
   latitude?: number;
   longitude?: number;
   timezone?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface Field {
-  id: string;
-  farm_id: string;
-  name: string;
-  area_hectares: number;
-  crop_type?: string;
-  soil_type?: string;
-  field_number?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -92,14 +102,51 @@ export interface CropTreatment {
 export interface Animal {
   id: string;
   farm_id: string;
-  animal_type: string;
+  name: string;
+  species: string;
   breed?: string;
-  identification: string;
-  date_of_birth?: string;
-  acquisition_date: string;
-  status: 'active' | 'sold' | 'deceased';
+  identification_tag?: string;
+  birth_date?: string;
+  sex?: string;
+  health_status?: string;
+  // New intake management fields
+  intake_type?: 'Birth' | 'Purchase' | 'Transfer';
+  intake_date?: string;
+  purchase_price?: number;
+  seller_details?: string;
+  // New pedigree fields
+  father_id?: string;
+  mother_id?: string;
+  // New location tracking
+  current_location_id?: string;
+  // Legacy fields (keeping for backward compatibility)
+  current_location?: string;
+  pasture_id?: number;
+  production_type?: string;
+  status?: 'active' | 'sold' | 'deceased';
+  current_weight?: number;
+  target_weight?: number;
+  vaccination_status?: string;
+  last_vet_check?: string;
+  acquisition_date?: string;
+  acquisition_cost?: number;
+  genetic_profile?: string;
   created_at: string;
   updated_at?: string;
+  // Computed/joined fields
+  farm_name?: string;
+  location_name?: string;
+  location_type?: string;
+  father_name?: string;
+  mother_name?: string;
+  breed_origin?: string;
+  breed_purpose?: string;
+  breed_avg_weight?: number;
+  temperament?: string;
+  health_records_count?: number;
+  production_records_count?: number;
+  breeding_records_count?: number;
+  movement_count?: number;
 }
 
 export interface AnimalHealth {
@@ -109,6 +156,68 @@ export interface AnimalHealth {
   notes?: string;
   recorded_date: string;
   created_at: string;
+}
+
+// ============================================================================
+// LOCATIONS & MOVEMENTS
+// ============================================================================
+
+export interface Location {
+  id: string;
+  farm_id: string;
+  name: string;
+  type: 'barn' | 'pasture' | 'field' | 'stable' | 'corral' | 'other';
+  description?: string;
+  capacity?: number;
+  current_occupancy?: number;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface AnimalMovement {
+  id: string;
+  animal_id: string;
+  source_location_id?: string;
+  destination_location_id: string;
+  movement_date: string;
+  recorded_by: string;
+  notes?: string;
+  created_at: string;
+}
+
+// ============================================================================
+// PEDIGREE & BREEDING
+// ============================================================================
+
+export interface PedigreeNode {
+  id: string;
+  name: string;
+  sex?: string;
+  generation: number;
+  parents?: {
+    father?: PedigreeNode;
+    mother?: PedigreeNode;
+  };
+}
+
+export interface LivestockStats {
+  total_animals: number;
+  by_species: Array<{
+    species: string;
+    count: number;
+  }>;
+  by_health_status: Array<{
+    health_status: string;
+    count: number;
+  }>;
+  by_location: Array<{
+    location_name: string;
+    count: number;
+  }>;
 }
 
 // ============================================================================

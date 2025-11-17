@@ -5,11 +5,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 import { useFarm } from './useFarm';
 import { InventoryItem, CreateInventoryForm } from '../types/entities';
 import { apiEndpoints, cacheConfig } from '../config/env';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 
 /**
  * Hook for managing inventory items
@@ -18,7 +18,7 @@ import { getApiClient } from '../lib/api/client';
 export function useInventory() {
   const { currentFarm } = useFarm();
   const { isAuthenticated } = useAuth();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
   const queryClient = useQueryClient();
 
   // Query: Fetch all inventory items for the farm
@@ -119,6 +119,7 @@ export function useInventory() {
     // Actions
     refetch,
     createItem: createItemMutation.mutate,
+    createItemAsync: createItemMutation.mutateAsync,
     updateItem: updateItemMutation.mutate,
     deleteItem: deleteItemMutation.mutate,
 
@@ -139,7 +140,7 @@ export function useInventory() {
 export function useLowStockItems() {
   const { currentFarm } = useFarm();
   const { isAuthenticated } = useAuth();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   return useQuery({
     queryKey: ['inventory', 'lowStock', currentFarm?.id],

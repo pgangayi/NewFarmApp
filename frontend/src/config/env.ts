@@ -50,11 +50,13 @@ export const apiEndpoints = {
 
   // Field endpoints
   fields: {
-    list: (farmId: string) => `/api/farms/${farmId}/fields`,
+    list: '/api/fields',
     create: '/api/fields',
-    get: (id: string) => `/api/fields/${id}`,
-    update: (id: string) => `/api/fields/${id}`,
-    delete: (id: string) => `/api/fields/${id}`,
+    get: (id: string) => `/api/fields?id=${id}`,
+    update: '/api/fields',
+    delete: (id: string) => `/api/fields?id=${id}`,
+    soilAnalysis: '/api/fields/soil-analysis',
+    equipment: '/api/fields/equipment',
   },
 
   // Inventory endpoints
@@ -69,29 +71,54 @@ export const apiEndpoints = {
 
   // Crop endpoints
   crops: {
-    list: '/api/crops-main',
-    create: '/api/crops-main',
-    get: (id: string) => `/api/crops-main/${id}`,
-    update: (id: string) => `/api/crops-main/${id}`,
-    delete: (id: string) => `/api/crops-main/${id}`,
+    list: '/api/crops',
+    create: '/api/crops',
+    get: (id: string) => `/api/crops/${id}`,
+    update: (id: string) => `/api/crops/${id}`,
+    delete: (id: string) => `/api/crops/${id}`,
+    activities: {
+      list: '/api/crop-activities',
+      create: '/api/crop-activities',
+      get: (id: string) => `/api/crop-activities/${id}`,
+      update: (id: string) => `/api/crop-activities/${id}`,
+      delete: (id: string) => `/api/crop-activities/${id}`,
+    },
+    observations: {
+      list: '/api/crop-observations',
+      create: '/api/crop-observations',
+      get: (id: string) => `/api/crop-observations/${id}`,
+      update: (id: string) => `/api/crop-observations/${id}`,
+      delete: (id: string) => `/api/crop-observations/${id}`,
+    },
+    yields: {
+      list: '/api/crop-yields',
+      create: '/api/crop-yields',
+      get: (id: string) => `/api/crop-yields/${id}`,
+      update: (id: string) => `/api/crop-yields/${id}`,
+      delete: (id: string) => `/api/crop-yields/${id}`,
+    },
+    planning: '/api/crops/planning',
   },
 
   // Animal endpoints
   animals: {
-    list: '/api/animals-enhanced',
-    create: '/api/animals-enhanced',
-    get: (id: string) => `/api/animals-enhanced/${id}`,
-    update: (id: string) => `/api/animals-enhanced/${id}`,
-    delete: (id: string) => `/api/animals-enhanced/${id}`,
+    list: '/api/livestock',
+    create: '/api/livestock',
+    get: (id: string) => `/api/livestock/${id}`,
+    update: (id: string) => `/api/livestock/${id}`,
+    delete: (id: string) => `/api/livestock/${id}`,
+    stats: '/api/livestock/stats',
+    pedigree: (id: string) => `/api/livestock/${id}/pedigree`,
+    movements: (id: string) => `/api/livestock/${id}/movements`,
   },
 
   // Task endpoints
   tasks: {
-    list: '/api/tasks-enhanced',
-    create: '/api/tasks-enhanced',
-    get: (id: string) => `/api/tasks-enhanced/${id}`,
-    update: (id: string) => `/api/tasks-enhanced/${id}`,
-    delete: (id: string) => `/api/tasks-enhanced/${id}`,
+    list: '/api/tasks',
+    create: '/api/tasks',
+    get: (id: string) => `/api/tasks/${id}`,
+    update: (id: string) => `/api/tasks/${id}`,
+    delete: (id: string) => `/api/tasks/${id}`,
   },
 
   // Finance endpoints

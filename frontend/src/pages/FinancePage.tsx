@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DollarSign,
   TrendingUp,
@@ -27,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { useAuth } from '../hooks/AuthContext';
 
 interface FinanceEntry {
   id: number;
@@ -119,6 +119,7 @@ export function FinancePage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<FinanceEntry | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<FinanceEntry | null>(null);
+  const [showCreateBudget, setShowCreateBudget] = useState(false);
 
   // Get farms for dropdown
   const { data: farms } = useQuery({
@@ -817,7 +818,10 @@ export function FinancePage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Budget Categories</h2>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowCreateBudget(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Budget
               </Button>
@@ -881,7 +885,11 @@ export function FinancePage() {
                       <div className="flex items-center justify-between pt-2">
                         <Badge variant="default">{budget.farm_name}</Badge>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => alert('Budget editing coming soon!')}
+                          >
                             <Edit className="h-3 w-3" />
                           </Button>
                         </div>
@@ -896,7 +904,7 @@ export function FinancePage() {
                   <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">No budgets</h4>
                   <p className="text-gray-600 mb-4">Create budget categories to track spending</p>
-                  <Button>
+                  <Button onClick={() => setShowCreateBudget(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create First Budget
                   </Button>
@@ -931,7 +939,11 @@ export function FinancePage() {
                     Comprehensive monthly financial summary including revenue, expenses, and profit
                     analysis.
                   </p>
-                  <Button className="w-full" variant="outline">
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => alert('Monthly report generation coming soon!')}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Generate Monthly
                   </Button>
@@ -946,7 +958,11 @@ export function FinancePage() {
                   <p className="text-sm text-gray-600 mb-4">
                     Detailed quarterly analysis with trends, comparisons, and performance metrics.
                   </p>
-                  <Button className="w-full" variant="outline">
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => alert('Quarterly report generation coming soon!')}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Generate Quarterly
                   </Button>
@@ -961,7 +977,11 @@ export function FinancePage() {
                   <p className="text-sm text-gray-600 mb-4">
                     Tax-deductible expenses and income summary for tax preparation.
                   </p>
-                  <Button className="w-full" variant="outline">
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => alert('Tax export functionality coming soon!')}
+                  >
                     <Upload className="h-4 w-4 mr-2" />
                     Export for Tax
                   </Button>

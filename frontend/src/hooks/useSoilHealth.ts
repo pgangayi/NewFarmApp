@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 import { apiEndpoints, cacheConfig } from '../config/env';
 
 export interface CreateSoilTestForm {
@@ -63,7 +63,7 @@ export interface SoilHealthMetrics {
  */
 export function useSoilHealth() {
   const queryClient = useQueryClient();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   // Fetch all soil tests
   const {
@@ -164,7 +164,7 @@ export function useSoilHealth() {
  * Hook for soil tests by farm
  */
 export function useSoilTestsByFarm(farmId: string, fieldId?: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: soilTests,
@@ -194,7 +194,7 @@ export function useSoilTestsByFarm(farmId: string, fieldId?: string) {
  * Hook for soil health metrics
  */
 export function useSoilHealthMetrics(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: metrics,
@@ -222,7 +222,7 @@ export function useSoilHealthMetrics(farmId: string) {
  * Hook for soil recommendations
  */
 export function useSoilRecommendations(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: recommendations,
@@ -265,7 +265,7 @@ export function useSoilRecommendations(farmId: string) {
  * Hook for soil trends analysis
  */
 export function useSoilTrendsAnalysis(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: trendsAnalysis,
@@ -310,7 +310,7 @@ export function useSoilTrendsAnalysis(farmId: string) {
  * Hook for soil report export
  */
 export function useSoilReportExport(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     mutate: exportReport,

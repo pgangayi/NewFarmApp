@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
 import { Plus, TrendingUp, Users, MapPin, Calendar, DollarSign } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -33,15 +33,15 @@ interface Farm {
 interface FarmFormData {
   name: string;
   location: string;
-  area_hectares?: number;
+  area_hectares?: number | undefined;
   farm_type?: string;
   certification_status?: string;
   environmental_compliance?: string;
-  total_acres?: number;
+  total_acres?: number | undefined;
   operational_start_date?: string;
   management_structure?: string;
-  seasonal_staff?: number;
-  annual_budget?: number;
+  seasonal_staff?: number | undefined;
+  annual_budget?: number | undefined;
 }
 
 export function FarmsPage() {
@@ -51,6 +51,8 @@ export function FarmsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'analytics'>('grid');
+
+  // Component state tracking
 
   const {
     data: farms,
@@ -203,28 +205,37 @@ export function FarmsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <div className="mb-8">
+          {/* Mobile Header */}
+          <div className="sm:hidden mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">Farm Management</h1>
+            <p className="text-gray-600 mt-1 text-sm">Manage your farm operations</p>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="hidden sm:block">
             <h1 className="text-3xl font-bold text-gray-900">Farm Management</h1>
             <p className="text-gray-600 mt-1">Manage and monitor your farm operations</p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex rounded-md shadow-sm" role="group">
+
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-4">
+            <div className="flex rounded-md shadow-sm self-start sm:self-center" role="group">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-l-lg border ${
                   viewMode === 'grid'
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                Grid View
+                Grid
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('analytics')}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-r border-b ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-r-lg border-t border-r border-b ${
                   viewMode === 'analytics'
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -234,11 +245,14 @@ export function FarmsPage() {
               </button>
             </div>
             <Button
+              type="button"
               onClick={() => setShowCreateForm(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] px-3 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 w-full sm:w-auto justify-center transition-colors duration-200"
+              size="default"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Farm
+              <Plus className="h-4 w-4 mr-1 flex-shrink-0" />
+              <span className="hidden md:inline">Add New Farm</span>
+              <span className="md:hidden">Add Farm</span>
             </Button>
           </div>
         </div>
@@ -475,15 +489,17 @@ export function FarmsPage() {
 
         {/* Create/Edit Farm Modal */}
         {(showCreateForm || editingFarm) && (
-          <FarmFormModal
-            farm={editingFarm}
-            onSubmit={editingFarm ? handleUpdateFarm : handleCreateFarm}
-            onClose={() => {
-              setShowCreateForm(false);
-              setEditingFarm(null);
-            }}
-            isLoading={createFarmMutation.isPending || updateFarmMutation.isPending}
-          />
+          <>
+            <FarmFormModal
+              farm={editingFarm}
+              onSubmit={editingFarm ? handleUpdateFarm : handleCreateFarm}
+              onClose={() => {
+                setShowCreateForm(false);
+                setEditingFarm(null);
+              }}
+              isLoading={createFarmMutation.isPending || updateFarmMutation.isPending}
+            />
+          </>
         )}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
 import { Calendar, MapPin, Cloud, CloudRain, Sun, Wind, Loader2, AlertCircle } from 'lucide-react';
 
 interface WeatherDay {

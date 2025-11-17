@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 
 interface WebSocketMessage {
   type: string;
@@ -23,8 +23,6 @@ interface UseWebSocketOptions {
   heartbeatInterval?: number;
 }
 
-const AUTH_TOKEN_KEY = 'auth_token';
-
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
     autoConnect = true,
@@ -33,18 +31,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     heartbeatInterval = 30000,
   } = options;
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, session } = useAuth();
+  const accessToken = session?.access_token ?? null;
   const [state, setState] = useState<WebSocketState>({
     isConnected: false,
     connectionStatus: 'disconnected',
     lastMessage: null,
     connectionError: null,
   });
-
-  // Helper function to get auth token
-  const getAuthToken = useCallback((): string | null => {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
-  }, []);
 
   const ws = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
@@ -61,7 +55,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       return;
     }
 
-    const token = getAuthToken();
+    const token = accessToken;
     if (!token) {
       setState(prev => ({
         ...prev,
@@ -179,7 +173,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         connectionError: 'Failed to create connection',
       }));
     }
-  }, [isAuthenticated, getAuthToken, maxReconnectAttempts, reconnectInterval, heartbeatInterval]);
+  }, [isAuthenticated, accessToken, maxReconnectAttempts, reconnectInterval, heartbeatInterval]);
 
   const disconnect = useCallback(() => {
     // Clear unknown pending reconnection
@@ -250,14 +244,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // Connect on mount if autoConnect is enabled
   useEffect(() => {
-    if (autoConnect && isAuthenticated()) {
+    if (autoConnect && isAuthenticated() && accessToken) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [autoConnect, isAuthenticated, connect, disconnect]);
+  }, [autoConnect, isAuthenticated, accessToken, connect, disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {

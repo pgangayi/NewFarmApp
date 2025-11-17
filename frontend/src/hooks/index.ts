@@ -1,9 +1,6 @@
 // Barrel export for all hooks
 // This file provides a single import point for all custom hooks
 
-// Authentication and user management
-export { useAuth } from './useAuth';
-
 // Farm management
 export { useFarm } from './useFarm';
 
@@ -23,3 +20,9 @@ export { useSoilHealth } from './useSoilHealth';
 
 // UI and utilities
 export { useTheme } from './useTheme';
+
+// Auth context
+export { useAuth, AuthProvider } from './AuthContext';
+
+// API client with auth
+export { useApiClient } from './useApiClient';

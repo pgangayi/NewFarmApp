@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 import { apiEndpoints, cacheConfig } from '../config/env';
 
 export interface CreatePestIssueForm {
@@ -86,7 +86,7 @@ export interface PreventionTask {
  */
 export function usePestDisease() {
   const queryClient = useQueryClient();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   // Fetch pest issues
   const {
@@ -208,7 +208,7 @@ export function usePestDisease() {
  * Hook for pest and disease issues by farm
  */
 export function usePestDiseaseByFarm(farmId: string, severity?: string, status?: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: pestIssues,
@@ -262,7 +262,7 @@ export function usePestDiseaseByFarm(farmId: string, severity?: string, status?:
  * Hook for prevention calendar
  */
 export function usePreventionCalendar(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: calendar,
@@ -296,7 +296,7 @@ export function usePreventionCalendar(farmId: string) {
  * Hook for pest predictions
  */
 export function usePestPredictions(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: predictions,
@@ -337,7 +337,7 @@ export function usePestPredictions(farmId: string) {
  * Hook for disease risk assessment
  */
 export function useDiseaseRiskAssessment(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: riskAssessment,

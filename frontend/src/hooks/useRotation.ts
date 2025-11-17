@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 import { apiEndpoints, cacheConfig } from '../config/env';
 
 export interface CreateRotationForm {
@@ -44,7 +44,7 @@ export interface RotationPlan {
  */
 export function useRotation() {
   const queryClient = useQueryClient();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   // Fetch all rotation plans
   const {
@@ -141,7 +141,7 @@ export function useRotation() {
  * Hook for rotation plans by farm
  */
 export function useRotationByFarm(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: rotationPlans,
@@ -170,7 +170,7 @@ export function useRotationByFarm(farmId: string) {
  * Hook for rotation recommendations
  */
 export function useRotationRecommendations(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: recommendations,
@@ -198,7 +198,7 @@ export function useRotationRecommendations(farmId: string) {
  * Hook for rotation health check
  */
 export function useRotationHealthCheck(rotationId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: healthCheck,

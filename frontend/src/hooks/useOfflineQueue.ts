@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import Dexie from 'dexie';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
+import { getAccessToken, getAuthHeadersFromStorage } from '../lib/authStorage';
 
 interface OfflineOperation {
   id?: number;
@@ -57,6 +58,33 @@ export function useOfflineQueue() {
     updateQueueStats(count, conflictOps);
   };
 
+  const validateOperation = (op: OfflineOperation) => {
+    if (!op || typeof op !== 'object') return { valid: false, error: 'Missing operation' };
+    if (!op.type) return { valid: false, error: 'Missing operation type' };
+    if (op.payload == null) return { valid: false, error: 'Missing payload' };
+
+    switch (op.type) {
+      case 'create_inventory_item': {
+        const p: any = op.payload as any;
+        if (!p.name || (!p.qty && p.qty !== 0)) return { valid: false, error: 'Invalid create payload: name and qty required' };
+        return { valid: true };
+      }
+      case 'update_inventory_item':
+      case 'delete_inventory_item': {
+        const p: any = op.payload as any;
+        if (!p.id && p.id !== 0) return { valid: false, error: 'Invalid payload: id required' };
+        return { valid: true };
+      }
+      case 'apply_treatment': {
+        const p: any = op.payload as any;
+        if (!p.items || !Array.isArray(p.items) || p.items.length === 0) return { valid: false, error: 'Invalid treatment payload: items required' };
+        return { valid: true };
+      }
+      default:
+        return { valid: false, error: `Unknown operation type: ${op.type}` };
+    }
+  };
+
   const addToQueue = async (type: OfflineOperation['type'], payload: unknown) => {
     await db.operations.add({
       type,
@@ -74,6 +102,26 @@ export function useOfflineQueue() {
     const operations = await db.operations.where('status').equals('pending').sortBy('timestamp');
 
     for (const op of operations) {
+      // Validate payload before attempting to sync
+      const validation = validateOperation(op);
+      if (!validation.valid) {
+        await db.operations.update(op.id!, {
+          status: 'failed',
+          error: validation.error,
+          retryCount: op.retryCount + 1,
+        });
+        continue;
+      }
+
+      // Drop operations that have exceeded retry limit
+      const maxRetries = 5;
+      if (op.retryCount >= maxRetries) {
+        await db.operations.update(op.id!, {
+          status: 'failed',
+          error: `Exceeded retry limit (${maxRetries})`,
+        });
+        continue;
+      }
       try {
         await db.operations.update(op.id!, { status: 'syncing' });
 
@@ -107,17 +155,17 @@ export function useOfflineQueue() {
   };
 
   const processOperation = async (op: OfflineOperation) => {
-    const token = localStorage.getItem('authToken');
-    if (!token) return { success: false, error: 'No auth token' };
-
+    // Prefer centralized headers getter (keeps in sync with AuthContext)
+    const storedHeaders = getAuthHeadersFromStorage();
+    if (!storedHeaders || !storedHeaders.Authorization) return { success: false, error: 'No auth token' };
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      ...storedHeaders,
     };
 
     try {
       switch (op.type) {
-        case 'create_inventory_item':
+        case 'create_inventory_item': {
           const createRes = await fetch('/api/inventory/items', {
             method: 'POST',
             headers,
@@ -129,8 +177,9 @@ export function useOfflineQueue() {
           }
           if (!createRes.ok) throw new Error(`HTTP ${createRes.status}`);
           return { success: true };
+        }
 
-        case 'update_inventory_item':
+        case 'update_inventory_item': {
           const updateRes = await fetch(`/api/inventory/items/${op.payload.id}`, {
             method: 'PATCH',
             headers,
@@ -147,16 +196,18 @@ export function useOfflineQueue() {
           }
           if (!updateRes.ok) throw new Error(`HTTP ${updateRes.status}`);
           return { success: true };
+        }
 
-        case 'delete_inventory_item':
+        case 'delete_inventory_item': {
           const deleteRes = await fetch(`/api/inventory/items/${op.payload.id}`, {
             method: 'DELETE',
             headers,
           });
           if (!deleteRes.ok) throw new Error(`HTTP ${deleteRes.status}`);
           return { success: true };
+        }
 
-        case 'apply_treatment':
+        case 'apply_treatment': {
           const treatmentRes = await fetch('/api/operations/apply-treatment', {
             method: 'POST',
             headers: {
@@ -176,9 +227,11 @@ export function useOfflineQueue() {
           }
           if (!treatmentRes.ok) throw new Error(`HTTP ${treatmentRes.status}`);
           return { success: true };
+        }
 
-        default:
+        default: {
           throw new Error(`Unknown operation type: ${op.type}`);
+        }
       }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };

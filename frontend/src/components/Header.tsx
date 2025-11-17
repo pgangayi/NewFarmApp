@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
 import { Button } from './ui/button';
 import GlobalSearch from './GlobalSearch';
 import {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
 import { BarChart, TrendingUp, DollarSign, Heart, Baby, Activity } from 'lucide-react';
 
 interface AnalyticsData {

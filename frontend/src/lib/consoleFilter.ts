@@ -13,8 +13,13 @@ if (import.meta.env.DEV) {
       /chrome-extension:/i,
       /Denying load of chrome-extension/i,
       /Failed to fetch dynamically imported module.*chrome-extension/i,
+      /TypeError: Failed to fetch dynamically imported module/i,
       /The installed version of React DevTools is too old/i,
       /can't detect preamble/i,
+      /net::ERR_FAILED/i,
+      /Failed to load resource: net::ERR_FAILED/i,
+      /Resources must be listed in the web_accessible_resources manifest key/i,
+      /\[NEW\] Explain Console errors/i,
     ];
 
     console.error = (...args: unknown[]) => {
@@ -30,6 +35,18 @@ if (import.meta.env.DEV) {
         originalWarn.apply(console, args);
       }
     };
+
+    // Global unhandled rejection handler for dynamic imports
+    window.addEventListener('unhandledrejection', event => {
+      const reason = event.reason;
+      if (reason instanceof Error) {
+        const message = reason.message;
+        if (ignoredPatterns.some(pattern => pattern.test(message))) {
+          // Suppress this error
+          event.preventDefault();
+        }
+      }
+    });
   }, 0);
 }
 

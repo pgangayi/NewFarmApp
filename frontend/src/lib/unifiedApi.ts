@@ -3,6 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { featureFlags, shouldUseEnhancedAPIs } from '../config/featureFlags';
+import { getAccessToken } from './authStorage';
 
 interface ApiResponse<T> {
   data: T;
@@ -78,7 +79,7 @@ class UnifiedApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-    const token = localStorage.getItem('authToken');
+    const token = getAccessToken();
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,

@@ -46,6 +46,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
     'schedules'
   );
   const [selectedSchedule, setSelectedSchedule] = useState<string>('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Use the main irrigation hook for mutation functions
   const { updateSchedule, optimizeSchedule, isOptimizing } = useIrrigation();
@@ -251,9 +252,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   <p className="text-gray-600 mb-4">
                     Create irrigation schedules to optimize water usage and crop health.
                   </p>
-                  <Button onClick={() => console.log('Create schedule clicked')}>
-                    Create Schedule
-                  </Button>
+                  <Button onClick={() => setShowCreateForm(true)}>Create Schedule</Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -458,7 +457,11 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                     <p className="text-sm text-gray-600 mb-3">
                       Automatically adjust irrigation based on weather forecasts and soil moisture.
                     </p>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => alert('Weather API integration coming soon!')}
+                    >
                       Connect Weather API
                     </Button>
                   </div>
@@ -467,7 +470,11 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                     <p className="text-sm text-gray-600 mb-3">
                       Integrate with IoT soil moisture sensors for precise watering.
                     </p>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => alert('Sensor configuration coming soon!')}
+                    >
                       Configure Sensors
                     </Button>
                   </div>
@@ -500,6 +507,131 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
           )}
         </div>
       </div>
+
+      {/* Create Schedule Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Create Irrigation Schedule</h2>
+
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Field *</label>
+                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      <option value="">Select a field</option>
+                      {fields?.map(field => (
+                        <option key={field.id} value={field.id}>
+                          {field.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Crop Type *
+                    </label>
+                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      <option value="">Select crop type</option>
+                      {Object.keys(CROP_WATER_REQUIREMENTS).map(crop => (
+                        <option key={crop} value={crop}>
+                          {crop.charAt(0).toUpperCase() + crop.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Irrigation Type *
+                    </label>
+                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      <option value="">Select irrigation type</option>
+                      {Object.entries(IRRIGATION_TYPES).map(([key, type]) => (
+                        <option key={key} value={key}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Frequency (days) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Duration (minutes) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Water Amount (liters) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      <option value="active">Active</option>
+                      <option value="paused">Paused</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Create Schedule
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

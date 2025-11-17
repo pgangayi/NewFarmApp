@@ -37,9 +37,17 @@ export class ApiClient {
   private getAuthHeaders: (() => Record<string, string>) | null = null;
 
   constructor(config: ApiClientConfig = {}) {
+    const metaEnv = import.meta.env as Record<string, unknown>;
+    const envBaseUrl =
+      (typeof metaEnv['VITE_API_URL'] === 'string'
+        ? (metaEnv['VITE_API_URL'] as string)
+        : undefined) ||
+      (typeof metaEnv['VITE_API_BASE_URL'] === 'string'
+        ? (metaEnv['VITE_API_BASE_URL'] as string)
+        : undefined);
     const browserBase =
       typeof window !== 'undefined' && window.location ? window.location.origin : '';
-    this.baseUrl = config.baseUrl ?? browserBase;
+    this.baseUrl = config.baseUrl ?? envBaseUrl ?? browserBase;
     this.timeout = config.timeout || 30000;
     this.retryAttempts = config.retryAttempts || 3;
   }

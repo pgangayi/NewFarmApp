@@ -1,144 +1,107 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/AuthContext';
+import { useApiClient } from '../hooks/useApiClient';
 import { Breadcrumbs } from '../components/Breadcrumbs';
-import { Plus, MapPin, Activity, Settings, Droplets, TrendingUp, Wrench, Leaf } from 'lucide-react';
+import { Plus, MapPin, Activity, Droplets, TrendingUp, Leaf } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { apiEndpoints } from '../config/env';
+import { Field, Farm, ApiResponse } from '../types/entities';
+import { FieldFormDataInternal, SoilAnalysisData } from '../types/ui';
 
-interface Field {
-  id: number;
-  farm_id: number;
-  name: string;
-  area_hectares?: number;
-  crop_type?: string;
-  notes?: string;
-  soil_type?: string;
-  field_capacity?: number;
-  current_cover_crop?: string;
-  irrigation_system?: string;
-  drainage_quality?: string;
-  accessibility_score?: number;
-  environmental_factors?: string;
-  maintenance_schedule?: string;
-  farm_name?: string;
-  crop_count?: number;
-  avg_profitability?: number;
-  best_yield_per_hectare?: number;
-  avg_ph_level?: number;
-  pending_tasks?: number;
-  created_at: string;
-  updated_at?: string;
+/**
+ * Safely get first farm from array
+ */
+function getFirstFarm(farms: Farm[] | undefined): Farm | null {
+  if (!farms || farms.length === 0) return null;
+  return farms[0] || null;
 }
 
-interface FieldFormData {
-  farm_id: number;
-  name: string;
-  area_hectares?: number;
-  crop_type?: string;
-  notes?: string;
-  soil_type?: string;
-  field_capacity?: number;
-  current_cover_crop?: string;
-  irrigation_system?: string;
-  drainage_quality?: string;
-  accessibility_score?: number;
-  environmental_factors?: string;
-  maintenance_schedule?: string;
+function isApiResponse<T>(payload: unknown): payload is ApiResponse<T> {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'data' in (payload as Record<string, unknown>)
+  );
 }
 
-interface SoilAnalysisData {
-  field_id: number;
-  analysis_date: string;
-  ph_level?: number;
-  nitrogen_content?: number;
-  phosphorus_content?: number;
-  potassium_content?: number;
-  organic_matter?: number;
-  soil_moisture?: number;
-  temperature?: number;
-  salinity?: number;
-  recommendations?: string;
+function unwrapResponse<T>(payload: ApiResponse<T> | T): T {
+  return isApiResponse<T>(payload) ? payload.data : (payload as T);
 }
+
+// --- FieldsPage Component ---
 
 export function FieldsPage() {
-  const { getAuthHeaders, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const apiClient = useApiClient();
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'analytics' | 'soil'>('grid');
   const [selectedFieldId, setSelectedFieldId] = useState<number | null>(null);
+  const [selectedFarmId, setSelectedFarmId] = useState<string>('');
 
   // Get farms for dropdown
-  const { data: farms } = useQuery({
+  const { data: farms, isLoading: farmsLoading } = useQuery<Farm[]>({
     queryKey: ['farms'],
-    queryFn: async () => {
-      const response = await fetch('/api/farms', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch farms');
-      return response.json();
+    queryFn: async (): Promise<Farm[]> => {
+      const response = await apiClient.get<ApiResponse<Farm[]>>(apiEndpoints.farms.list);
+      return response.data;
     },
     enabled: isAuthenticated(),
   });
+
+  // Auto-select first farm when farms load
+  useEffect(() => {
+    const firstFarm = getFirstFarm(farms);
+    if (firstFarm && !selectedFarmId) {
+      setSelectedFarmId(firstFarm.id.toString());
+    }
+  }, [farms, selectedFarmId]);
 
   // Get enhanced fields with analytics
   const {
     data: fields,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['fields', 'enhanced'],
-    queryFn: async () => {
-      const response = await fetch('/api/fields?analytics=true', {
-        method: 'GET',
-        headers: getAuthHeaders(),
+    isLoading: fieldsLoading,
+    error: fieldsError,
+  } = useQuery<Field[]>({
+    queryKey: ['fields', selectedFarmId, 'enhanced'],
+    queryFn: async (): Promise<Field[]> => {
+      if (!selectedFarmId) return [];
+      const response = await apiClient.get<ApiResponse<Field[]>>(apiEndpoints.fields.list, {
+        params: {
+          analytics: true,
+          farm_id: selectedFarmId,
+        },
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch fields: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<Field[]>;
+      const data = unwrapResponse<Field[]>(response);
+      return data || [];
     },
-    enabled: isAuthenticated(),
+    enabled: isAuthenticated() && !!selectedFarmId,
   });
 
   // Get soil analysis data for selected field
-  const { data: soilAnalysis } = useQuery({
+  const { data: soilAnalysis } = useQuery<SoilAnalysisData[]>({
     queryKey: ['soil-analysis', selectedFieldId],
-    queryFn: async () => {
+    queryFn: async (): Promise<SoilAnalysisData[]> => {
       if (!selectedFieldId) return [];
-
-      const response = await fetch(`/api/fields/soil-analysis?field_id=${selectedFieldId}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) return [];
-      return response.json() as Promise<SoilAnalysisData[]>;
+      const response = await apiClient.get<ApiResponse<SoilAnalysisData[]>>(
+        apiEndpoints.fields.soilAnalysis,
+        {
+          params: { field_id: selectedFieldId },
+        }
+      );
+      const data = unwrapResponse<SoilAnalysisData[]>(response);
+      return data || [];
     },
     enabled: isAuthenticated() && selectedFieldId !== null && viewMode === 'soil',
   });
 
   const createFieldMutation = useMutation({
-    mutationFn: async (fieldData: FieldFormData) => {
-      const response = await fetch('/api/fields', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(fieldData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create field');
-      }
-
-      return response.json();
+    mutationFn: async (fieldData: FieldFormDataInternal) => {
+      return apiClient.post<ApiResponse<Field>>(apiEndpoints.fields.create, fieldData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
@@ -147,21 +110,8 @@ export function FieldsPage() {
   });
 
   const updateFieldMutation = useMutation({
-    mutationFn: async ({ id, ...fieldData }: FieldFormData & { id: number }) => {
-      const response = await fetch('/api/fields', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ id, ...fieldData }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update field');
-      }
-
-      return response.json();
+    mutationFn: async ({ id, ...fieldData }: FieldFormDataInternal & { id: number }) => {
+      return apiClient.put<ApiResponse<Field>>(apiEndpoints.fields.update, { id, ...fieldData });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
@@ -171,27 +121,20 @@ export function FieldsPage() {
 
   const deleteFieldMutation = useMutation({
     mutationFn: async (fieldId: number) => {
-      const response = await fetch(`/api/fields?id=${fieldId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete field');
-      }
-
-      return response.json();
+      return apiClient.delete<ApiResponse<{ success: boolean }>>(
+        apiEndpoints.fields.delete(fieldId.toString())
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
     },
   });
 
-  const handleCreateField = (fieldData: FieldFormData) => {
+  const handleCreateField = (fieldData: FieldFormDataInternal) => {
     createFieldMutation.mutate(fieldData);
   };
 
-  const handleUpdateField = (fieldData: FieldFormData) => {
+  const handleUpdateField = (fieldData: FieldFormDataInternal) => {
     if (editingField) {
       updateFieldMutation.mutate({ id: editingField.id, ...fieldData });
     }
@@ -214,7 +157,7 @@ export function FieldsPage() {
     );
   }
 
-  if (isLoading)
+  if (farmsLoading || fieldsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -223,23 +166,34 @@ export function FieldsPage() {
         </div>
       </div>
     );
+  }
 
-  if (error)
+  if (fieldsError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading fields</h2>
-          <p className="text-gray-600">{error.message}</p>
+          <p className="text-gray-600">{fieldsError.message}</p>
+          <Button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['fields'] })}
+            className="mt-4"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );
+  }
 
   const totalFields = fields?.length || 0;
-  const totalHectares = fields?.reduce((sum, field) => sum + (field.area_hectares || 0), 0) || 0;
-  const totalCrops = fields?.reduce((sum, field) => sum + (field.crop_count || 0), 0) || 0;
+  const totalHectares =
+    fields?.reduce((sum: number, field: Field) => sum + (field.area_hectares || 0), 0) || 0;
+  const totalCrops =
+    fields?.reduce((sum: number, field: Field) => sum + (field.crop_count || 0), 0) || 0;
   const avgProfitability =
     fields && fields.length > 0
-      ? fields.reduce((sum, field) => sum + (field.avg_profitability || 0), 0) / fields.length
+      ? fields.reduce((sum: number, field: Field) => sum + (field.avg_profitability || 0), 0) /
+        fields.length
       : 0;
 
   return (
@@ -259,10 +213,30 @@ export function FieldsPage() {
             <p className="text-gray-600 mt-1">Monitor and optimize your field operations</p>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Farm Selector */}
+            {farms && farms.length > 0 && (
+              <select
+                value={selectedFarmId}
+                onChange={e => setSelectedFarmId(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Select Farm</option>
+                {farms.map(farm => (
+                  <option key={farm.id} value={farm.id.toString()}>
+                    {farm.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* View Mode Toggle */}
             <div className="flex rounded-md shadow-sm" role="group">
               <button
                 type="button"
-                onClick={() => setViewMode('grid')}
+                onClick={() => {
+                  setViewMode('grid');
+                  setSelectedFieldId(null);
+                }}
                 className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
                   viewMode === 'grid'
                     ? 'bg-green-600 text-white border-green-600'
@@ -273,7 +247,10 @@ export function FieldsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('analytics')}
+                onClick={() => {
+                  setViewMode('analytics');
+                  setSelectedFieldId(null);
+                }}
                 className={`px-4 py-2 text-sm font-medium border-t border-b ${
                   viewMode === 'analytics'
                     ? 'bg-green-600 text-white border-green-600'
@@ -294,15 +271,31 @@ export function FieldsPage() {
                 Soil Health
               </button>
             </div>
+
+            {/* Add New Field Button */}
             <Button
               onClick={() => setShowCreateForm(true)}
               className="bg-green-600 hover:bg-green-700"
+              disabled={!selectedFarmId}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add New Field
             </Button>
           </div>
         </div>
+
+        {/* No Farm Selected */}
+        {!selectedFarmId && farms && farms.length > 0 && (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow p-8">
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Farm</h3>
+              <p className="text-gray-600 mb-4">
+                Choose a farm from the dropdown to view its fields.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Analytics Overview */}
         {fields && fields.length > 0 && (
@@ -354,11 +347,11 @@ export function FieldsPage() {
         )}
 
         {/* Content based on view mode */}
-        {viewMode === 'grid' ? (
+        {viewMode === 'grid' && selectedFarmId ? (
           /* Grid View */
           fields && fields.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fields.map(field => (
+              {fields.map((field: Field) => (
                 <Card key={field.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -501,7 +494,7 @@ export function FieldsPage() {
               </div>
             </div>
           )
-        ) : viewMode === 'analytics' ? (
+        ) : viewMode === 'analytics' && selectedFarmId ? (
           /* Analytics View */
           <div className="space-y-8">
             <Card>
@@ -523,7 +516,7 @@ export function FieldsPage() {
               </CardContent>
             </Card>
           </div>
-        ) : (
+        ) : viewMode === 'soil' ? (
           /* Soil Health View */
           <div className="space-y-6">
             <Card>
@@ -583,25 +576,28 @@ export function FieldsPage() {
                       ))}
                     </div>
                   </div>
+                ) : !selectedFieldId ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p>Select a field from the Grid View to load soil analysis data.</p>
+                  </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p>Select a field to view soil analysis data</p>
-                    <p className="text-sm">
-                      No soil analysis data available for the selected field.
-                    </p>
+                    <p>No soil analysis data available for the selected field.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
-        )}
+        ) : null}
 
         {/* Create/Edit Field Modal */}
         {(showCreateForm || editingField) && (
           <FieldFormModal
             field={editingField}
             farms={farms || []}
+            selectedFarmId={selectedFarmId}
             onSubmit={editingField ? handleUpdateField : handleCreateField}
             onClose={() => {
               setShowCreateForm(false);
@@ -615,35 +611,62 @@ export function FieldsPage() {
   );
 }
 
-// Field Form Modal Component
+// --- Field Form Modal Component ---
+
 interface FieldFormModalProps {
   field?: Field | null;
-  farms: unknown[];
-  onSubmit: (data: FieldFormData) => void;
+  farms: Farm[];
+  selectedFarmId: string;
+  onSubmit: (data: FieldFormDataInternal) => void;
   onClose: () => void;
   isLoading: boolean;
 }
 
-function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFormModalProps) {
-  const [formData, setFormData] = useState<FieldFormData>({
-    farm_id: field?.farm_id || (farms.length > 0 ? farms[0].id : 0),
-    name: field?.name || '',
-    area_hectares: field?.area_hectares,
-    crop_type: field?.crop_type || '',
-    notes: field?.notes || '',
-    soil_type: field?.soil_type || '',
-    field_capacity: field?.field_capacity,
-    current_cover_crop: field?.current_cover_crop || '',
-    irrigation_system: field?.irrigation_system || '',
-    drainage_quality: field?.drainage_quality || '',
-    accessibility_score: field?.accessibility_score,
-    environmental_factors: field?.environmental_factors || '',
-    maintenance_schedule: field?.maintenance_schedule || '',
+function FieldFormModal({
+  field,
+  farms,
+  selectedFarmId,
+  onSubmit,
+  onClose,
+  isLoading,
+}: FieldFormModalProps) {
+  const [formData, setFormData] = useState<FieldFormDataInternal>(() => {
+    const firstFarm = getFirstFarm(farms);
+    const defaultFarmId = selectedFarmId ? parseInt(selectedFarmId) : firstFarm ? firstFarm.id : 0;
+
+    return {
+      farm_id: field?.farm_id || defaultFarmId,
+      name: field?.name || '',
+      area_hectares: field?.area_hectares,
+      crop_type: field?.crop_type || '',
+      notes: field?.notes || '',
+      soil_type: field?.soil_type || '',
+      field_capacity: field?.field_capacity,
+      current_cover_crop: field?.current_cover_crop || '',
+      irrigation_system: field?.irrigation_system || '',
+      drainage_quality: field?.drainage_quality || '',
+      accessibility_score: field?.accessibility_score,
+      environmental_factors: field?.environmental_factors || '',
+      maintenance_schedule: field?.maintenance_schedule || '',
+    };
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (selectedFarmId && !field) {
+      setFormData(prev => ({ ...prev, farm_id: parseInt(selectedFarmId) }));
+    }
+  }, [selectedFarmId, field]);
+
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     onSubmit(formData);
+  };
+
+  const updateField = (key: keyof FieldFormDataInternal, value: string | number | null): void => {
+    setFormData(prev => ({
+      ...prev,
+      [key]: value === '' ? null : value,
+    }));
   };
 
   return (
@@ -652,7 +675,11 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">{field ? 'Edit Field' : 'Create New Field'}</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              disabled={isLoading}
+            >
               ×
             </button>
           </div>
@@ -667,10 +694,11 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <select
                     required
                     value={formData.farm_id}
-                    onChange={e => setFormData({ ...formData, farm_id: parseInt(e.target.value) })}
+                    onChange={e => updateField('farm_id', parseInt(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={!!field}
                   >
-                    <option value="">Select farm</option>
+                    <option value={0}>Select farm</option>
                     {farms.map(farm => (
                       <option key={farm.id} value={farm.id}>
                         {farm.name}
@@ -687,7 +715,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                     type="text"
                     required
                     value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    onChange={e => updateField('name', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
@@ -699,12 +727,13 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     value={formData.area_hectares || ''}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        area_hectares: parseFloat(e.target.value) || undefined,
-                      })
+                      updateField(
+                        'area_hectares',
+                        e.target.value ? parseFloat(e.target.value) : undefined
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
@@ -717,7 +746,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <input
                     type="text"
                     value={formData.crop_type || ''}
-                    onChange={e => setFormData({ ...formData, crop_type: e.target.value })}
+                    onChange={e => updateField('crop_type', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="e.g., Corn, Wheat, Soybeans"
                   />
@@ -733,7 +762,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <label className="block text-sm font-medium text-gray-700 mb-1">Soil Type</label>
                   <select
                     value={formData.soil_type || ''}
-                    onChange={e => setFormData({ ...formData, soil_type: e.target.value })}
+                    onChange={e => updateField('soil_type', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select soil type</option>
@@ -752,7 +781,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   </label>
                   <select
                     value={formData.irrigation_system || ''}
-                    onChange={e => setFormData({ ...formData, irrigation_system: e.target.value })}
+                    onChange={e => updateField('irrigation_system', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select irrigation</option>
@@ -770,7 +799,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   </label>
                   <select
                     value={formData.drainage_quality || ''}
-                    onChange={e => setFormData({ ...formData, drainage_quality: e.target.value })}
+                    onChange={e => updateField('drainage_quality', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select drainage</option>
@@ -792,10 +821,10 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                     max="10"
                     value={formData.accessibility_score || ''}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        accessibility_score: parseInt(e.target.value) || undefined,
-                      })
+                      updateField(
+                        'accessibility_score',
+                        e.target.value ? parseInt(e.target.value) : undefined
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
@@ -814,7 +843,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <input
                     type="text"
                     value={formData.current_cover_crop || ''}
-                    onChange={e => setFormData({ ...formData, current_cover_crop: e.target.value })}
+                    onChange={e => updateField('current_cover_crop', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="e.g., Rye, Clover, Oats"
                   />
@@ -827,12 +856,13 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     value={formData.field_capacity || ''}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        field_capacity: parseFloat(e.target.value) || undefined,
-                      })
+                      updateField(
+                        'field_capacity',
+                        e.target.value ? parseFloat(e.target.value) : undefined
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
@@ -845,9 +875,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                 </label>
                 <textarea
                   value={formData.environmental_factors || ''}
-                  onChange={e =>
-                    setFormData({ ...formData, environmental_factors: e.target.value })
-                  }
+                  onChange={e => updateField('environmental_factors', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Environmental considerations, wind exposure, slope, etc."
@@ -860,7 +888,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                 </label>
                 <textarea
                   value={formData.maintenance_schedule || ''}
-                  onChange={e => setFormData({ ...formData, maintenance_schedule: e.target.value })}
+                  onChange={e => updateField('maintenance_schedule', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Regular maintenance tasks and schedules..."
@@ -871,7 +899,7 @@ function FieldFormModal({ field, farms, onSubmit, onClose, isLoading }: FieldFor
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
                   value={formData.notes || ''}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={e => updateField('notes', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Additional notes about the field..."

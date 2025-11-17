@@ -1,8 +1,6 @@
-// Performance optimization system for enhanced application performance
-// Provides lazy loading, virtualization, caching, and performance monitoring
-
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useInView } from 'react-intersection-observer';
+
+// --- Type Definitions ---
 
 export type PerformanceMetric = 'lcp' | 'fid' | 'cls' | 'fcp' | 'ttfb';
 export type OptimizationType =
@@ -12,6 +10,25 @@ export type OptimizationType =
   | 'code-splitting'
   | 'preloading'
   | 'debouncing';
+
+export interface OptimizationConfig {
+  enableIntersectionObserver: boolean;
+  enablePerformanceObserver: boolean;
+  enableMemoryMonitoring: boolean;
+  enableNetworkMonitoring: boolean;
+  virtualScrollThreshold: number;
+  lazyLoadMargin: string;
+  preloadCriticalResources: boolean;
+  cacheMaxSize: number;
+  debounceDelay: number;
+}
+
+// Standardized MemoryInfo type for clarity
+export interface MemoryInfo {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
 
 export interface PerformanceMetrics {
   lcp: number | null; // Largest Contentful Paint
@@ -26,16 +43,12 @@ export interface PerformanceMetrics {
   timestamp: number;
 }
 
-export interface OptimizationConfig {
-  enableIntersectionObserver: boolean;
-  enablePerformanceObserver: boolean;
-  enableMemoryMonitoring: boolean;
-  enableNetworkMonitoring: boolean;
-  virtualScrollThreshold: number;
-  lazyLoadMargin: string;
-  preloadCriticalResources: boolean;
-  cacheMaxSize: number; // in entries
-  debounceDelay: number; // in ms
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  lastAccessed: number;
+  size: number;
+  hits: number;
 }
 
 export interface VirtualItem {
@@ -45,12 +58,10 @@ export interface VirtualItem {
   y: number;
 }
 
-export interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  lastAccessed: number;
-  size: number;
-  hits: number;
+export interface LazyLoadingOptions {
+  rootMargin?: string;
+  threshold?: number;
+  triggerOnce?: boolean;
 }
 
 const DEFAULT_CONFIG: OptimizationConfig = {
@@ -65,6 +76,108 @@ const DEFAULT_CONFIG: OptimizationConfig = {
   debounceDelay: 300,
 };
 
+// --- Hooks ---
+
+// Lazy loading hook
+export function useLazyLoading(options?: LazyLoadingOptions) {
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!ref.current || !options) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) {
+          setInView(entry.isIntersecting);
+          if (entry.isIntersecting && options.triggerOnce) {
+            observer.disconnect();
+          }
+        }
+      },
+      {
+        rootMargin: options.rootMargin || '50px',
+        threshold: options.threshold || 0.1,
+      }
+    );
+
+    observer.observe(ref.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [options?.triggerOnce]);
+
+  return { ref, inView };
+}
+
+// Virtual scrolling hook
+export function useVirtualScrolling(
+  itemCount: number,
+  itemHeight: number,
+  containerHeight: number,
+  overscan: number = 5
+) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const visibleStartIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const visibleEndIndex = Math.min(
+    itemCount - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  );
+
+  const visibleItems = useMemo(() => {
+    const items: VirtualItem[] = [];
+    for (let i = visibleStartIndex; i <= visibleEndIndex; i++) {
+      const y = i * itemHeight;
+      items.push({
+        id: `item-${i}`,
+        index: i,
+        height: itemHeight,
+        y,
+      });
+    }
+    return items;
+  }, [visibleStartIndex, visibleEndIndex, itemHeight]);
+
+  const totalHeight = itemCount * itemHeight;
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
+
+  return {
+    containerRef,
+    visibleItems,
+    totalHeight,
+    handleScroll,
+    scrollTop,
+    visibleStartIndex,
+    visibleEndIndex,
+  };
+}
+
+// Debounce hook
+export function useDebounce<T>(value: T, delay?: number) {
+  const debounceDelay = delay || 300;
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, debounceDelay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, debounceDelay]);
+
+  return debouncedValue;
+}
+
+// --- Main Hook ---
+
 export function usePerformanceOptimizations(customConfig?: Partial<OptimizationConfig>) {
   const config = useMemo(() => ({ ...DEFAULT_CONFIG, ...customConfig }), [customConfig]);
 
@@ -78,73 +191,55 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
   });
 
   const [isLowPerformance, setIsLowPerformance] = useState(false);
-  const [activeOptimization, setActiveOptimization] = useState<OptimizationType[]>([]);
-  const [cache, setCache] = useState<Map<string, CacheEntry<unknown>>>(new Map());
-  const [virtualItems, setVirtualItems] = useState<VirtualItem[]>([]);
+  const [activeOptimization] = useState<OptimizationType[]>([]);
+
+  const cacheRef = useRef<Map<string, CacheEntry<unknown>>>(new Map());
+  const [cache, setCache] = useState<Map<string, CacheEntry<unknown>>>(cacheRef.current);
 
   const performanceObserverRef = useRef<PerformanceObserver | null>(null);
-  const memoryIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const networkStatusRef = useRef<unknown>(null);
+  const memoryIntervalRef = useRef<number | null>(null);
 
   // Performance Observer setup
   useEffect(() => {
     if (!config.enablePerformanceObserver || typeof window === 'undefined') return;
 
     if ('PerformanceObserver' in window) {
-      performanceObserverRef.current = new PerformanceObserver(list => {
-        const entries = list.getEntries();
+      performanceObserverRef.current = new PerformanceObserver((list: any) => {
+        setMetrics(prevMetrics => {
+          const newMetrics = { ...prevMetrics, timestamp: Date.now() };
 
-        entries.forEach(entry => {
-          setMetrics(prev => ({
-            ...prev,
-            timestamp: Date.now(),
-          }));
+          list.getEntries().forEach((entry: any) => {
+            const time = entry.startTime;
 
-          // Core Web Vitals
-          if (entry.entryType === 'largest-contentful-paint') {
-            setMetrics(prev => ({
-              ...prev,
-              lcp: entry.startTime,
-            }));
-          }
-
-          if (entry.entryType === 'first-input') {
-            setMetrics(prev => ({
-              ...prev,
-              fid: entry.processingStart - entry.startTime,
-            }));
-          }
-
-          if (entry.entryType === 'layout-shift' && !(entry as unknown).hadRecentInput) {
-            setMetrics(prev => ({
-              ...prev,
-              cls: (prev.cls || 0) + entry.value,
-            }));
-          }
-
-          if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
-            setMetrics(prev => ({
-              ...prev,
-              fcp: entry.startTime,
-            }));
-          }
-
-          if (entry.entryType === 'navigation') {
-            const nav = entry as PerformanceNavigationTiming;
-            setMetrics(prev => ({
-              ...prev,
-              ttfb: nav.responseStart - nav.requestStart,
-            }));
-          }
+            // Core Web Vitals
+            if (entry.entryType === 'largest-contentful-paint') {
+              newMetrics.lcp = time;
+            } else if (entry.entryType === 'first-input') {
+              const fidEntry = entry as PerformanceEventTiming;
+              newMetrics.fid = fidEntry.processingStart - fidEntry.startTime;
+            } else if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
+              const shiftEntry = entry as any;
+              newMetrics.cls = (newMetrics.cls || 0) + shiftEntry.value;
+            } else if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
+              newMetrics.fcp = time;
+            } else if (entry.entryType === 'navigation') {
+              const nav = entry as PerformanceNavigationTiming;
+              newMetrics.ttfb = nav.responseStart - nav.requestStart;
+            }
+          });
+          return newMetrics;
         });
       });
 
-      // Observe different entry types
-      performanceObserverRef.current.observe({ entryTypes: ['largest-contentful-paint'] });
-      performanceObserverRef.current.observe({ entryTypes: ['first-input'] });
-      performanceObserverRef.current.observe({ entryTypes: ['layout-shift'] });
-      performanceObserverRef.current.observe({ entryTypes: ['paint'] });
-      performanceObserverRef.current.observe({ entryTypes: ['navigation'] });
+      performanceObserverRef.current.observe({
+        entryTypes: [
+          'largest-contentful-paint',
+          'first-input',
+          'layout-shift',
+          'paint',
+          'navigation',
+        ],
+      });
     }
 
     return () => {
@@ -160,25 +255,24 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
 
     const checkMemory = () => {
       if ('memory' in performance) {
-        const memory = (performance as unknown).memory;
-        const memoryUsage = {
-          usedJSHeapSize: memory.usedJSHeapSize,
-          totalJSHeapSize: memory.totalJSHeapSize,
-          jsHeapSizeLimit: memory.jsHeapSizeLimit,
-        };
+        const memory = (performance as any).memory;
 
         setMetrics(prev => ({
           ...prev,
-          memoryUsage,
+          memoryUsage: {
+            usedJSHeapSize: memory.usedJSHeapSize,
+            totalJSHeapSize: memory.totalJSHeapSize,
+            jsHeapSizeLimit: memory.jsHeapSizeLimit,
+          },
         }));
       }
     };
 
-    memoryIntervalRef.current = setInterval(checkMemory, 10000); // Check every 10 seconds
+    memoryIntervalRef.current = window.setInterval(checkMemory, 10000);
 
     return () => {
       if (memoryIntervalRef.current) {
-        clearInterval(memoryIntervalRef.current);
+        window.clearInterval(memoryIntervalRef.current);
       }
     };
   }, [config.enableMemoryMonitoring]);
@@ -189,7 +283,7 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
 
     const updateNetworkInfo = () => {
       if ('connection' in navigator) {
-        const connection = (navigator as unknown).connection;
+        const connection = (navigator as any).connection;
         setMetrics(prev => ({
           ...prev,
           connectionType: connection.effectiveType,
@@ -199,7 +293,7 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
 
     updateNetworkInfo();
 
-    networkStatusRef.current = window.addEventListener('online', updateNetworkInfo);
+    window.addEventListener('online', updateNetworkInfo);
     window.addEventListener('offline', updateNetworkInfo);
 
     return () => {
@@ -212,14 +306,21 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    setMetrics(prev => ({
-      ...prev,
-      devicePixelRatio: window.devicePixelRatio,
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      },
-    }));
+    const updateViewport = () => {
+      setMetrics(prev => ({
+        ...prev,
+        devicePixelRatio: window.devicePixelRatio,
+        viewport: {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        },
+      }));
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+
+    return () => window.removeEventListener('resize', updateViewport);
   }, []);
 
   // Performance classification
@@ -227,6 +328,7 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
     const classifyPerformance = () => {
       let lowPerformanceScore = 0;
 
+      // Standard Core Web Vitals thresholds
       if (metrics.lcp && metrics.lcp > 2500) lowPerformanceScore += 1;
       if (metrics.fid && metrics.fid > 100) lowPerformanceScore += 1;
       if (metrics.cls && metrics.cls > 0.25) lowPerformanceScore += 1;
@@ -241,7 +343,11 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
       }
 
       // Check connection type
-      if (metrics.connectionType === 'slow-2g' || metrics.connectionType === '2g') {
+      if (
+        metrics.connectionType === 'slow-2g' ||
+        metrics.connectionType === '2g' ||
+        metrics.connectionType === '3g'
+      ) {
         lowPerformanceScore += 1;
       }
 
@@ -251,157 +357,72 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
     classifyPerformance();
   }, [metrics]);
 
-  // Lazy loading hook
-  const useLazyLoading = useCallback(
-    (options?: { rootMargin?: string; threshold?: number; triggerOnce?: boolean }) => {
-      const { ref, inView, entry } = useInView({
-        rootMargin: options?.rootMargin || config.lazyLoadMargin,
-        threshold: options?.threshold || 0.1,
-        triggerOnce: options?.triggerOnce !== false,
-      });
-
-      return { ref, inView, entry };
-    },
-    [config.lazyLoadMargin]
-  );
-
-  // Virtual scrolling hook
-  const useVirtualScrolling = useCallback(
-    (itemCount: number, itemHeight: number, containerHeight: number, overscan: number = 5) => {
-      const [scrollTop, setScrollTop] = useState(0);
-      const [containerWidth, setContainerWidth] = useState(0);
-
-      const visibleStartIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-      const visibleEndIndex = Math.min(
-        itemCount - 1,
-        Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
-      );
-
-      const visibleItems = useMemo(() => {
-        const items: VirtualItem[] = [];
-        for (let i = visibleStartIndex; i <= visibleEndIndex; i++) {
-          const y = i * itemHeight;
-          items.push({
-            id: `item-${i}`,
-            index: i,
-            height: itemHeight,
-            y,
-          });
-        }
-        return items;
-      }, [visibleStartIndex, visibleEndIndex, itemHeight]);
-
-      const totalHeight = itemCount * itemHeight;
-
-      const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-        setScrollTop(e.currentTarget.scrollTop);
-      }, []);
-
-      const handleResize = useCallback(() => {
-        setContainerWidth(window.innerWidth);
-      }, []);
-
-      useEffect(() => {
-        setContainerWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-      }, [handleResize]);
-
-      return {
-        visibleItems,
-        totalHeight,
-        handleScroll,
-        scrollTop,
-        visibleStartIndex,
-        visibleEndIndex,
-      };
-    },
-    []
-  );
-
   // Cache management
-  const getCached = useCallback(
-    <T,>(key: string): T | null => {
-      const entry = cache.get(key);
-      if (!entry) return null;
+  const getCached = useCallback(<T,>(key: string): T | null => {
+    const entry = cacheRef.current.get(key);
+    if (!entry) return null;
 
-      // Update access time
-      entry.lastAccessed = Date.now();
-      entry.hits += 1;
+    entry.lastAccessed = Date.now();
+    entry.hits += 1;
 
-      return entry.data as T;
-    },
-    [cache]
-  );
+    setCache(new Map(cacheRef.current));
+
+    return entry.data as T;
+  }, []);
 
   const setCached = useCallback(
     <T,>(key: string, data: T, size: number = 1) => {
-      setCache(prev => {
-        const newCache = new Map(prev);
+      const newCache = cacheRef.current;
 
-        // Remove oldest entries if cache is full
-        if (newCache.size >= config.cacheMaxSize) {
-          const entries = Array.from(newCache.entries());
-          entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+      // Eviction Policy: Remove oldest entries if cache is full (Least Recently Used)
+      if (newCache.size >= config.cacheMaxSize) {
+        const entries = Array.from(newCache.entries());
+        entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
 
-          // Remove 10% of oldest entries
-          const toRemove = Math.ceil(config.cacheMaxSize * 0.1);
-          for (let i = 0; i < toRemove; i++) {
-            newCache.delete(entries[i][0]);
+        const toRemove = Math.ceil(config.cacheMaxSize * 0.1);
+        for (let i = 0; i < toRemove && i < entries.length; i++) {
+          const keyToRemove = entries[i]?.[0];
+          if (keyToRemove !== undefined) {
+            newCache.delete(keyToRemove);
           }
         }
+      }
 
-        newCache.set(key, {
-          data,
-          timestamp: Date.now(),
-          lastAccessed: Date.now(),
-          size,
-          hits: 0,
-        });
-
-        return newCache;
+      newCache.set(key, {
+        data,
+        timestamp: Date.now(),
+        lastAccessed: Date.now(),
+        size,
+        hits: 0,
       });
+
+      setCache(new Map(newCache));
     },
     [config.cacheMaxSize]
   );
 
   const clearCache = useCallback(() => {
+    cacheRef.current.clear();
     setCache(new Map());
   }, []);
 
   const getCacheStats = useCallback(() => {
-    const entries = Array.from(cache.values());
+    const entries = Array.from(cacheRef.current.values());
+    const totalEntries = cacheRef.current.size;
+    const totalSize = entries.reduce((sum, entry) => sum + entry.size, 0);
+    const totalHits = entries.reduce((sum, entry) => sum + entry.hits, 0);
+    const averageAge =
+      entries.length > 0
+        ? entries.reduce((sum, entry) => sum + (Date.now() - entry.timestamp), 0) / entries.length
+        : 0;
+
     return {
-      totalEntries: cache.size,
-      totalSize: entries.reduce((sum, entry) => sum + entry.size, 0),
-      totalHits: entries.reduce((sum, entry) => sum + entry.hits, 0),
-      averageAge:
-        entries.length > 0
-          ? entries.reduce((sum, entry) => sum + (Date.now() - entry.timestamp), 0) / entries.length
-          : 0,
+      totalEntries,
+      totalSize,
+      totalHits,
+      averageAge,
     };
   }, [cache]);
-
-  // Debounce hook
-  const useDebounce = useCallback(
-    <T,>(value: T, delay?: number) => {
-      const debounceDelay = delay || config.debounceDelay;
-      const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-      useEffect(() => {
-        const handler = setTimeout(() => {
-          setDebouncedValue(value);
-        }, debounceDelay);
-
-        return () => {
-          clearTimeout(handler);
-        };
-      }, [value, debounceDelay]);
-
-      return debouncedValue;
-    },
-    [config.debounceDelay]
-  );
 
   // Preloading hook
   const preloadResource = useCallback(
@@ -421,116 +442,58 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
     []
   );
 
-  // Optimized image component
-  const OptimizedImage = useCallback(
-    ({
-      src,
-      alt,
-      className,
-      loading = 'lazy',
-      sizes,
-      srcSet,
-    }: {
-      src: string;
-      alt: string;
-      className?: string;
-      loading?: 'lazy' | 'eager';
-      sizes?: string;
-      srcSet?: string;
-    }) => {
-      const { ref, inView } = useLazyLoading({
-        rootMargin: config.lazyLoadMargin,
-        threshold: 0.1,
-        triggerOnce: true,
-      });
-
-      const [isLoaded, setIsLoaded] = useState(false);
-      const [error, setError] = useState(false);
-
-      const handleLoad = useCallback(() => setIsLoaded(true), []);
-      const handleError = useCallback(() => setError(true), []);
-
-      useEffect(() => {
-        if (inView && !isLoaded && !error) {
-          const img = new Image();
-          img.onload = handleLoad;
-          img.onerror = handleError;
-          img.src = src;
-          if (srcSet) img.srcset = srcSet;
-          if (sizes) img.sizes = sizes;
-        }
-      }, [inView, isLoaded, error, src, srcSet, sizes, handleLoad, handleError]);
-
-      return (
-        <div ref={ref} className={className}>
-          {inView && !error ? (
-            <img
-              src={
-                isLoaded
-                  ? src
-                  : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg=='
-              }
-              alt={alt}
-              loading={loading}
-              sizes={sizes}
-              srcSet={srcSet}
-            />
-          ) : null}
-          {error && (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <span className="text-gray-400 text-sm">Failed to load image: {src}</span>
-            </div>
-          )}
-        </div>
-      );
-    },
-    [useLazyLoading, config.lazyLoadMargin]
-  );
-
   // Performance recommendations
   const getRecommendations = useCallback((): string[] => {
     const recommendations: string[] = [];
 
     if (metrics.lcp && metrics.lcp > 2500) {
       recommendations.push(
-        'Consider optimizing images and reducing server response time to improve Largest Contentful Paint'
+        'Consider optimizing images and reducing server response time to improve Largest Contentful Paint (LCP).'
       );
     }
 
     if (metrics.fid && metrics.fid > 100) {
-      recommendations.push('Reduce JavaScript execution time to improve First Input Delay');
+      recommendations.push(
+        'Reduce JavaScript execution time and main thread blocking to improve First Input Delay (FID).'
+      );
     }
 
     if (metrics.cls && metrics.cls > 0.25) {
-      recommendations.push('Reserve space for dynamic content to reduce Cumulative Layout Shift');
+      recommendations.push(
+        'Reserve space for dynamic content (images/ads) to prevent layout shifts and reduce Cumulative Layout Shift (CLS).'
+      );
+    }
+
+    if (metrics.ttfb && metrics.ttfb > 600) {
+      recommendations.push(
+        'Optimize backend processing and DNS lookups to improve Time to First Byte (TTFB).'
+      );
     }
 
     if (metrics.memoryUsage) {
       const memoryUsage = metrics.memoryUsage.usedJSHeapSize / metrics.memoryUsage.jsHeapSizeLimit;
       if (memoryUsage > 0.8) {
         recommendations.push(
-          'High memory usage detected. Consider implementing more aggressive caching strategies'
+          'High memory usage detected. Consider implementing more aggressive caching strategies and checking for memory leaks.'
         );
       }
     }
 
     if (metrics.connectionType === 'slow-2g' || metrics.connectionType === '2g') {
-      recommendations.push('Consider reducing bundle size for slow network connections');
+      recommendations.push(
+        'Consider serving smaller, optimized bundles and enabling code-splitting for slow network connections.'
+      );
     }
 
     return recommendations;
   }, [metrics]);
 
   return {
-    // Metrics
+    // State
     metrics,
     isLowPerformance,
     activeOptimization,
-
-    // Optimization hooks
-    useLazyLoading,
-    useVirtualScrolling,
-    useDebounce,
+    cache,
 
     // Cache management
     getCached,
@@ -540,11 +503,6 @@ export function usePerformanceOptimizations(customConfig?: Partial<OptimizationC
 
     // Utilities
     preloadResource,
-    OptimizedImage,
-
-    // Performance insights
     getRecommendations,
   };
 }
-
-export default usePerformanceOptimizations;

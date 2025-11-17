@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 import { apiEndpoints, cacheConfig } from '../config/env';
 
 export interface CreateIrrigationForm {
@@ -49,7 +49,7 @@ export interface IrrigationAnalytics {
  */
 export function useIrrigation() {
   const queryClient = useQueryClient();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   // Fetch all irrigation schedules
   const {
@@ -175,7 +175,7 @@ export function useIrrigation() {
  * Hook for irrigation schedules by farm
  */
 export function useIrrigationByFarm(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: schedules,
@@ -204,7 +204,7 @@ export function useIrrigationByFarm(farmId: string) {
  * Hook for irrigation analytics
  */
 export function useIrrigationAnalytics(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: analytics,
@@ -232,7 +232,7 @@ export function useIrrigationAnalytics(farmId: string) {
  * Hook for irrigation recommendations
  */
 export function useIrrigationRecommendations(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: recommendations,

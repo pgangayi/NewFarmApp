@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 import { FinanceEntry, FinanceReport } from '../types/entities';
 import { apiEndpoints, cacheConfig } from '../config/env';
 
@@ -25,7 +25,7 @@ export interface UpdateFinanceForm extends Partial<CreateFinanceForm> {
  */
 export function useFinance() {
   const queryClient = useQueryClient();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   // Fetch all finance entries
   const {
@@ -112,7 +112,7 @@ export function useFinance() {
  * Hook for fetching finance entries by farm
  */
 export function useFinanceByFarm(farmId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: entries,
@@ -140,7 +140,7 @@ export function useFinanceByFarm(farmId: string) {
  * Hook for finance report generation
  */
 export function useFinanceReport(type?: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: report,

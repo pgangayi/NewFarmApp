@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/AuthContext';
 import { useFarm } from '../hooks/useFarm';
 import { useCrops, useCropsStats } from '../hooks/useCrops';
 import { Button } from '../components/ui/button';
@@ -21,18 +21,20 @@ import {
   X,
   AlertCircle,
   CheckCircle,
+  Calculator,
 } from 'lucide-react';
 
 import { CropRotationPlanner } from '../components/CropRotationPlanner';
 import { IrrigationOptimizer } from '../components/IrrigationOptimizer';
 import { PestDiseaseManager } from '../components/PestDiseaseManager';
 import { SoilHealthMonitor } from '../components/SoilHealthMonitor';
+import { CropPlanning } from '../components/CropPlanning';
 
 export function CropsPage() {
   const { user, getAuthHeaders, isAuthenticated } = useAuth();
   const { currentFarm } = useFarm();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'rotation' | 'irrigation' | 'pests' | 'soil'
+    'overview' | 'planning' | 'rotation' | 'irrigation' | 'pests' | 'soil'
   >('overview');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +58,16 @@ export function CropsPage() {
     status: 'planned',
   });
 
-  const { crops, isLoading, error, createCrop, updateCrop, deleteCrop, isCreating } = useCrops();
+  const {
+    crops,
+    isLoading,
+    error,
+    createCrop,
+    updateCrop,
+    deleteCrop,
+    createCropAsync,
+    isCreating,
+  } = useCrops();
   const stats = useCropsStats();
 
   if (!isAuthenticated()) {
@@ -95,21 +106,32 @@ export function CropsPage() {
 
   const handleCreateCrop = async (e: React.FormEvent) => {
     e.preventDefault();
-    createCrop({
-      ...formData,
-      farm_id: currentFarm.id,
-    });
-    setFormData({
-      name: '',
-      farm_id: currentFarm.id,
-      field_id: '',
-      crop_type: '',
-      variety: '',
-      planting_date: new Date().toISOString().split('T')[0],
-      expected_harvest_date: '',
-      status: 'planned',
-    });
-    setShowCreateForm(false);
+
+    try {
+      const payload = {
+        ...formData,
+        farm_id: currentFarm.id,
+      };
+
+      // Awaitable create
+      const created = await createCropAsync ? createCropAsync(payload) : Promise.resolve(null);
+
+      // Optionally inspect created result here
+      setFormData({
+        name: '',
+        farm_id: currentFarm.id,
+        field_id: '',
+        crop_type: '',
+        variety: '',
+        planting_date: new Date().toISOString().split('T')[0],
+        expected_harvest_date: '',
+        status: 'planned',
+      });
+      setShowCreateForm(false);
+    } catch (err: any) {
+      console.error('Failed to create crop', err);
+      alert(err?.message || 'Failed to create crop');
+    }
   };
 
   return (
@@ -148,11 +170,19 @@ export function CropsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => alert('Crop analytics coming soon!')}
+              >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Analytics
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => alert('Crop settings coming soon!')}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
@@ -175,6 +205,17 @@ export function CropsPage() {
             >
               <Target className="h-4 w-4" />
               Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('planning')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                activeTab === 'planning'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Calculator className="h-4 w-4" />
+              Financial Planning
             </button>
             <button
               onClick={() => setActiveTab('rotation')}
@@ -226,6 +267,8 @@ export function CropsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'planning' && <CropPlanning farmId={currentFarm.id} />}
+
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Quick Stats */}

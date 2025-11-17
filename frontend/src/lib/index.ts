@@ -4,8 +4,5 @@
 // Database and API
 export { getApiClient } from './api/client';
 
-// Cloudflare utilities
-export { apiClient, getCurrentUser, signIn, signUp, signOut } from './cloudflare';
-
 // Utilities
 export { cn } from './utils';

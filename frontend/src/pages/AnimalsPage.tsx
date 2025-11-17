@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useAnimals } from '../hooks/useAnimals';
+import { useAuth } from '../hooks/AuthContext';
+import { useAnimals, CreateAnimalForm } from '../hooks/useAnimals';
 import { useFarm } from '../hooks/useFarm';
+import { Animal } from '../types/entities';
+import { FilterState, AnimalCardProps } from '../types/ui';
 import {
   Plus,
   Search,
@@ -18,19 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
-
-interface FilterState {
-  search: string;
-  species: string;
-  breed: string;
-  health_status: string;
-  sex: string;
-  production_type: string;
-  status: string;
-  location: string;
-  sort_by: string;
-  sort_order: 'asc' | 'desc';
-}
+import { AnimalForm } from '../components/AnimalForm';
 
 const defaultFilters: FilterState = {
   search: '',
@@ -41,6 +31,8 @@ const defaultFilters: FilterState = {
   production_type: '',
   status: '',
   location: '',
+  intake_type: '',
+  pedigree_search: '',
   sort_by: 'created_at',
   sort_order: 'desc',
 };
@@ -89,14 +81,21 @@ const statusOptions = [
   { value: 'retired', label: 'Retired' },
 ];
 
-export function AnimalsPage() {
+const intakeTypeOptions = [
+  { value: '', label: 'All Intake Types' },
+  { value: 'Birth', label: 'Birth' },
+  { value: 'Purchase', label: 'Purchase' },
+  { value: 'Transfer', label: 'Transfer' },
+];
+
+function AnimalsPage() {
   const { user, isAuthenticated } = useAuth();
   const { currentFarm } = useFarm();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAnimal, setSelectedAnimal] = useState<unknown>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
 
   // Use custom hooks for live data
   const {
@@ -144,14 +143,36 @@ export function AnimalsPage() {
   const filteredAnimals = farmAnimals.filter(animal => {
     const matchesSearch =
       filters.search === '' ||
-      animal.identification?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      animal.animal_type?.toLowerCase().includes(filters.search.toLowerCase());
+      animal.identification_tag?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      animal.species?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      animal.name?.toLowerCase().includes(filters.search.toLowerCase());
 
-    const matchesSpecies = filters.species === '' || animal.animal_type === filters.species;
+    const matchesSpecies = filters.species === '' || animal.species === filters.species;
     const matchesBreed = filters.breed === '' || animal.breed === filters.breed;
     const matchesStatus = filters.status === '' || animal.status === filters.status;
+    const matchesIntakeType =
+      filters.intake_type === '' || animal.intake_type === filters.intake_type;
+    const matchesLocation =
+      filters.location === '' ||
+      animal.current_location_id === filters.location ||
+      animal.location_name === filters.location;
 
-    return matchesSearch && matchesSpecies && matchesBreed && matchesStatus;
+    const matchesPedigreeSearch =
+      filters.pedigree_search === '' ||
+      animal.father_name?.toLowerCase().includes(filters.pedigree_search.toLowerCase()) ||
+      animal.mother_name?.toLowerCase().includes(filters.pedigree_search.toLowerCase()) ||
+      animal.father_id === filters.pedigree_search ||
+      animal.mother_id === filters.pedigree_search;
+
+    return (
+      matchesSearch &&
+      matchesSpecies &&
+      matchesBreed &&
+      matchesStatus &&
+      matchesIntakeType &&
+      matchesLocation &&
+      matchesPedigreeSearch
+    );
   });
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
@@ -162,14 +183,16 @@ export function AnimalsPage() {
     setFilters(defaultFilters);
   };
 
-  const handleEdit = (animal: unknown) => {
+  const handleEdit = (animal: Animal) => {
     setSelectedAnimal(animal);
     setShowEditModal(true);
   };
 
-  const handleDelete = async (animal: unknown) => {
+  const handleDelete = async (animal: Animal) => {
     if (
-      window.confirm(`Are you sure you want to delete ${animal.identification || 'this animal'}?`)
+      window.confirm(
+        `Are you sure you want to delete ${animal.identification_tag || animal.name || 'this animal'}?`
+      )
     ) {
       try {
         await deleteAnimal(animal.id);
@@ -412,6 +435,45 @@ export function AnimalsPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Intake Type</label>
+                <select
+                  value={filters.intake_type}
+                  onChange={e => handleFilterChange('intake_type', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {intakeTypeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={filters.location}
+                  onChange={e => handleFilterChange('location', e.target.value)}
+                  placeholder="Filter by location..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pedigree Search
+                </label>
+                <input
+                  type="text"
+                  value={filters.pedigree_search}
+                  onChange={e => handleFilterChange('pedigree_search', e.target.value)}
+                  placeholder="Search by parent name/ID..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
               <div className="flex items-end">
                 <button
                   onClick={clearFilters}
@@ -463,22 +525,22 @@ export function AnimalsPage() {
 
       {/* Create/Edit Modals */}
       {showCreateModal && (
-        <AnimalFormModal
-          farmId={currentFarm.id}
-          onClose={() => setShowCreateModal(false)}
+        <AnimalForm
+          animal={{ farm_id: currentFarm.id }}
           onSubmit={data => createAnimal(data)}
+          onCancel={() => setShowCreateModal(false)}
           isLoading={isCreating}
         />
       )}
 
       {showEditModal && selectedAnimal && (
-        <AnimalFormModal
+        <AnimalForm
           animal={selectedAnimal}
-          onClose={() => {
+          onSubmit={data => updateAnimal({ id: selectedAnimal.id, ...data })}
+          onCancel={() => {
             setShowEditModal(false);
             setSelectedAnimal(null);
           }}
-          onSubmit={data => updateAnimal({ id: selectedAnimal.id, ...data })}
           isLoading={isUpdating}
         />
       )}
@@ -487,14 +549,8 @@ export function AnimalsPage() {
 }
 
 // Animal Card Component
-interface AnimalCardProps {
-  animal: unknown;
-  onEdit: (animal: unknown) => void;
-  onDelete: (animal: unknown) => void;
-}
-
 function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status?.toLowerCase()) {
       case 'active':
         return 'bg-green-100 text-green-800';
@@ -536,8 +592,10 @@ function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
               <Heart className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{animal.identification || 'No ID'}</h3>
-              <p className="text-sm text-gray-600">{animal.animal_type || 'Unknown type'}</p>
+              <h3 className="font-semibold text-gray-900">
+                {animal.identification_tag || animal.name || 'No ID'}
+              </h3>
+              <p className="text-sm text-gray-600">{animal.species || 'Unknown type'}</p>
             </div>
           </div>
         </div>
@@ -595,161 +653,10 @@ function AnimalCard({ animal, onEdit, onDelete }: AnimalCardProps) {
       {animal.breed && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-xs text-gray-500">
-            {animal.animal_type} • {animal.breed}
+            {animal.species} • {animal.breed}
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-// Animal Form Modal Component
-interface AnimalFormModalProps {
-  farmId?: string;
-  animal?: unknown;
-  onClose: () => void;
-  onSubmit: (data: unknown) => void;
-  isLoading: boolean;
-}
-
-function AnimalFormModal({ farmId, animal, onClose, onSubmit, isLoading }: AnimalFormModalProps) {
-  const [formData, setFormData] = useState({
-    farm_id: animal?.farm_id || farmId || '',
-    animal_type: animal?.animal_type || '',
-    breed: animal?.breed || '',
-    identification: animal?.identification || '',
-    acquisition_date: animal?.acquisition_date || new Date().toISOString().split('T')[0],
-    status: animal?.status || 'active',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Heart className="h-6 w-6 text-blue-600" />
-              </div>
-              {animal ? 'Edit Animal' : 'Add New Animal'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Animal Type *
-                </label>
-                <select
-                  required
-                  value={formData.animal_type}
-                  onChange={e => setFormData(prev => ({ ...prev, animal_type: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select Type</option>
-                  {speciesOptions.slice(1).map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Breed</label>
-                <input
-                  type="text"
-                  value={formData.breed}
-                  onChange={e => setFormData(prev => ({ ...prev, breed: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter breed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Identification *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.identification}
-                  onChange={e => setFormData(prev => ({ ...prev, identification: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter ID or tag"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Acquisition Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.acquisition_date}
-                  onChange={e =>
-                    setFormData(prev => ({ ...prev, acquisition_date: e.target.value }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {statusOptions.slice(1).map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : animal ? (
-                  'Update Animal'
-                ) : (
-                  'Create Animal'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
   );
 }

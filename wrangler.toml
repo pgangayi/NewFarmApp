@@ -3,6 +3,7 @@
 
 name = "farmers-boot"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # D1 Database Configuration
 [[d1_databases]]
@@ -30,3 +31,6 @@ pages_build_output_dir = "frontend/dist"
 
 # Pages Functions configuration
 functions = "functions"
+
+[functions]
+compatibility_flags = ["nodejs_compat"]

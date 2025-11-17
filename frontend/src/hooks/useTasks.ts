@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiClient } from '../lib/api/client';
+import { useApiClient } from './useApiClient';
 import { Task, Operation } from '../types/entities';
 import { apiEndpoints, cacheConfig } from '../config/env';
 
@@ -23,7 +23,7 @@ export interface UpdateTaskForm extends Partial<CreateTaskForm> {
  */
 export function useTasks() {
   const queryClient = useQueryClient();
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   // Fetch all tasks
   const {
@@ -121,7 +121,7 @@ export function usePendingTasks() {
  * Hook for task operations/treatments
  */
 export function useTaskOperations(taskId: string) {
-  const apiClient = getApiClient();
+  const apiClient = useApiClient();
 
   const {
     data: operations,

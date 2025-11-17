@@ -25,6 +25,7 @@ import {
   HardDrive,
   RefreshCw,
   Bell,
+  Zap,
   MessageSquare,
   Settings,
   Share,
