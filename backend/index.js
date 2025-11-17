@@ -42,6 +42,29 @@ import { onRequest as performanceHandler } from "./api/performance.js";
 import { onRequest as systemIntegrationHandler } from "./api/system-integration.js";
 import { onRequest as webhooksHandler } from "./api/webhooks.js";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Requested-With, X-CSRF-Token, x-csrf-token",
+};
+
+function withCors(response) {
+  if (!response) {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  const headers = new Headers(response.headers || {});
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+
+  return new Response(response.body, {
+    status: response.status,
+    headers,
+  });
+}
+
 // Simple handlers for missing endpoints
 async function usersHandler(context) {
   const { request, env, ctx } = context;
@@ -266,21 +289,32 @@ export async function onRequestFinanceReports(context) {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
     const method = request.method;
 
-    try {
+    if (method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders });
+    }
+
+    const createContext = (customRequest = request) => ({
+      request: customRequest,
+      env,
+      ctx,
+    });
+
+    const handleRoute = async () => {
+      const url = new URL(request.url);
+      const pathname = url.pathname;
+
       console.log(`${method} ${pathname}`);
 
       // Health endpoints
       if (pathname === "/health" || pathname === "/api/health") {
-        return await healthHandler({ request, env, ctx });
+        return await healthHandler(createContext());
       }
 
       // Authentication routes
       if (pathname === "/api/auth/login" && method === "POST") {
-        const response = await loginHandler({ request, env, ctx });
+        const response = await loginHandler(createContext());
 
         // Transform response format for frontend compatibility
         const originalData = await response.clone().json();
@@ -301,7 +335,7 @@ export default {
       }
 
       if (pathname === "/api/auth/signup" && method === "POST") {
-        const response = await signupHandler({ request, env, ctx });
+        const response = await signupHandler(createContext());
 
         // Transform response format for frontend compatibility
         const originalData = await response.clone().json();
@@ -325,7 +359,7 @@ export default {
         pathname === "/api/auth/validate" &&
         (method === "GET" || method === "POST")
       ) {
-        const response = await validateHandler({ request, env, ctx });
+        const response = await validateHandler(createContext());
 
         // Transform response for frontend compatibility
         const originalData = await response.clone().json();
@@ -345,71 +379,71 @@ export default {
       }
 
       if (pathname === "/api/auth/refresh" && method === "POST") {
-        const response = await refreshHandler({ request, env, ctx });
+        const response = await refreshHandler(createContext());
         return response;
       }
 
       if (pathname === "/api/auth/logout" && method === "POST") {
-        const response = await logoutHandler({ request, env, ctx });
+        const response = await logoutHandler(createContext());
         return response;
       }
 
       if (pathname === "/api/auth/forgot-password" && method === "POST") {
-        return await forgotPasswordHandler({ request, env, ctx });
+        return await forgotPasswordHandler(createContext());
       }
 
       if (pathname === "/api/auth/reset-password" && method === "POST") {
-        return await resetPasswordHandler({ request, env, ctx });
+        return await resetPasswordHandler(createContext());
       }
 
       // User management
       if (pathname === "/api/users") {
-        return await usersHandler({ request, env, ctx });
+        return await usersHandler(createContext());
       }
 
       // Location management
       if (pathname.startsWith("/api/locations")) {
-        return await locationsHandler({ request, env, ctx });
+        return await locationsHandler(createContext());
       }
 
       // Inventory management routes
       if (pathname.startsWith("/api/inventory")) {
         if (pathname === "/api/inventory/suppliers") {
-          return await onRequestSuppliers({ request, env, ctx });
+          return await onRequestSuppliers(createContext());
         }
         if (pathname === "/api/inventory/alerts") {
-          return await onRequestAlerts({ request, env, ctx });
+          return await onRequestAlerts(createContext());
         }
         if (pathname === "/api/inventory/items") {
-          return await inventoryItemsHandler({ request, env, ctx });
+          return await inventoryItemsHandler(createContext());
         }
 
         // Use enhanced inventory for main inventory operations
-        return await inventoryEnhancedHandler({ request, env, ctx });
+        return await inventoryEnhancedHandler(createContext());
       }
 
       // Task management routes
       if (pathname.startsWith("/api/tasks")) {
         if (pathname === "/api/tasks/templates") {
-          return await onRequestTemplates({ request, env, ctx });
+          return await onRequestTemplates(createContext());
         }
         if (pathname === "/api/tasks/time-logs") {
-          return await onRequestTimeLogs({ request, env, ctx });
+          return await onRequestTimeLogs(createContext());
         }
 
-        return await tasksHandler({ request, env, ctx });
+        return await tasksHandler(createContext());
       }
 
       // Field management routes
       if (pathname.startsWith("/api/fields")) {
         if (pathname === "/api/fields/soil-analysis") {
-          return await onRequestSoilAnalysis({ request, env, ctx });
+          return await onRequestSoilAnalysis(createContext());
         }
         if (pathname === "/api/fields/equipment") {
-          return await onRequestEquipment({ request, env, ctx });
+          return await onRequestEquipment(createContext());
         }
 
-        return await fieldsHandler({ request, env, ctx });
+        return await fieldsHandler(createContext());
       }
 
       // Farm management routes
@@ -418,39 +452,39 @@ export default {
         const subPath = pathname.replace("/api/farms", "");
 
         if (subPath === "/stats") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(`${request.url}&subroute=stats`, request),
-          };
-          return await farmsHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=stats`,
+            request
+          );
+          return await farmsHandler(createContext(enhancedRequest));
         }
 
         if (subPath === "/operations") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(`${request.url}&subroute=operations`, request),
-          };
-          return await farmsHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=operations`,
+            request
+          );
+          return await farmsHandler(createContext(enhancedRequest));
         }
 
-        return await farmsHandler({ request, env, ctx });
+        return await farmsHandler(createContext());
       }
 
       // Specialized crop sub-routes (rotation, irrigation, pests, soil health)
       if (pathname.startsWith("/api/crops/rotation")) {
-        return await cropsRotationHandler({ request, env, ctx });
+        return await cropsRotationHandler(createContext());
       }
 
       if (pathname.startsWith("/api/crops/irrigation")) {
-        return await cropsIrrigationHandler({ request, env, ctx });
+        return await cropsIrrigationHandler(createContext());
       }
 
       if (pathname.startsWith("/api/crops/pests-diseases")) {
-        return await cropsPestsHandler({ request, env, ctx });
+        return await cropsPestsHandler(createContext());
       }
 
       if (pathname.startsWith("/api/crops/soil-health")) {
-        return await cropsSoilHealthHandler({ request, env, ctx });
+        return await cropsSoilHealthHandler(createContext());
       }
 
       // Crop management routes
@@ -458,41 +492,38 @@ export default {
         const subPath = pathname.replace("/api/crops", "");
 
         if (subPath === "/activities") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(`${request.url}&subroute=activities`, request),
-          };
-          return await cropsHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=activities`,
+            request
+          );
+          return await cropsHandler(createContext(enhancedRequest));
         }
 
         if (subPath === "/observations") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(
-              `${request.url}&subroute=observations`,
-              request
-            ),
-          };
-          return await cropsHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=observations`,
+            request
+          );
+          return await cropsHandler(createContext(enhancedRequest));
         }
 
         if (subPath === "/planning") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(`${request.url}&subroute=planning`, request),
-          };
-          return await cropsHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=planning`,
+            request
+          );
+          return await cropsHandler(createContext(enhancedRequest));
         }
 
         if (subPath === "/yields") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(`${request.url}&subroute=yields`, request),
-          };
-          return await cropsHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=yields`,
+            request
+          );
+          return await cropsHandler(createContext(enhancedRequest));
         }
 
-        return await cropsHandler({ request, env, ctx });
+        return await cropsHandler(createContext());
       }
 
       // Livestock management routes
@@ -501,102 +532,102 @@ export default {
         pathname.startsWith("/api/animals")
       ) {
         if (pathname === "/api/livestock/health") {
-          return await livestockHealthHandler({ request, env, ctx });
+          return await livestockHealthHandler(createContext());
         }
 
-        return await animalsHandler({ request, env, ctx });
+        return await animalsHandler(createContext());
       }
 
       // Finance management routes
       if (pathname.startsWith("/api/finance")) {
         if (pathname === "/api/finance/entries") {
-          return await onRequestFinanceEntries({ request, env, ctx });
+          return await onRequestFinanceEntries(createContext());
         }
 
         if (pathname === "/api/finance/reports") {
-          return await onRequestFinanceReports({ request, env, ctx });
+          return await onRequestFinanceReports(createContext());
         }
 
         if (pathname === "/api/finance/budgets") {
-          return await financeBudgetsHandler({ request, env, ctx });
+          return await financeBudgetsHandler(createContext());
         }
 
         if (pathname === "/api/finance/analytics") {
-          const enhancedContext = {
-            ...context,
-            request: new Request(`${request.url}&subroute=analytics`, request),
-          };
-          return await financeHandler(enhancedContext);
+          const enhancedRequest = new Request(
+            `${request.url}&subroute=analytics`,
+            request
+          );
+          return await financeHandler(createContext(enhancedRequest));
         }
 
-        return await financeHandler({ request, env, ctx });
+        return await financeHandler(createContext());
       }
 
       // Notifications
       if (pathname === "/api/notifications") {
-        return await notificationsHandler({ request, env, ctx });
+        return await notificationsHandler(createContext());
       }
 
       // Search
       if (pathname === "/api/search") {
-        return await searchHandler({ request, env, ctx });
+        return await searchHandler(createContext());
       }
 
       // Weather endpoints
       if (pathname === "/api/weather/location") {
-        return await weatherLocationHandler({ request, env, ctx });
+        return await weatherLocationHandler(createContext());
       }
 
       if (pathname === "/api/weather/recommendations") {
-        return await weatherRecommendationsHandler({ request, env, ctx });
+        return await weatherRecommendationsHandler(createContext());
       }
 
       if (pathname === "/api/weather/farm") {
-        return await weatherFarmHandler({ request, env, ctx });
+        return await weatherFarmHandler(createContext());
       }
 
       if (pathname === "/api/weather/impact-analysis") {
-        return await weatherImpactHandler({ request, env, ctx });
+        return await weatherImpactHandler(createContext());
       }
 
       // Legacy weather route
       if (pathname === "/api/weather") {
-        return await weatherLocationHandler({ request, env, ctx });
+        return await weatherLocationHandler(createContext());
       }
 
       // Bulk operations
       if (pathname === "/api/bulk-operations") {
-        return await bulkOperationsHandler({ request, env, ctx });
+        return await bulkOperationsHandler(createContext());
       }
 
       // Analytics
       if (pathname === "/api/analytics") {
-        return await analyticsEngineHandler({ request, env, ctx });
+        return await analyticsEngineHandler(createContext());
       }
 
       // Analytics Engine (legacy compatibility)
       if (pathname === "/api/analytics-engine") {
-        return await analyticsEngineHandler({ request, env, ctx });
+        return await analyticsEngineHandler(createContext());
       }
 
       // Performance
       if (pathname === "/api/performance") {
-        return await performanceHandler({ request, env, ctx });
+        return await performanceHandler(createContext());
       }
 
       // System integration
       if (pathname === "/api/system-integration") {
-        return await systemIntegrationHandler({ request, env, ctx });
+        return await systemIntegrationHandler(createContext());
       }
 
       // Webhooks
       if (pathname === "/api/webhooks") {
-        return await webhooksHandler({ request, env, ctx });
+        return await webhooksHandler(createContext());
       }
 
       // WebSocket upgrade
       if (pathname === "/api/websocket") {
-        return await websocketHandler({ request, env, ctx });
+        return await websocketHandler(createContext());
       }
 
       // Admin routes
@@ -606,38 +637,38 @@ export default {
           const { onRequest: adminAuditHandler } = await import(
             "./api/admin_audit_logs.js"
           );
-          return await adminAuditHandler({ request, env, ctx });
+          return await adminAuditHandler(createContext());
         }
       }
 
       // Legacy route compatibility - redirect old patterns to new ones
       if (pathname === "/api/tasks" && method === "GET") {
-        return await tasksHandler({ request, env, ctx });
+        return await tasksHandler(createContext());
       }
 
       if (pathname === "/api/fields" && method === "GET") {
-        return await fieldsHandler({ request, env, ctx });
+        return await fieldsHandler(createContext());
       }
 
       // Database debug (only in development)
       if (pathname === "/api/debug-db" && env.NODE_ENV !== "production") {
         const { onRequest: debugHandler } = await import("./api/debug-db.js");
-        return await debugHandler({ request, env, ctx });
+        return await debugHandler(createContext());
       }
 
       // Database migration (admin only)
       if (pathname === "/api/migrate" && env.NODE_ENV !== "production") {
         const { onRequest: migrateHandler } = await import("./api/migrate.js");
-        return await migrateHandler({ request, env, ctx });
+        return await migrateHandler(createContext());
       }
       // Database cleanup endpoints (admin only)
       if (pathname === "/api/cleanup" && env.NODE_ENV !== "production") {
-        return await onRequestCleanup({ request, env, ctx });
+        return await onRequestCleanup(createContext());
       }
 
       // Clean database migration (new schema)
       if (pathname === "/api/migrate-clean" && env.NODE_ENV !== "production") {
-        return await migrateCleanHandler({ request, env, ctx });
+        return await migrateCleanHandler(createContext());
       }
 
       // File-based migration (legacy)
@@ -645,12 +676,12 @@ export default {
         pathname === "/api/migrate-from-files" &&
         env.NODE_ENV !== "production"
       ) {
-        return await migrateFromFilesHandler({ request, env, ctx });
+        return await migrateFromFilesHandler(createContext());
       }
 
       // Simple database migration (step-by-step)
       if (pathname === "/api/migrate-simple" && env.NODE_ENV !== "production") {
-        return await migrateSimpleHandler({ request, env, ctx });
+        return await migrateSimpleHandler(createContext());
       }
 
       // Fallback for unknown routes
@@ -745,21 +776,28 @@ export default {
           headers: { "Content-Type": "application/json" },
         }
       );
+    };
+
+    try {
+      const response = await handleRoute();
+      return withCors(response);
     } catch (error) {
       console.error("Request handling error:", error);
 
-      return new Response(
-        JSON.stringify({
-          error: "Internal server error",
-          message: error.message || "An unexpected error occurred",
-          path: pathname,
-          method: method,
-          timestamp: new Date().toISOString(),
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
+      return withCors(
+        new Response(
+          JSON.stringify({
+            error: "Internal server error",
+            message: error.message || "An unexpected error occurred",
+            path: new URL(request.url).pathname,
+            method,
+            timestamp: new Date().toISOString(),
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       );
     }
   },
