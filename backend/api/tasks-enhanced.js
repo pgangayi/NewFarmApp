@@ -517,7 +517,10 @@ export async function onRequestTimeLogs(context) {
 
       // Try to return the inserted id in a few common property name variants
       const insertedId =
-        (result && (result.lastInsertRowId || result.lastInsertRowid || result.lastInsertId)) ||
+        (result &&
+          (result.lastInsertRowId ||
+            result.lastInsertRowid ||
+            result.lastInsertId)) ||
         null;
 
       return createSuccessResponse({ success: true, id: insertedId }, 201);

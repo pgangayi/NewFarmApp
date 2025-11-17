@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "start:e2e": "node ./scripts/start-e2e-servers.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "deploy": "./scripts/deploy/deploy.sh",

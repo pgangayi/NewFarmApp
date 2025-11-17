@@ -83,9 +83,11 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run preview',
+    // Start the real backend (Wrangler dev) and preview the built frontend from repo root.
+    // This runs `npm run start:e2e` which launches Wrangler and the preview server.
+    command: 'cd .. && npm run start:e2e',
     port: 3000,
     reuseExistingServer: !process.env.CI,
-    timeout: 60 * 1000,
+    timeout: 2 * 60 * 1000,
   },
 });
