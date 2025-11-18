@@ -1,158 +1,118 @@
-import { AuthUtils, createErrorResponse } from "../_auth.js";
-import { RateLimiter } from "../_rate-limit.js";
-import { TokenManager } from "../_token-management.js";
+// Simplified Signup Endpoint
+// Maintains security while reducing complexity
+// Date: November 18, 2025
+
+import { SimpleAuth, createErrorResponse } from "../_auth.js";
 import { CSRFProtection } from "../_csrf.js";
-import { DatabaseOperations, DB_ERROR_CODES } from "../_database.js";
-import { UserRepository } from "../repositories/index.js";
-import { buildPublicUser, createSessionResponse } from "./_session-response.js";
+import {
+  buildPublicUser,
+  createSessionResponse,
+  SimpleUserRepository,
+} from "./_session-response.js";
 
 const MIN_PASSWORD_LENGTH = 8;
 
 export async function onRequest(context) {
   const { request, env } = context;
+
   if (request.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
   }
 
-  const auth = new AuthUtils(env);
-  const tokenManager = new TokenManager(env);
+  const auth = new SimpleAuth(env);
   const csrf = new CSRFProtection(env);
-  const db = new DatabaseOperations(env);
-  const userRepo = new UserRepository(db);
-  const rateLimiter = new RateLimiter(env);
-
-  const endpointPath = new URL(request.url).pathname;
-  const identifier = await rateLimiter.getIdentifier(request);
-  const rateLimitInfo = await rateLimiter.checkLimit(
-    identifier,
-    endpointPath,
-    request.method
-  );
-
-  if (!rateLimitInfo.allowed) {
-    return rateLimiter.createRateLimitResponse(
-      rateLimitInfo.remaining,
-      rateLimitInfo.resetTime,
-      rateLimitInfo.limit
-    );
-  }
-
-  const ipAddress = auth.getClientIP(request);
-  const userAgent = request.headers.get("user-agent") || "unknown";
-
-  const trackSignupAttempt = async (emailValue, success, reason) => {
-    await tokenManager.trackLoginAttempt(
-      emailValue || null,
-      ipAddress,
-      userAgent,
-      success,
-      reason
-    );
-  };
+  const userRepo = new SimpleUserRepository(env.DB);
 
   try {
-    let body;
-    try {
-      body = await request.json();
-    } catch (jsonError) {
-      await trackSignupAttempt(null, false, "invalid_json");
-      return createErrorResponse("Invalid JSON in request body", 400);
-    }
-
+    const body = await request.json();
     const { email, password, name } = body;
-    const normalizedEmail = email?.trim().toLowerCase();
-    const trimmedName = name?.trim();
 
-    if (!normalizedEmail || !password || !trimmedName) {
-      await trackSignupAttempt(normalizedEmail, false, "missing_fields");
+    if (!email || !password || !name) {
       return createErrorResponse("Email, password, and name are required", 400);
     }
 
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalizedEmail)) {
-      await trackSignupAttempt(normalizedEmail, false, "invalid_email_format");
+    if (!emailRegex.test(email)) {
       return createErrorResponse("Invalid email format", 400);
     }
 
+    // Validate password length
     if (password.length < MIN_PASSWORD_LENGTH) {
-      await trackSignupAttempt(normalizedEmail, false, "short_password");
       return createErrorResponse(
         `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
         400
       );
     }
 
-    try {
-      const existingUser = await userRepo.findByEmail(normalizedEmail, {
-        userId: "system",
-      });
-      if (existingUser) {
-        await trackSignupAttempt(normalizedEmail, false, "duplicate_email");
-        return createErrorResponse("User already exists", 409);
-      }
-    } catch (error) {
-      if (error.code !== DB_ERROR_CODES.NOT_FOUND) {
-        console.error("Error checking existing user:", error);
-        return createErrorResponse("Database error", 500);
-      }
+    // Check if user already exists
+    const existingUser = await userRepo.findByEmail(email);
+    if (existingUser) {
+      return createErrorResponse("User already exists", 409);
     }
 
+    // Hash password
     const passwordHash = await auth.hashPassword(password);
-    let createdUser;
-    try {
-      createdUser = await userRepo.createUser(
-        {
-          email: normalizedEmail,
-          name: trimmedName,
-          password_hash: passwordHash,
-          updated_at: new Date().toISOString(),
-        },
-        { userId: "system" }
-      );
-    } catch (error) {
-      console.error("Error creating user:", error);
-      return createErrorResponse("Failed to create user", 500);
-    }
 
-    const accessToken = auth.generateToken(createdUser.id, normalizedEmail);
+    // Create user
+    const createdUser = await userRepo.createUser({
+      email: email.toLowerCase().trim(),
+      password_hash: passwordHash,
+      name: name.trim(),
+    });
+
+    // Generate tokens
+    const accessToken = auth.generateAccessToken(
+      createdUser.id,
+      createdUser.email
+    );
     const refreshToken = auth.generateRefreshToken(
       createdUser.id,
-      normalizedEmail
-    );
-    await trackSignupAttempt(normalizedEmail, true);
-
-    const rateLimitHeaders = rateLimiter.buildRateLimitHeaders(
-      rateLimitInfo.limit,
-      rateLimitInfo.remaining,
-      rateLimitInfo.resetTime
+      createdUser.email
     );
 
-    const sessionResult = await createSessionResponse({
+    // Log audit event
+    const ipAddress = auth.getClientIP(request);
+    await auth.logAuditEvent(
+      createdUser.id,
+      "signup",
+      null,
+      null,
+      ipAddress,
+      true
+    );
+
+    // Create session response
+    const sessionResponse = createSessionResponse({
       user: buildPublicUser(createdUser),
       userId: createdUser.id,
       accessToken,
       refreshToken,
       csrf,
       ipAddress,
-      userAgent,
-      rateLimitHeaders,
+      userAgent: request.headers.get("user-agent") || "unknown",
       status: 201,
     });
 
-    if (sessionResult.error) {
-      return sessionResult.error;
+    if (sessionResponse.error) {
+      return sessionResponse.error;
     }
 
-    console.log("User signup successful", { userId: createdUser.id });
-
-    return sessionResult.response;
+    return sessionResponse.response;
   } catch (error) {
     console.error("Signup error:", error);
-    await auth.logSecurityEvent("signup_failed", {
-      error: error.message,
-      ip: ipAddress,
-      userAgent,
-    });
+
+    // Log security event for errors
+    const ipAddress = auth.getClientIP(request);
+    await auth.logAuditEvent(
+      null,
+      "signup_failed",
+      null,
+      null,
+      ipAddress,
+      false
+    );
+
     return createErrorResponse("Internal server error", 500);
   }
 }
