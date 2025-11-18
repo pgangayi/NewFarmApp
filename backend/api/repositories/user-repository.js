@@ -38,8 +38,12 @@ export class UserRepository extends BaseRepository {
       throw new Error("Email, password hash, and name are required");
     }
 
+    // Generate UUID for id since users table uses TEXT PRIMARY KEY
+    const id = crypto.randomUUID();
+
     return await this.create(
       {
+        id,
         email: email.toLowerCase().trim(),
         password_hash,
         name: name.trim(),

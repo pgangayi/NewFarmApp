@@ -377,19 +377,19 @@ export class TokenManager {
       await this.env.DB.prepare(
         `
         INSERT INTO security_events (
-          id, event_type, severity, user_id, ip_address, 
-          user_agent, event_data
+          id, user_id, event_type, ip_address,
+          user_agent, success, details
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `
       )
         .bind(
           eventId,
-          eventType,
-          severity,
           userId,
+          eventType,
           requestContext.ipAddress || "unknown",
           requestContext.userAgent || "unknown",
-          JSON.stringify(eventData)
+          severity === "low" ? 1 : 0, // success: 1 for low severity, 0 for others
+          JSON.stringify({ severity, ...eventData })
         )
         .run();
 

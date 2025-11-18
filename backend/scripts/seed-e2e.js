@@ -21,7 +21,7 @@ BEGIN TRANSACTION;
 -- Clean up any existing references before deleting or recreating the user
 DELETE FROM csrf_tokens WHERE user_id = '${userId}';
 DELETE FROM user_sessions WHERE user_id = '${userId}';
-DELETE FROM audit_logs WHERE user_id = '${userId}' OR email = '${userEmail}';
+DELETE FROM audit_logs WHERE user_id = '${userId}';
 DELETE FROM operations WHERE user_id = '${userId}';
 DELETE FROM tasks WHERE assigned_to = '${userId}' OR created_by = '${userId}';
 DELETE FROM treatments WHERE created_by = '${userId}';
@@ -48,7 +48,8 @@ COMMIT;
 PRAGMA foreign_keys = ON;
 `;
 
-    const tmpFile = path.join(__dirname, "..", "..", "temp-seed.sql");
+    const tmpSeedFileName = ".tmp-seed.sql";
+    const tmpFile = path.join(__dirname, "..", tmpSeedFileName);
     fs.writeFileSync(tmpFile, sql);
 
     console.log("Seeding D1 via Wrangler (local) using SQL file:", tmpFile);
@@ -80,6 +81,8 @@ PRAGMA foreign_keys = ON;
       "migrations/0002_create_missing_tables.sql",
       "migrations/0003_enhanced_task_finance.sql",
       "../migrations/0004_security_auth.sql",
+      "../migrations/0005_session_tracking.sql",
+      "../migrations/0006_password_reset_tokens.sql",
     ];
 
     for (const relativePath of migrationFiles) {
@@ -139,9 +142,7 @@ PRAGMA foreign_keys = ON;
       );
     }
 
-    const cmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=../${path.basename(
-      tmpFile
-    )} --local`;
+    const cmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=${tmpSeedFileName} --local`;
     // Use execSync to run the command and inherit output
     const out = execSync(cmd, { encoding: "utf8" });
     console.log(out);

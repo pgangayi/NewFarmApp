@@ -108,20 +108,19 @@ export class CSRFProtection {
   // Store CSRF token in database for validation
   async storeCSRFToken(userId, token, requestContext = {}) {
     try {
-      const tokenId = `csrf_${Date.now()}_${crypto
-        .randomUUID()
-        .replace(/-/g, "")}`;
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
-      await this.env.DB.prepare(
+      const result = await this.env.DB.prepare(
         `
         INSERT INTO csrf_tokens (
-          id, user_id, token, expires_at, created_at
-        ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+          user_id, token, expires_at, created_at
+        ) VALUES (?, ?, ?, CURRENT_TIMESTAMP)
       `
       )
-        .bind(tokenId, userId, token, expiresAt.toISOString())
+        .bind(userId, token, expiresAt.toISOString())
         .run();
+
+      const tokenId = result.lastRowId;
 
       // Log CSRF token creation for security monitoring
       await this.logSecurityEvent(
@@ -387,38 +386,32 @@ export class CSRFProtection {
   // Log security events for monitoring
   async logSecurityEvent(eventType, userId, requestContext, eventData = {}) {
     try {
-      const eventId = `csrf_${Date.now()}_${crypto
-        .randomUUID()
-        .replace(/-/g, "")}`;
-
-      // Determine severity
-      let severity = "low";
+      // Determine success based on event type
+      let success = 1; // Default to success
       if (eventType.includes("failed") || eventType.includes("attack")) {
-        severity = "high";
-      } else if (eventType.includes("revoked")) {
-        severity = "medium";
+        success = 0;
       }
 
       await this.env.DB.prepare(
         `
         INSERT INTO security_events (
-          id, event_type, severity, user_id, ip_address, user_agent, event_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          event_type, user_id, ip_address, user_agent, success, details
+        ) VALUES (?, ?, ?, ?, ?, ?)
       `
       )
         .bind(
-          eventId,
           eventType,
-          severity,
           userId,
           requestContext.ipAddress || "unknown",
           requestContext.userAgent || "unknown",
+          success,
           JSON.stringify(eventData)
         )
         .run();
 
       // Log to console for immediate monitoring
-      console.log(`CSRF SECURITY [${severity.toUpperCase()}]: ${eventType}`, {
+      const status = success ? "SUCCESS" : "FAILED";
+      console.log(`CSRF SECURITY [${status}]: ${eventType}`, {
         userId,
         ipAddress: requestContext.ipAddress,
         eventData,

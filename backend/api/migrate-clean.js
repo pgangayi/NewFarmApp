@@ -417,16 +417,7 @@ export async function onRequest(context) {
           FOREIGN KEY (user_id) REFERENCES users(id)
       );
 
-      -- MFA (Multi-Factor Authentication) setup
-      CREATE TABLE IF NOT EXISTS mfa_secrets (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_id TEXT UNIQUE NOT NULL,
-          secret TEXT NOT NULL,
-          is_enabled INTEGER DEFAULT 0,
-          backup_codes TEXT, -- JSON array of backup codes
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id)
-      );
+      -- MFA tables removed - simplified authentication system
 
       -- Token management for sessions
       CREATE TABLE IF NOT EXISTS user_tokens (
@@ -492,8 +483,8 @@ export async function onRequest(context) {
       CREATE INDEX IF NOT EXISTS idx_audit_logs_farm ON audit_logs(farm_id);
       CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
       CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
-      CREATE INDEX IF NOT EXISTS idx_mfa_secrets_user ON mfa_secrets(user_id);
       CREATE INDEX IF NOT EXISTS idx_user_tokens_user ON user_tokens(user_id);
+      -- MFA index removed - simplified authentication system
       CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
       CREATE INDEX IF NOT EXISTS idx_bulk_operations_farm ON bulk_operations(farm_id);
       CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(setting_key);
