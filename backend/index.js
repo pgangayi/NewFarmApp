@@ -1,7 +1,7 @@
 // Production-grade Farm Management System API
 // Consolidated routing with proper authentication integration
 
-// Import authentication handlers
+// Import simplified authentication handlers
 import { onRequest as loginHandler } from "./api/auth/login.js";
 import { onRequest as signupHandler } from "./api/auth/signup.js";
 import { onRequest as validateHandler } from "./api/auth/validate.js";
@@ -42,20 +42,23 @@ import { onRequest as performanceHandler } from "./api/performance.js";
 import { onRequest as systemIntegrationHandler } from "./api/system-integration.js";
 import { onRequest as webhooksHandler } from "./api/webhooks.js";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Requested-With, X-CSRF-Token, x-csrf-token",
-};
+function getCorsHeaders(env) {
+  return {
+    "Access-Control-Allow-Origin": env.FRONTEND_ORIGIN || "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Requested-With, X-CSRF-Token, x-csrf-token",
+    ...(env.FRONTEND_ORIGIN && { "Access-Control-Allow-Credentials": "true" }),
+  };
+}
 
-function withCors(response) {
+function withCors(response, env) {
   if (!response) {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response(null, { status: 204, headers: getCorsHeaders(env) });
   }
 
   const headers = new Headers(response.headers || {});
-  Object.entries(corsHeaders).forEach(([key, value]) => {
+  Object.entries(getCorsHeaders(env)).forEach(([key, value]) => {
     headers.set(key, value);
   });
 
@@ -292,7 +295,7 @@ export default {
     const method = request.method;
 
     if (method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders });
+      return new Response(null, { status: 204, headers: getCorsHeaders(env) });
     }
 
     const createContext = (customRequest = request) => ({
@@ -314,68 +317,18 @@ export default {
 
       // Authentication routes
       if (pathname === "/api/auth/login" && method === "POST") {
-        const response = await loginHandler(createContext());
-
-        // Transform response format for frontend compatibility
-        const originalData = await response.clone().json();
-        if (originalData.success && originalData.data) {
-          const transformed = {
-            success: true,
-            user: originalData.data.user,
-            token: originalData.data.tokens.accessToken,
-            message: "Login successful",
-          };
-
-          return new Response(JSON.stringify(transformed), {
-            status: response.status,
-            headers: response.headers,
-          });
-        }
-        return response;
+        return await loginHandler(createContext());
       }
 
       if (pathname === "/api/auth/signup" && method === "POST") {
-        const response = await signupHandler(createContext());
-
-        // Transform response format for frontend compatibility
-        const originalData = await response.clone().json();
-        if (originalData.success && originalData.data) {
-          const transformed = {
-            success: true,
-            user: originalData.data.user,
-            token: originalData.data.tokens.accessToken,
-            message: "Signup successful",
-          };
-
-          return new Response(JSON.stringify(transformed), {
-            status: response.status,
-            headers: response.headers,
-          });
-        }
-        return response;
+        return await signupHandler(createContext());
       }
 
       if (
         pathname === "/api/auth/validate" &&
         (method === "GET" || method === "POST")
       ) {
-        const response = await validateHandler(createContext());
-
-        // Transform response for frontend compatibility
-        const originalData = await response.clone().json();
-        if (originalData.success && originalData.data) {
-          const transformed = {
-            success: true,
-            user: originalData.data.user,
-            valid: originalData.data.valid,
-          };
-
-          return new Response(JSON.stringify(transformed), {
-            status: response.status,
-            headers: response.headers,
-          });
-        }
-        return response;
+        return await validateHandler(createContext());
       }
 
       if (pathname === "/api/auth/refresh" && method === "POST") {
@@ -780,7 +733,7 @@ export default {
 
     try {
       const response = await handleRoute();
-      return withCors(response);
+      return withCors(response, env);
     } catch (error) {
       console.error("Request handling error:", error);
 
@@ -797,7 +750,8 @@ export default {
             status: 500,
             headers: { "Content-Type": "application/json" },
           }
-        )
+        ),
+        env
       );
     }
   },
