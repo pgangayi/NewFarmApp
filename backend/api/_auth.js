@@ -1,6 +1,9 @@
 // Simplified Authentication Utilities
 // Maintains essential security while reducing complexity
 // Date: November 18, 2025
+//
+// PII Hygiene: Never log emails, passwords, or sensitive tokens in production.
+// Use user IDs or hashed identifiers for logging. Redact sensitive data from logs.
 
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
