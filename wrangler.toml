@@ -12,10 +12,8 @@ database_name = "farmers_boot"
 database_id = "96ba79d2-c66e-4421-9116-3d231666266c"
 
 # Environment Variables
-[vars]
-JWT_SECRET = "Kpl44YRP4CRv37pOTF2gVgg6ByGdVUIrkzSKUcCs0Ug="
-
-# Local Development Environment
+# Note: JWT_SECRET should be set as a secret in Cloudflare Pages using 'wrangler secret put JWT_SECRET'
+# Do not commit secrets to the repository
 [env.local.vars]
 ENVIRONMENT = "local"
 CF_PAGES_URL = "http://localhost:8788"
