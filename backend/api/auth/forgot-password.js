@@ -146,7 +146,10 @@ export async function onRequest(context) {
         }
 
         // Send actual email with the full link
-        console.log("Attempting to send password reset email for user ID:", user.id);
+        console.log(
+          "Attempting to send password reset email for user ID:",
+          user.id
+        );
         const emailResult = await emailService.sendPasswordResetEmail(
           user.email,
           resetLink // Pass the full link instead of just the token

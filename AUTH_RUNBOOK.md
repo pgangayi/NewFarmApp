@@ -1,11 +1,13 @@
 # Authentication System Runbook
 
 ## Overview
+
 This runbook documents the simplified authentication system architecture, maintenance procedures, and troubleshooting guides.
 
 ## Architecture
 
 ### Core Components
+
 - **JWT Authentication**: HS256 tokens with 15-minute access, 7-day refresh
 - **Password Security**: bcrypt hashing with 12 salt rounds
 - **CSRF Protection**: Double-submit cookie pattern with DB storage
@@ -14,6 +16,7 @@ This runbook documents the simplified authentication system architecture, mainte
 - **Audit Logging**: Security events in `audit_logs` table
 
 ### Database Schema
+
 ```sql
 -- Users
 CREATE TABLE users (
@@ -83,6 +86,7 @@ CREATE TABLE audit_logs (
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/signup` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
@@ -91,7 +95,9 @@ CREATE TABLE audit_logs (
 - `POST /api/auth/reset-password` - Password reset confirmation
 
 ### Security Headers
+
 All responses include:
+
 ```
 Access-Control-Allow-Origin: https://your-frontend.com
 Access-Control-Allow-Credentials: true
@@ -102,12 +108,14 @@ Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token
 ## Maintenance Procedures
 
 ### Regular Tasks
+
 - **Monitor Failed Login Attempts**: Check `login_attempts` table for suspicious patterns
 - **Clean Expired Tokens**: Periodically remove expired entries from `revoked_tokens`, `csrf_tokens`
 - **Review Audit Logs**: Monitor `audit_logs` for security events
 - **Update Dependencies**: Keep authentication libraries updated
 
 ### Secret Rotation
+
 ```bash
 # Generate new JWT secret
 openssl rand -base64 32
@@ -120,6 +128,7 @@ wrangler secret put JWT_SECRET
 ```
 
 ### Database Cleanup
+
 ```sql
 -- Remove expired revoked tokens (run monthly)
 DELETE FROM revoked_tokens
@@ -139,26 +148,31 @@ WHERE expires_at < datetime('now');
 ### Common Issues
 
 #### "Invalid token" errors
+
 - Check if JWT_SECRET was rotated without user notification
 - Verify token hasn't expired (15 min for access, 7 days for refresh)
 - Check if token was revoked in `revoked_tokens` table
 
 #### CORS errors
+
 - Verify `FRONTEND_ORIGIN` environment variable is set correctly
 - Check that request includes credentials: `credentials: 'include'`
 - Ensure preflight OPTIONS requests are handled
 
 #### CSRF validation fails
+
 - Verify CSRF token is sent in `X-CSRF-Token` header
 - Check that CSRF cookie is present
 - Ensure tokens match and haven't expired
 
 #### Password reset not working
+
 - Check email service configuration
 - Verify `password_reset_tokens` table has valid entries
 - Ensure reset links aren't expired (24 hours)
 
 ### Debug Commands
+
 ```bash
 # Check token status
 wrangler d1 execute db --command="
@@ -183,6 +197,7 @@ GROUP BY user_id;"
 ## Security Monitoring
 
 ### Alerts to Set Up
+
 - Failed login rate > 10/minute from single IP
 - Successful logins from multiple countries in short time
 - Mass token revocation events
@@ -190,6 +205,7 @@ GROUP BY user_id;"
 - PII appearing in logs
 
 ### Log Analysis
+
 ```bash
 # Search for security events
 wrangler tail | grep -E "(login|token|csrf|security)"
@@ -201,6 +217,7 @@ wrangler tail | grep -i "email\|password\|token"
 ## Incident Response
 
 ### Token Compromise
+
 1. **Immediate**: Revoke all user's tokens
    ```sql
    INSERT INTO revoked_tokens (id, token_hash, user_id, token_type, reason, revoked_by)
@@ -211,6 +228,7 @@ wrangler tail | grep -i "email\|password\|token"
 3. **Investigation**: Review audit logs for compromise vector
 
 ### Mass Account Attack
+
 1. **Rate Limiting**: Enable stricter rate limits
 2. **IP Blocking**: Block attacking IPs at edge
 3. **Monitoring**: Increase log retention
@@ -219,7 +237,9 @@ wrangler tail | grep -i "email\|password\|token"
 ## Performance Optimization
 
 ### Database Indexes
+
 Ensure these indexes exist:
+
 ```sql
 CREATE INDEX idx_revoked_tokens_hash ON revoked_tokens(token_hash);
 CREATE INDEX idx_revoked_tokens_user ON revoked_tokens(user_id);
@@ -229,6 +249,7 @@ CREATE INDEX idx_login_attempts_email ON login_attempts(email);
 ```
 
 ### Caching Strategy
+
 - Cache user data for token validation (avoid DB hits)
 - Cache revoked token checks (with short TTL)
 - Use Redis for distributed rate limiting if needed
@@ -236,6 +257,7 @@ CREATE INDEX idx_login_attempts_email ON login_attempts(email);
 ## Development Guidelines
 
 ### Code Standards
+
 - Never log emails, passwords, or tokens
 - Use environment variables for all configuration
 - Validate all inputs before processing
@@ -243,6 +265,7 @@ CREATE INDEX idx_login_attempts_email ON login_attempts(email);
 - Test authentication flows thoroughly
 
 ### Testing
+
 ```bash
 # Run auth tests
 npm run test:auth
@@ -256,6 +279,7 @@ npm run test:auth
 ```
 
 ## Contact Information
+
 - **Security Team**: security@company.com
 - **DevOps**: devops@company.com
 - **On-call Engineer**: Current rotation schedule
