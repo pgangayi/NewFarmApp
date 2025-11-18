@@ -2,8 +2,17 @@
 -- Date: November 18, 2025
 -- This script migrates data from token_blacklist to revoked_tokens and drops the old table.
 
--- Step 1: Backup token_blacklist table
-CREATE TABLE token_blacklist_backup AS SELECT * FROM token_blacklist;
+-- Step 1: Backup token_blacklist table (explicit create for cross-DB compatibility)
+CREATE TABLE IF NOT EXISTS token_blacklist_backup (
+  token_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  reason TEXT,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+INSERT INTO token_blacklist_backup (token_hash, user_id, reason, expires_at, created_at)
+SELECT token_hash, user_id, reason, expires_at, created_at FROM token_blacklist;
 
 -- Step 2: Migrate data from token_blacklist to revoked_tokens
 -- Assuming token_blacklist has: token_hash, user_id, reason, expires_at
@@ -22,7 +31,7 @@ INSERT INTO revoked_tokens (
   revoked_at
 )
 SELECT
-  'migrated_' || rowid,  -- Generate ID for migrated records
+  token_hash,  -- use token_hash as id for migrated rows (token_hash is unique)
   token_hash,
   user_id,
   'refresh',  -- Assume refresh tokens for blacklist migration

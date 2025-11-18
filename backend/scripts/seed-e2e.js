@@ -78,8 +78,8 @@ PRAGMA foreign_keys = ON;
     // Apply required migrations (base schema + targeted enhancements)
     const migrationFiles = [
       "../migrations_backup/0001_d1_complete_schema.sql",
-      "migrations/0002_create_missing_tables.sql",
-      "migrations/0003_enhanced_task_finance.sql",
+      "../migrations/0002_create_missing_tables.sql",
+      // skip 0003 to avoid duplicate table definitions; root schema + 0002 provides needed tables
       "../migrations/0004_security_auth.sql",
       "../migrations/0005_session_tracking.sql",
       "../migrations/0006_password_reset_tokens.sql",
@@ -146,6 +146,24 @@ PRAGMA foreign_keys = ON;
     // Use execSync to run the command and inherit output
     const out = execSync(cmd, { encoding: "utf8" });
     console.log(out);
+
+      // Insert sample breeds and crops after teams/farm/user are created
+      const sampleSql = `
+    INSERT OR IGNORE INTO breeds (species, name, origin_country, purpose, average_weight, temperament) VALUES
+    ('cattle', 'Holstein', 'Netherlands', 'Dairy', 680, 'Docile'),
+    ('cattle', 'Angus', 'Scotland', 'Beef', 750, 'Calm'),
+    ('chicken', 'Leghorn', 'Italy', 'Egg Production', 2.5, 'Active');
+
+    INSERT OR IGNORE INTO crops (farm_id, crop_type, planting_date, status)
+    VALUES ((SELECT id FROM farms WHERE owner_id = '${userId}' LIMIT 1), 'Corn', '2025-03-15', 'active');
+    `;
+
+      const tmpSampleFileName = ".tmp-sample-data.sql";
+      const tmpSampleFile = path.join(__dirname, "..", tmpSampleFileName);
+      fs.writeFileSync(tmpSampleFile, sampleSql);
+      const sampleCmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=${tmpSampleFileName} --local`;
+      const sampleOut = execSync(sampleCmd, { encoding: "utf8" });
+      console.log(sampleOut);
 
     // Try to log in via the local worker to obtain a real JWT/session
     // Retry a few times because Wrangler dev may still be booting
