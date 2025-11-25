@@ -7,8 +7,6 @@ import { useFarm } from '../hooks/useFarm';
 import {
   Package,
   AlertTriangle,
-  TrendingUp,
-  Users,
   Plus,
   Search,
   Filter,

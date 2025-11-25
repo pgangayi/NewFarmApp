@@ -33,7 +33,7 @@ export interface FilterState {
 // ============================================================================
 
 export interface FieldFormDataInternal {
-  farm_id: number;
+  farm_id: string;
   name: string;
   area_hectares: number | null;
   crop_type: string | null;
@@ -53,7 +53,7 @@ export interface FieldFormDataInternal {
 // ============================================================================
 
 export interface SoilAnalysisData {
-  field_id: number;
+  field_id: string;
   analysis_date: string;
   ph_level: number | null;
   nitrogen_content: number | null;

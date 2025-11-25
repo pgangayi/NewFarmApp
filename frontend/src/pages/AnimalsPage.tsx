@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/AuthContext';
-import { useAnimals, CreateAnimalForm } from '../hooks/useAnimals';
+import { useAnimals } from '../hooks/useAnimals';
 import { useFarm } from '../hooks/useFarm';
 import { Animal } from '../types/entities';
 import { FilterState, AnimalCardProps } from '../types/ui';
@@ -16,7 +16,6 @@ import {
   TrendingUp,
   Loader2,
   AlertTriangle,
-  X,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
