@@ -363,7 +363,9 @@ export default function AdvancedReportingSystem() {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key as unknown)}
+                onClick={() =>
+                  setActiveTab(key as 'templates' | 'generate' | 'history' | 'analytics')
+                }
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   activeTab === key
                     ? 'border-blue-500 text-blue-600'

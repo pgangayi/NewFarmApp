@@ -10,14 +10,25 @@ const testConfig = {
   headers: {
     "Content-Type": "application/json",
   },
+  // Simple cookie jar used for refresh/csrf cookies between requests
+  cookie: "",
 };
 
 // Test utilities
-async function makeRequest(endpoint, method = "GET", body = null) {
+async function makeRequest(endpoint, method = "GET", body = null, extraHeaders = {}) {
   const url = `${BASE_URL}${endpoint}`;
+  const headers = {
+    ...testConfig.headers,
+    ...extraHeaders,
+  };
+
+  if (testConfig.cookie) {
+    headers["Cookie"] = testConfig.cookie;
+  }
+
   const options = {
     method,
-    headers: testConfig.headers,
+    headers,
     ...(body && { body: JSON.stringify(body) }),
   };
 
@@ -26,7 +37,27 @@ async function makeRequest(endpoint, method = "GET", body = null) {
 
   try {
     const response = await fetch(url, options);
-    const data = await response.json();
+
+    // Update simple cookie jar from any Set-Cookie headers
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) {
+      // Support multiple cookies in a single header
+      const cookiePairs = setCookie
+        .split(",")
+        .map((c) => c.split(";")[0].trim())
+        .filter(Boolean);
+      if (cookiePairs.length) {
+        testConfig.cookie = cookiePairs.join("; ");
+      }
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.warn("⚠️ Response body was not valid JSON, continuing with empty object");
+      data = {};
+    }
 
     console.log(`📥 Status: ${response.status}`);
     console.log("📥 Response:", JSON.stringify(data, null, 2));
@@ -290,10 +321,9 @@ class SimplifiedAuthTester {
     await this.runTest("Token Validation with Valid Token", async () => {
       const headers = {
         Authorization: `Bearer ${this.accessToken}`,
-        "X-CSRF-Token": this.csrfToken,
       };
 
-      const result = await makeRequest("/api/auth/validate", "GET");
+      const result = await makeRequest("/api/auth/validate", "GET", null, headers);
 
       if (!result.success) {
         throw new Error("Token validation failed");
@@ -309,10 +339,9 @@ class SimplifiedAuthTester {
     await this.runTest("Token Validation with Invalid Token", async () => {
       const headers = {
         Authorization: "Bearer invalid-token",
-        "X-CSRF-Token": this.csrfToken,
       };
 
-      const result = await makeRequest("/api/auth/validate", "GET");
+      const result = await makeRequest("/api/auth/validate", "GET", null, headers);
 
       // Should fail with unauthorized
       if (result.success) {
@@ -337,20 +366,15 @@ class SimplifiedAuthTester {
         "X-CSRF-Token": this.csrfToken,
       };
 
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.accessToken}`,
-          "X-CSRF-Token": this.csrfToken,
-        },
-      };
+      const result = await makeRequest(
+        "/api/auth/logout",
+        "POST",
+        null,
+        headers
+      );
 
-      const response = await fetch(`${BASE_URL}/api/auth/logout`, options);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(`Logout failed: ${result.error || "Unknown error"}`);
+      if (!result.success) {
+        throw new Error(`Logout failed: ${result.data.error || "Unknown error"}`);
       }
 
       this.addResult("Logout with Valid Token", true, "Logout successful");
@@ -360,10 +384,9 @@ class SimplifiedAuthTester {
       // Try to use the same token after logout
       const headers = {
         Authorization: `Bearer ${this.accessToken}`,
-        "X-CSRF-Token": this.csrfToken,
       };
 
-      const result = await makeRequest("/api/auth/validate", "GET");
+      const result = await makeRequest("/api/auth/validate", "GET", null, headers);
 
       // Should fail because token should be blacklisted
       if (result.success) {

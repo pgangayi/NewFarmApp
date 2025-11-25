@@ -239,7 +239,7 @@ export function AdvancedManagementDashboard() {
 
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, queryClient, dashboard]);
+  }, [autoRefresh, queryClient, dashboard, setLastUpdated]);
 
   // WebSocket connection and farm subscription
   useEffect(() => {

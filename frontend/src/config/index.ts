@@ -144,13 +144,17 @@ const environmentOverrides: Record<string, Partial<AppConfig>> = {
 
 // Merge base config with environment-specific overrides
 const mergeConfigs = (base: AppConfig, override: Partial<AppConfig>): AppConfig => {
-  const merged = { ...base } as unknown;
+  const merged = { ...base } as Record<string, unknown>;
 
   for (const key in override) {
     const overrideValue = override[key as keyof AppConfig];
-    if (typeof overrideValue === 'object' && overrideValue !== null) {
+    if (
+      typeof overrideValue === 'object' &&
+      overrideValue !== null &&
+      !Array.isArray(overrideValue)
+    ) {
       merged[key] = {
-        ...(merged[key] || {}),
+        ...((merged[key] as Record<string, unknown>) || {}),
         ...overrideValue,
       };
     } else {

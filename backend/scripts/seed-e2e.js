@@ -147,8 +147,8 @@ PRAGMA foreign_keys = ON;
     const out = execSync(cmd, { encoding: "utf8" });
     console.log(out);
 
-      // Insert sample breeds and crops after teams/farm/user are created
-      const sampleSql = `
+    // Insert sample breeds and crops after teams/farm/user are created
+    const sampleSql = `
     INSERT OR IGNORE INTO breeds (species, name, origin_country, purpose, average_weight, temperament) VALUES
     ('cattle', 'Holstein', 'Netherlands', 'Dairy', 680, 'Docile'),
     ('cattle', 'Angus', 'Scotland', 'Beef', 750, 'Calm'),
@@ -158,12 +158,12 @@ PRAGMA foreign_keys = ON;
     VALUES ((SELECT id FROM farms WHERE owner_id = '${userId}' LIMIT 1), 'Corn', '2025-03-15', 'active');
     `;
 
-      const tmpSampleFileName = ".tmp-sample-data.sql";
-      const tmpSampleFile = path.join(__dirname, "..", tmpSampleFileName);
-      fs.writeFileSync(tmpSampleFile, sampleSql);
-      const sampleCmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=${tmpSampleFileName} --local`;
-      const sampleOut = execSync(sampleCmd, { encoding: "utf8" });
-      console.log(sampleOut);
+    const tmpSampleFileName = ".tmp-sample-data.sql";
+    const tmpSampleFile = path.join(__dirname, "..", tmpSampleFileName);
+    fs.writeFileSync(tmpSampleFile, sampleSql);
+    const sampleCmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=${tmpSampleFileName} --local`;
+    const sampleOut = execSync(sampleCmd, { encoding: "utf8" });
+    console.log(sampleOut);
 
     // Try to log in via the local worker to obtain a real JWT/session
     // Retry a few times because Wrangler dev may still be booting

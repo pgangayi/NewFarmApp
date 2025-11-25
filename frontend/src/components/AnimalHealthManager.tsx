@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { apiEndpoints } from '../config/env';
 import { Plus, Calendar, FileText, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 interface HealthRecord {
@@ -50,7 +51,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
   } = useQuery({
     queryKey: ['animal-health-records', animalId],
     queryFn: async () => {
-      const response = await fetch(`/api/animals/${animalId}/health-records`, {
+      const response = await fetch(apiEndpoints.animals.healthRecords(animalId), {
         headers: getAuthHeaders(),
       });
 
@@ -66,7 +67,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
   // Create health record mutation
   const createMutation = useMutation({
     mutationFn: async (recordData: unknown) => {
-      const response = await fetch(`/api/animals/${animalId}/health-records`, {
+      const response = await fetch(apiEndpoints.animals.healthRecords(animalId), {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -90,7 +91,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
   // Update health record mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...recordData }: unknown) => {
-      const response = await fetch(`/api/animals/${animalId}/health-records/${id}`, {
+      const response = await fetch(apiEndpoints.animals.healthRecords(animalId, id), {
         method: 'PUT',
         headers: {
           ...getAuthHeaders(),
@@ -114,7 +115,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
   // Delete health record mutation
   const deleteMutation = useMutation({
     mutationFn: async (recordId: string) => {
-      const response = await fetch(`/api/animals/${animalId}/health-records/${recordId}`, {
+      const response = await fetch(apiEndpoints.animals.healthRecords(animalId, recordId), {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });

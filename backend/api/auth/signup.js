@@ -83,7 +83,7 @@ export async function onRequest(context) {
     );
 
     // Create session response
-    const sessionResponse = createSessionResponse({
+    const sessionResponse = await createSessionResponse({
       user: buildPublicUser(createdUser),
       userId: createdUser.id,
       accessToken,

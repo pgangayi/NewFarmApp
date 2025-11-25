@@ -75,7 +75,7 @@ export async function onRequest(context) {
     await auth.logAuditEvent(user.id, "login", null, null, ipAddress, true);
 
     // Create session response
-    const sessionResponse = createSessionResponse({
+    const sessionResponse = await createSessionResponse({
       user: buildPublicUser(user),
       userId: user.id,
       accessToken,

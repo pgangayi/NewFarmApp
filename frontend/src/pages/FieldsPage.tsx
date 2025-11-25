@@ -28,7 +28,7 @@ function isApiResponse<T>(payload: unknown): payload is ApiResponse<T> {
 }
 
 function unwrapResponse<T>(payload: ApiResponse<T> | T): T {
-  return isApiResponse<T>(payload) ? payload.data : (payload as T);
+  return isApiResponse<T>(payload) ? (payload.data as T) : (payload as T);
 }
 
 // --- FieldsPage Component ---
@@ -48,7 +48,7 @@ export function FieldsPage() {
     queryKey: ['farms'],
     queryFn: async (): Promise<Farm[]> => {
       const response = await apiClient.get<ApiResponse<Farm[]>>(apiEndpoints.farms.list);
-      return response.data;
+      return unwrapResponse(response.data) || [];
     },
     enabled: isAuthenticated(),
   });
@@ -136,7 +136,7 @@ export function FieldsPage() {
 
   const handleUpdateField = (fieldData: FieldFormDataInternal) => {
     if (editingField) {
-      updateFieldMutation.mutate({ id: editingField.id, ...fieldData });
+      updateFieldMutation.mutate({ id: parseInt(editingField.id), ...fieldData });
     }
   };
 
@@ -450,7 +450,7 @@ export function FieldsPage() {
                         size="sm"
                         className="flex-1"
                         onClick={() => {
-                          setSelectedFieldId(field.id);
+                          setSelectedFieldId(parseInt(field.id));
                           setViewMode('soil');
                         }}
                       >
@@ -463,7 +463,7 @@ export function FieldsPage() {
                         className="flex-1"
                         onClick={() => {
                           if (confirm(`Delete field "${field.name}"?`)) {
-                            handleDeleteField(field.id);
+                            handleDeleteField(parseInt(field.id));
                           }
                         }}
                       >
@@ -632,20 +632,26 @@ function FieldFormModal({
 }: FieldFormModalProps) {
   const [formData, setFormData] = useState<FieldFormDataInternal>(() => {
     const firstFarm = getFirstFarm(farms);
-    const defaultFarmId = selectedFarmId ? parseInt(selectedFarmId) : firstFarm ? firstFarm.id : 0;
+    const defaultFarmId = selectedFarmId
+      ? parseInt(selectedFarmId)
+      : firstFarm
+        ? typeof firstFarm.id === 'string'
+          ? parseInt(firstFarm.id)
+          : firstFarm.id
+        : 0;
 
     return {
-      farm_id: field?.farm_id || defaultFarmId,
+      farm_id: (field?.farm_id ?? defaultFarmId) as number,
       name: field?.name || '',
-      area_hectares: field?.area_hectares,
+      area_hectares: field?.area_hectares || null,
       crop_type: field?.crop_type || '',
       notes: field?.notes || '',
       soil_type: field?.soil_type || '',
-      field_capacity: field?.field_capacity,
+      field_capacity: field?.field_capacity || null,
       current_cover_crop: field?.current_cover_crop || '',
       irrigation_system: field?.irrigation_system || '',
       drainage_quality: field?.drainage_quality || '',
-      accessibility_score: field?.accessibility_score,
+      accessibility_score: field?.accessibility_score || null,
       environmental_factors: field?.environmental_factors || '',
       maintenance_schedule: field?.maintenance_schedule || '',
     };
@@ -732,7 +738,7 @@ function FieldFormModal({
                     onChange={e =>
                       updateField(
                         'area_hectares',
-                        e.target.value ? parseFloat(e.target.value) : undefined
+                        e.target.value ? parseFloat(e.target.value) : null
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -823,7 +829,7 @@ function FieldFormModal({
                     onChange={e =>
                       updateField(
                         'accessibility_score',
-                        e.target.value ? parseInt(e.target.value) : undefined
+                        e.target.value ? parseInt(e.target.value) : null
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -861,7 +867,7 @@ function FieldFormModal({
                     onChange={e =>
                       updateField(
                         'field_capacity',
-                        e.target.value ? parseFloat(e.target.value) : undefined
+                        e.target.value ? parseFloat(e.target.value) : null
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"

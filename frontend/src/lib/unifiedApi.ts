@@ -3,6 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { featureFlags, shouldUseEnhancedAPIs } from '../config/featureFlags';
+import { apiEndpoints } from '../config/env';
 import { getAccessToken } from './authStorage';
 
 interface ApiResponse<T> {
@@ -30,8 +31,8 @@ const API_ENDPOINTS = {
   },
   // Animals API
   animals: {
-    basic: '/api/animals',
-    enhanced: '/api/animals', // Currently using unified animals.js
+    basic: apiEndpoints.animals.list,
+    enhanced: apiEndpoints.animals.list,
   },
   // Fields API
   fields: {

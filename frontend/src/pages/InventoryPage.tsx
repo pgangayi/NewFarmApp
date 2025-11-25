@@ -28,6 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { Farm } from '../types/entities';
 
 interface InventoryItem {
   id: number;
@@ -114,7 +115,7 @@ interface InventoryFormData {
   qty: number;
   unit: string;
   reorder_threshold: number;
-  category?: string;
+  category: string;
   supplier_info?: string;
   storage_requirements?: string;
   expiration_date?: string;
@@ -129,7 +130,6 @@ export function InventoryPage() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const apiClient = useApiClient();
-  const { currentFarm } = useFarm();
   const [viewMode, setViewMode] = useState<
     'overview' | 'items' | 'alerts' | 'suppliers' | 'analytics'
   >('overview');
@@ -142,6 +142,7 @@ export function InventoryPage() {
   // Use shared inventory hooks
   const { items: inventoryItems, isLoading, error, refetch, createItemAsync } = useInventory();
   const { data: lowStockItems } = useLowStockItems();
+  const { currentFarm, farms } = useFarm();
 
   // Suppliers and alerts via apiClient
   const { data: suppliers } = useQuery({
@@ -299,7 +300,9 @@ export function InventoryPage() {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as unknown)}
+                onClick={() =>
+                  setViewMode(key as 'items' | 'analytics' | 'overview' | 'alerts' | 'suppliers')
+                }
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-blue-500 text-blue-600'
@@ -454,7 +457,7 @@ export function InventoryPage() {
                           size="sm"
                           variant="outline"
                           className="w-full mt-2"
-                          onClick={() => setEditingItem(item)}
+                          onClick={() => setEditingItem(item as unknown as InventoryItem)}
                         >
                           <ShoppingCart className="h-3 w-3 mr-1" />
                           Reorder
@@ -590,7 +593,7 @@ export function InventoryPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setEditingItem(item)}
+                              onClick={() => setEditingItem(item as unknown as InventoryItem)}
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
@@ -863,14 +866,14 @@ export function InventoryPage() {
         {(showCreateForm || editingItem) && (
           <InventoryItemModal
             item={editingItem}
-            farms={farms || []}
+            farms={(farms as Farm[]) || []}
             suppliers={suppliers || []}
             onSave={editingItem ? handleUpdateItem : handleCreateItem}
             onClose={() => {
               setShowCreateForm(false);
               setEditingItem(null);
             }}
-            isLoading={createItemMutation.isPending || updateItemMutation.isPending}
+            isLoading={isLoading}
           />
         )}
       </div>
@@ -880,7 +883,7 @@ export function InventoryPage() {
 
 interface InventoryItemModalProps {
   item?: InventoryItem | null;
-  farms: unknown[];
+  farms: Farm[];
   suppliers: Supplier[];
   onSave: (data: InventoryFormData) => void;
   onClose: () => void;
@@ -896,7 +899,13 @@ function InventoryItemModal({
   isLoading,
 }: InventoryItemModalProps) {
   const [formData, setFormData] = useState<InventoryFormData>({
-    farm_id: item?.farm_id || farms[0]?.id || 1,
+    farm_id:
+      item?.farm_id ||
+      (farms?.[0]?.id
+        ? typeof farms[0].id === 'string'
+          ? parseInt(farms[0].id)
+          : farms[0].id
+        : 1),
     name: item?.name || '',
     sku: item?.sku || '',
     qty: item?.qty || 0,

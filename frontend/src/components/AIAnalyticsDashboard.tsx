@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/AuthContext';
 import {
   TrendingUp,
-  TrendingDown,
   Activity,
   Brain,
   Target,
@@ -13,36 +12,57 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   BarChart3,
-  PieChart,
-  LineChart,
-  Calendar,
-  AlertTriangle,
-  CheckCircle,
   RefreshCw,
   Download,
-  Filter,
-  Settings,
   Users,
   DollarSign,
   Sprout,
   Package,
   Clock,
-  Beaker,
-  MapPin,
-  Sun,
-  CloudRain,
   Wind,
   Thermometer,
   Gauge,
   Trophy,
-  Star,
   Shield,
   Leaf,
   Timer,
+  CloudRain,
+  CheckCircle,
+  MapPin,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+
+interface ModulePerformance {
+  performance_score?: number;
+  overview?: {
+    health_status?: string;
+    total_animals?: number;
+    production_rate?: number;
+    active_crops?: number;
+    growth_stage?: string;
+    net_profit?: number;
+    revenue?: number;
+    expenses?: number;
+    tax_deductible_amount?: number;
+    avg_temperature?: number;
+    total_precipitation?: number;
+    avg_humidity?: number;
+  } & Array<{
+    mature_crops?: number;
+  }>;
+  yield_performance?: Array<{
+    yield_efficiency?: number;
+  }>;
+}
+
+interface Recommendation {
+  title?: string;
+  description?: string;
+  impact?: string;
+  suggestion?: string;
+}
 
 interface ComprehensiveAnalytics {
   summary: {
@@ -52,17 +72,17 @@ interface ComprehensiveAnalytics {
     sustainability_score: number;
   };
   modules: {
-    animals: unknown;
-    crops: unknown;
-    fields: unknown;
-    inventory: unknown;
-    tasks: unknown;
-    finance: unknown;
-    weather: unknown;
+    animals: ModulePerformance;
+    crops: ModulePerformance;
+    fields: ModulePerformance;
+    inventory: ModulePerformance;
+    tasks: ModulePerformance;
+    finance: ModulePerformance;
+    weather: ModulePerformance;
   };
   insights: unknown[];
   benchmarks: unknown;
-  recommendations: unknown[];
+  recommendations: Recommendation[];
   trends: unknown;
 }
 
@@ -80,9 +100,17 @@ export function AIAnalyticsDashboard() {
   const queryClient = useQueryClient();
   const [selectedFarm, setSelectedFarm] = useState<number>(1);
   const [viewMode, setViewMode] = useState<
-    'comprehensive' | 'predictive' | 'optimization' | 'trends' | 'roi' | 'efficiency'
+    | 'comprehensive'
+    | 'predictive'
+    | 'optimization'
+    | 'trends'
+    | 'roi'
+    | 'efficiency'
+    | 'performance'
+    | 'predictions'
+    | 'recommendations'
   >('comprehensive');
-  const [timeframe, setTimeframe] = useState<'6months' | '12months' | '24months'>('12months');
+  const [timeframe] = useState<'6months' | '12months' | '24months'>('12months');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Get comprehensive analytics
@@ -335,7 +363,20 @@ export function AIAnalyticsDashboard() {
             ].map(({ key, label, icon: Icon, description }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as unknown)}
+                onClick={() =>
+                  setViewMode(
+                    key as
+                      | 'comprehensive'
+                      | 'performance'
+                      | 'efficiency'
+                      | 'predictions'
+                      | 'recommendations'
+                      | 'predictive'
+                      | 'optimization'
+                      | 'trends'
+                      | 'roi'
+                  )
+                }
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-purple-500 text-purple-600'
@@ -481,36 +522,32 @@ export function AIAnalyticsDashboard() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Health Score</span>
-                        <span
-                          className={`font-bold ${getScoreColor(comprehensiveData.modules.animals.performance_score)}`}
-                        >
-                          {comprehensiveData.modules.animals.performance_score}/100
+                        <span className="text-sm text-gray-600">Performance Score</span>
+                        <span className="font-medium">
+                          {(comprehensiveData.modules.animals as ModulePerformance)
+                            .performance_score || 0}
+                          /100
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Health Status</span>
+                        <span className="font-medium">
+                          {(comprehensiveData.modules.animals as ModulePerformance).overview
+                            ?.health_status || 'Unknown'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Total Animals</span>
                         <span className="font-medium">
-                          {comprehensiveData.modules.animals.overview?.reduce(
-                            (sum: number, a: unknown) => sum + a.total_count,
-                            0
-                          ) || 0}
+                          {(comprehensiveData.modules.animals as ModulePerformance).overview
+                            ?.total_animals || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Vaccination Rate</span>
+                        <span className="text-sm text-gray-600">Production Rate</span>
                         <span className="font-medium">
-                          {Math.round(
-                            ((comprehensiveData.modules.animals.overview?.reduce(
-                              (sum: number, a: unknown) => sum + a.vaccinated_count,
-                              0
-                            ) || 0) /
-                              (comprehensiveData.modules.animals.overview?.reduce(
-                                (sum: number, a: unknown) => sum + a.total_count,
-                                1
-                              ) || 1)) *
-                              100
-                          )}
+                          {(comprehensiveData.modules.animals as ModulePerformance).overview
+                            ?.production_rate || 0}
                           %
                         </span>
                       </div>
@@ -533,16 +570,19 @@ export function AIAnalyticsDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Growth Score</span>
                         <span
-                          className={`font-bold ${getScoreColor(comprehensiveData.modules.crops.performance_score)}`}
+                          className={`font-bold ${getScoreColor((comprehensiveData.modules.crops as ModulePerformance).performance_score)}`}
                         >
-                          {comprehensiveData.modules.crops.performance_score}/100
+                          {(comprehensiveData.modules.crops as ModulePerformance)
+                            .performance_score || 0}
+                          /100
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Mature Crops</span>
                         <span className="font-medium">
-                          {comprehensiveData.modules.crops.overview?.reduce(
-                            (sum: number, c: unknown) => sum + c.mature_crops,
+                          {(comprehensiveData.modules.crops as ModulePerformance).overview?.reduce(
+                            (sum: number, c: { mature_crops?: number }) =>
+                              sum + (c.mature_crops || 0),
                             0
                           ) || 0}
                         </span>
@@ -551,12 +591,16 @@ export function AIAnalyticsDashboard() {
                         <span className="text-sm text-gray-600">Yield Efficiency</span>
                         <span className="font-medium">
                           {Math.round(
-                            comprehensiveData.modules.crops.yield_performance?.reduce(
-                              (sum: number, y: unknown) => sum + (y.yield_efficiency || 0),
+                            (
+                              comprehensiveData.modules.crops as ModulePerformance
+                            ).yield_performance?.reduce(
+                              (sum: number, y: { yield_efficiency?: number }) =>
+                                sum + (y.yield_efficiency || 0),
                               0
-                            ) / (comprehensiveData.modules.crops.yield_performance?.length || 1) ||
-                              0
-                          )}
+                            ) /
+                              ((comprehensiveData.modules.crops as ModulePerformance)
+                                .yield_performance?.length || 1)
+                          ) || 0}
                           %
                         </span>
                       </div>
@@ -579,23 +623,27 @@ export function AIAnalyticsDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Profitability</span>
                         <span
-                          className={`font-bold ${getScoreColor(comprehensiveData.modules.finance.performance_score)}`}
+                          className={`font-bold ${getScoreColor((comprehensiveData.modules.finance as ModulePerformance).performance_score)}`}
                         >
-                          {comprehensiveData.modules.finance.performance_score}/100
+                          {(comprehensiveData.modules.finance as ModulePerformance)
+                            .performance_score || 0}
+                          /100
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Net Profit</span>
                         <span
                           className={`font-medium ${
-                            (comprehensiveData.modules.finance.overview?.net_profit || 0) >= 0
+                            ((comprehensiveData.modules.finance as ModulePerformance).overview
+                              ?.net_profit || 0) >= 0
                               ? 'text-green-600'
                               : 'text-red-600'
                           }`}
                         >
                           $
                           {(
-                            comprehensiveData.modules.finance.overview?.net_profit || 0
+                            (comprehensiveData.modules.finance as ModulePerformance).overview
+                              ?.net_profit || 0
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -604,7 +652,8 @@ export function AIAnalyticsDashboard() {
                         <span className="font-medium">
                           $
                           {(
-                            comprehensiveData.modules.finance.overview?.tax_deductible_amount || 0
+                            (comprehensiveData.modules.finance as ModulePerformance).overview
+                              ?.tax_deductible_amount || 0
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -627,7 +676,7 @@ export function AIAnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {comprehensiveData.recommendations?.map((rec, index) => (
+                  {comprehensiveData.recommendations?.map((rec: Recommendation, index: number) => (
                     <div
                       key={index}
                       className="p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-purple-100"
@@ -637,13 +686,19 @@ export function AIAnalyticsDashboard() {
                           <Lightbulb className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">{rec.title}</h4>
-                          <p className="text-sm text-gray-600 mb-2">{rec.description}</p>
+                          <h4 className="font-semibold text-gray-900 mb-1">
+                            {rec.title || 'Recommendation'}
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {rec.description || 'No description available'}
+                          </p>
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">
-                              {rec.impact} impact
+                              {rec.impact || 'Medium'} impact
                             </Badge>
-                            <span className="text-xs text-blue-600">💡 {rec.suggestion}</span>
+                            <span className="text-xs text-blue-600">
+                              💡 {rec.suggestion || 'No suggestion available'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -679,7 +734,8 @@ export function AIAnalyticsDashboard() {
                       <Thermometer className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                       <div className="text-lg font-bold">
                         {Math.round(
-                          comprehensiveData.modules.weather?.overview?.avg_temperature || 0
+                          (comprehensiveData.modules.weather as ModulePerformance)?.overview
+                            ?.avg_temperature || 0
                         )}
                         °C
                       </div>
@@ -689,7 +745,8 @@ export function AIAnalyticsDashboard() {
                       <CloudRain className="h-8 w-8 text-green-500 mx-auto mb-2" />
                       <div className="text-lg font-bold">
                         {Math.round(
-                          comprehensiveData.modules.weather?.overview?.total_precipitation || 0
+                          (comprehensiveData.modules.weather as ModulePerformance)?.overview
+                            ?.total_precipitation || 0
                         )}
                         mm
                       </div>
@@ -698,7 +755,10 @@ export function AIAnalyticsDashboard() {
                     <div className="text-center p-4 bg-purple-50 rounded-lg">
                       <Wind className="h-8 w-8 text-purple-500 mx-auto mb-2" />
                       <div className="text-lg font-bold">
-                        {Math.round(comprehensiveData.modules.weather?.overview?.avg_humidity || 0)}
+                        {Math.round(
+                          (comprehensiveData.modules.weather as ModulePerformance)?.overview
+                            ?.avg_humidity || 0
+                        )}
                         %
                       </div>
                       <div className="text-sm text-gray-600">Humidity</div>
@@ -710,21 +770,27 @@ export function AIAnalyticsDashboard() {
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <Package className="h-6 w-6 text-orange-500 mx-auto mb-1" />
                       <div className="text-sm font-bold">
-                        {comprehensiveData.modules.inventory?.performance_score || 0}/100
+                        {(comprehensiveData.modules.inventory as ModulePerformance)
+                          ?.performance_score || 0}
+                        /100
                       </div>
                       <div className="text-xs text-gray-600">Inventory Health</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
                       <div className="text-sm font-bold">
-                        {comprehensiveData.modules.tasks?.performance_score || 0}/100
+                        {(comprehensiveData.modules.tasks as ModulePerformance)
+                          ?.performance_score || 0}
+                        /100
                       </div>
                       <div className="text-xs text-gray-600">Task Efficiency</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <MapPin className="h-6 w-6 text-blue-500 mx-auto mb-1" />
                       <div className="text-sm font-bold">
-                        {comprehensiveData.modules.fields?.performance_score || 0}/100
+                        {(comprehensiveData.modules.fields as ModulePerformance)
+                          ?.performance_score || 0}
+                        /100
                       </div>
                       <div className="text-xs text-gray-600">Field Utilization</div>
                     </div>
@@ -746,7 +812,7 @@ export function AIAnalyticsDashboard() {
         {viewMode === 'predictive' && predictiveData && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Object.entries(predictiveData).map(([key, value]) => (
+              {Object.entries(predictiveData).map(([key, _value]) => (
                 <Card key={key} className="border-0 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -775,7 +841,7 @@ export function AIAnalyticsDashboard() {
         {viewMode === 'optimization' && optimizationData && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(optimizationData).map(([key, value]) => (
+              {Object.entries(optimizationData).map(([key, _value]) => (
                 <Card
                   key={key}
                   className="border-0 shadow-lg bg-gradient-to-br from-white to-green-50"

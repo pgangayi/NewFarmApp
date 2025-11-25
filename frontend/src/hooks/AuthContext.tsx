@@ -245,7 +245,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    const token = readToken();
+    const token = getAccessToken();
+    const headers = getAuthHeaders();
+
     clearState();
 
     if (!token) {
@@ -255,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers,
       });
     } catch (error) {
       console.warn('Server sign out failed:', error);
@@ -266,7 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = useCallback(() => Boolean(user), [user]);
 
-  const isTokenValid = useCallback(() => Boolean(readToken()), []);
+  const isTokenValid = useCallback(() => Boolean(getAccessToken()), []);
 
   const refreshToken = useCallback(async (): Promise<AuthResult> => {
     try {

@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { apiEndpoints } from '../config/env';
 import { BarChart, TrendingUp, DollarSign, Heart, Baby, Activity } from 'lucide-react';
+
+interface TopPerformingAnimal {
+  name: string;
+  species: string;
+  breed: string;
+  production: number;
+}
+
+interface Species {
+  species: string;
+  count: number;
+  percentage?: number;
+}
 
 interface AnalyticsData {
   totalAnimals: number;
@@ -12,10 +26,10 @@ interface AnalyticsData {
   avgProductionPerAnimal: number;
   breedingSuccessRate: number;
   vaccinationCompliance: number;
-  topPerformingAnimals: unknown[];
+  topPerformingAnimals: TopPerformingAnimal[];
   productionTrends: unknown[];
   healthOverview: unknown;
-  speciesBreakdown: unknown[];
+  speciesBreakdown: Species[];
   upcomingEvents: unknown[];
 }
 
@@ -41,7 +55,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
   } = useQuery({
     queryKey: ['animal-analytics', queryParams.toString()],
     queryFn: async () => {
-      const response = await fetch(`/api/animals/analytics?${queryParams.toString()}`, {
+      const response = await fetch(`${apiEndpoints.animals.analytics}?${queryParams.toString()}`, {
         headers: getAuthHeaders(),
       });
 
@@ -195,7 +209,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <Activity className="h-5 w-5 text-blue-600" />
           </div>
           <div className="space-y-3">
-            {data.speciesBreakdown?.map((species: unknown, index: number) => (
+            {(data.speciesBreakdown as Species[])?.map((species: Species, index: number) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
@@ -232,22 +246,24 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <TrendingUp className="h-5 w-5 text-green-600" />
           </div>
           <div className="space-y-3">
-            {data.topPerformingAnimals?.map((animal: unknown, index: number) => (
-              <div key={index} className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">{animal.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {animal.species} • {animal.breed}
-                  </p>
+            {(data.topPerformingAnimals as TopPerformingAnimal[])?.map(
+              (animal: TopPerformingAnimal, index: number) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{animal.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {animal.species} • {animal.breed}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-green-600">
+                      {animal.production ? animal.production.toFixed(1) : '0'} units
+                    </p>
+                    <p className="text-sm text-gray-500">this month</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-green-600">
-                    {animal.production ? animal.production.toFixed(1) : '0'} units
-                  </p>
-                  <p className="text-sm text-gray-500">this month</p>
-                </div>
-              </div>
-            )) || (
+              )
+            ) || (
               <div className="text-center py-4 text-gray-500">No performance data available</div>
             )}
           </div>

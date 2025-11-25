@@ -78,7 +78,7 @@ async function handleRefreshRequest(context) {
       return createErrorResponse("User not found", 401);
     }
 
-    const newAccessToken = auth.generateToken(user.id, user.email);
+    const newAccessToken = auth.generateAccessToken(user.id, user.email);
     const shouldRotateRefreshToken = env.REFRESH_TOKEN_ROTATION !== "false";
     let newRefreshToken = refreshToken;
 

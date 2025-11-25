@@ -2,6 +2,7 @@ import _React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
 import { useAnimalPedigree, useAnimalMovements } from '../hooks/useAnimals';
+import { apiEndpoints } from '../config/env';
 import {
   ArrowLeft,
   Heart,
@@ -78,7 +79,7 @@ export function AnimalDetailPage({ animalId }: AnimalDetailPageProps = {}) {
   } = useQuery({
     queryKey: ['animal', id],
     queryFn: async () => {
-      const response = await fetch(`/api/animals/${id}`, {
+      const response = await fetch(apiEndpoints.animals.get(id as string), {
         headers: getAuthHeaders(),
       });
 

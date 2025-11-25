@@ -123,15 +123,32 @@ export class SimpleAuth {
     }
   }
 
-  // Get user from token
-  async getUserFromToken(request) {
+  // Extract bearer token from Authorization header
+  extractToken(request) {
     try {
       const authHeader = request.headers.get("Authorization");
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      if (!authHeader) return null;
+
+      const [scheme, token] = authHeader.split(" ");
+      if (!token || scheme?.toLowerCase() !== "bearer") {
         return null;
       }
 
-      const token = authHeader.substring(7);
+      return token.trim();
+    } catch (error) {
+      console.error("Error extracting token:", error);
+      return null;
+    }
+  }
+
+  // Get user from token
+  async getUserFromToken(request) {
+    try {
+      const token = this.extractToken(request);
+      if (!token) {
+        return null;
+      }
+
       const payload = await this.verifyToken(token);
       if (!payload) return null;
 
@@ -156,6 +173,79 @@ export class SimpleAuth {
       request.headers.get("X-Real-IP") ||
       "unknown"
     );
+  }
+
+  // Verify whether a user has access to a farm (owner or member)
+  async hasFarmAccess(userId, farmId) {
+    if (!userId || !farmId) {
+      return false;
+    }
+
+    try {
+      const { results } = await this.env.DB.prepare(
+        `
+        SELECT 1 FROM farms WHERE id = ? AND owner_id = ?
+        UNION
+        SELECT 1 FROM farm_members WHERE farm_id = ? AND user_id = ?
+        LIMIT 1
+      `
+      )
+        .bind(farmId, userId, farmId, userId)
+        .all();
+
+      return Array.isArray(results) && results.length > 0;
+    } catch (error) {
+      console.error("Error checking farm access:", error);
+      return false;
+    }
+  }
+
+  // Grant farm access to a user via farm_members entry when needed
+  async grantFarmAccess(farmId, userId, role = "member") {
+    if (!farmId || !userId) {
+      return false;
+    }
+
+    try {
+      // Owners implicitly have access
+      const ownerCheck = await this.env.DB.prepare(
+        `SELECT 1 FROM farms WHERE id = ? AND owner_id = ? LIMIT 1`
+      )
+        .bind(farmId, userId)
+        .all();
+
+      if (ownerCheck.results?.length) {
+        return true;
+      }
+
+      // Existing membership?
+      const memberCheck = await this.env.DB.prepare(
+        `SELECT 1 FROM farm_members WHERE farm_id = ? AND user_id = ? LIMIT 1`
+      )
+        .bind(farmId, userId)
+        .all();
+
+      if (memberCheck.results?.length) {
+        return true;
+      }
+
+      await this.env.DB.prepare(
+        `INSERT INTO farm_members (farm_id, user_id, role)
+         VALUES (?, ?, ?)`
+      )
+        .bind(farmId, userId, role || "member")
+        .run();
+
+      return true;
+    } catch (error) {
+      // Ignore uniqueness errors since access already exists
+      if (error?.message?.includes("UNIQUE")) {
+        return true;
+      }
+
+      console.error("Error granting farm access:", error);
+      return false;
+    }
   }
 
   // Simple audit logging (critical events only)
@@ -220,17 +310,23 @@ export class SimpleCSRF {
 }
 
 // Response helpers
-export function createErrorResponse(message, status = 400) {
+export function createErrorResponse(message, status = 400, extraHeaders = {}) {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
   });
 }
 
-export function createSuccessResponse(data, status = 200) {
+export function createSuccessResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
   });
 }
 
@@ -252,9 +348,4 @@ export function generateSecureToken(length = 32) {
 
 export function hashResetToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-export function hasFarmAccess(userId, farmId) {
-  // Simplified implementation - in complex system this would check permissions
-  return true; // For now, allow all access
 }

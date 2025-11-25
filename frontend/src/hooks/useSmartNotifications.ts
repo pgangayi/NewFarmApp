@@ -19,6 +19,49 @@ interface Notification {
   farmId?: string;
 }
 
+// Type interfaces for notification data
+interface InventoryNotificationData {
+  quantity: number;
+  minStock: number;
+  name: string;
+  id: string | number;
+}
+
+interface TaskNotificationData {
+  dueDate: string;
+  status: string;
+  title: string;
+  id: string | number;
+}
+
+interface AnimalNotificationData {
+  healthStatus: string;
+  name: string;
+  id: string | number;
+}
+
+interface WeatherNotificationData {
+  temperature: number;
+}
+
+interface CropNotificationData {
+  daysToHarvest: number;
+  name: string;
+  id: string | number;
+}
+
+interface NotificationRule {
+  id: string;
+  name: string;
+  type: string;
+  condition: (data: any) => boolean;
+  action: (context: any) => Omit<Notification, 'id' | 'timestamp' | 'read' | 'dismissed'>;
+  enabled: boolean;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  cooldown?: number;
+  lastTriggered?: Date;
+}
+
 interface NotificationPreferences {
   weather: boolean;
   inventory: boolean;
@@ -77,8 +120,9 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'low-stock',
     name: 'Low Stock Alert',
     type: 'inventory',
-    condition: data => data.quantity <= data.minStock && data.quantity > 0,
-    action: context => ({
+    condition: (data: InventoryNotificationData) =>
+      data.quantity <= data.minStock && data.quantity > 0,
+    action: (context: InventoryNotificationData) => ({
       type: 'inventory',
       title: 'Low Stock Warning',
       message: `${context.name} is running low (${context.quantity} remaining)`,
@@ -97,17 +141,18 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'overdue-task',
     name: 'Overdue Task',
     type: 'task',
-    condition: data => new Date(data.dueDate) < new Date() && data.status !== 'completed',
-    action: context => ({
+    condition: (data: TaskNotificationData) =>
+      new Date(data.dueDate) < new Date() && data.status !== 'completed',
+    action: (context: TaskNotificationData) => ({
       type: 'task',
       title: 'Overdue Task',
       message: `Task "${context.title}" is overdue`,
       priority: 'high',
-      category: 'tasks',
+      category: 'task',
       data: context,
       actionable: true,
       actionUrl: `/tasks/${context.id}`,
-      actionLabel: 'Update Task',
+      actionLabel: 'View Task',
     }),
     enabled: true,
     priority: 'high',
@@ -117,53 +162,51 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'animal-health',
     name: 'Animal Health Alert',
     type: 'animal',
-    condition: data => data.healthStatus === 'sick',
-    action: context => ({
+    condition: (data: AnimalNotificationData) => data.healthStatus === 'sick',
+    action: (context: AnimalNotificationData) => ({
       type: 'animal',
-      title: 'Animal Health Concern',
+      title: 'Health Alert',
       message: `${context.name} needs medical attention`,
       priority: 'high',
-      category: 'animals',
+      category: 'health',
       data: context,
       actionable: true,
       actionUrl: `/animals/${context.id}`,
-      actionLabel: 'View Details',
+      actionLabel: 'View Animal',
     }),
     enabled: true,
     priority: 'high',
     cooldown: 120,
   },
   {
-    id: 'weather-alert',
-    name: 'Weather Alert',
+    id: 'temperature-extreme',
+    name: 'Temperature Extreme',
     type: 'weather',
-    condition: data => data.temperature > 40 || data.temperature < 0,
-    action: context => ({
+    condition: (data: WeatherNotificationData) => data.temperature > 40 || data.temperature < 0,
+    action: (context: WeatherNotificationData) => ({
       type: 'weather',
-      title: 'Weather Alert',
+      title: 'Temperature Alert',
       message: `Temperature extreme: ${context.temperature}°C`,
       priority: 'urgent',
       category: 'weather',
       data: context,
-      actionable: true,
-      actionUrl: '/weather',
-      actionLabel: 'View Weather',
+      actionable: false,
     }),
     enabled: true,
-    priority: 'high',
-    cooldown: 60,
+    priority: 'urgent',
+    cooldown: 180,
   },
   {
-    id: 'crop-maturity',
-    name: 'Crop Maturity',
+    id: 'harvest-ready',
+    name: 'Harvest Ready',
     type: 'crop',
-    condition: data => data.daysToHarvest <= 7 && data.daysToHarvest >= 0,
-    action: context => ({
+    condition: (data: CropNotificationData) => data.daysToHarvest <= 7 && data.daysToHarvest >= 0,
+    action: (context: CropNotificationData) => ({
       type: 'crop',
-      title: 'Crop Ready for Harvest',
+      title: 'Harvest Ready',
       message: `${context.name} will be ready for harvest in ${context.daysToHarvest} days`,
       priority: 'medium',
-      category: 'crops',
+      category: 'crop',
       data: context,
       actionable: true,
       actionUrl: `/crops/${context.id}`,
@@ -171,7 +214,7 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     }),
     enabled: true,
     priority: 'medium',
-    cooldown: 360,
+    cooldown: 240,
   },
 ];
 

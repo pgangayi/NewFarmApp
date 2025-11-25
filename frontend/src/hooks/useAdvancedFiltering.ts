@@ -597,7 +597,7 @@ export function applyAdvancedFilters<T>(
     const query = searchQuery.toLowerCase();
     result = result.filter(item => {
       return searchableFields.some(field => {
-        const value = (item as unknown)[field];
+        const value = (item as Record<string, unknown>)[field];
         if (value === null || value === undefined) return false;
         return String(value).toLowerCase().includes(query);
       });
@@ -608,7 +608,7 @@ export function applyAdvancedFilters<T>(
   const activeFilters = filters.filter(f => f.isActive);
   result = result.filter(item => {
     return activeFilters.every(filter => {
-      const itemValue = (item as unknown)[filter.field];
+      const itemValue = (item as Record<string, unknown>)[filter.field];
       return evaluateFilter(itemValue, filter.operator, filter.value);
     });
   });
@@ -617,12 +617,14 @@ export function applyAdvancedFilters<T>(
   if (sorts.length > 0) {
     result.sort((a, b) => {
       for (const sort of sorts) {
-        const aValue = (a as unknown)[sort.field];
-        const bValue = (b as unknown)[sort.field];
+        const aValue = (a as Record<string, unknown>)[sort.field];
+        const bValue = (b as Record<string, unknown>)[sort.field];
 
         let comparison = 0;
-        if (aValue < bValue) comparison = -1;
-        else if (aValue > bValue) comparison = 1;
+        if (aValue !== null && aValue !== undefined && bValue !== null && bValue !== undefined) {
+          if (aValue < bValue) comparison = -1;
+          else if (aValue > bValue) comparison = 1;
+        }
 
         if (comparison !== 0) {
           return sort.order === 'asc' ? comparison : -comparison;

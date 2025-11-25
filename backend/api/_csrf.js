@@ -23,14 +23,22 @@ export class CSRFProtection {
   // Set CSRF cookie with security attributes
   setCSRFCookie(response, token, maxAge = 1800) {
     // 30 minutes default
-    const cookieOptions = [
+    const cookieParts = [
       `csrf_token=${token}`,
       `Max-Age=${maxAge}`,
       "Path=/",
       "HttpOnly=false", // Must be readable by JavaScript for double-submit
-      "Secure=true", // Only over HTTPS
       "SameSite=Strict", // Prevents cross-site requests
-    ].join("; ");
+    ];
+
+    // Only mark cookie as Secure outside of local development
+    const envName = (this.env?.ENVIRONMENT || this.env?.NODE_ENV || "").toLowerCase();
+    const isDev = envName === "development";
+    if (!isDev) {
+      cookieParts.push("Secure");
+    }
+
+    const cookieOptions = cookieParts.join("; ");
 
     response.headers.append("Set-Cookie", cookieOptions);
   }

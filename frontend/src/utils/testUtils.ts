@@ -218,7 +218,7 @@ export function createMockApiResponse<T>(
 
 export function createMockApiError(
   message: string = 'An error occurred',
-  statusCode: number = 500,
+  _statusCode: number = 500,
   error: string = 'INTERNAL_ERROR'
 ): ApiResponse<null> {
   return {

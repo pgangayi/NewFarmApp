@@ -100,7 +100,7 @@ export const apiEndpoints = {
     planning: '/api/crops/planning',
   },
 
-  // Animal endpoints
+  // Animal endpoints (canonicalized to /api/livestock)
   animals: {
     list: '/api/livestock',
     create: '/api/livestock',
@@ -110,6 +110,15 @@ export const apiEndpoints = {
     stats: '/api/livestock/stats',
     pedigree: (id: string) => `/api/livestock/${id}/pedigree`,
     movements: (id: string) => `/api/livestock/${id}/movements`,
+    analytics: '/api/livestock/analytics',
+    healthRecords: (id: string, recordId?: string) =>
+      recordId
+        ? `/api/livestock/${id}/health-records/${recordId}`
+        : `/api/livestock/${id}/health-records`,
+    production: (id: string, recordId?: string) =>
+      recordId ? `/api/livestock/${id}/production/${recordId}` : `/api/livestock/${id}/production`,
+    breeding: (id: string, recordId?: string) =>
+      recordId ? `/api/livestock/${id}/breeding/${recordId}` : `/api/livestock/${id}/breeding`,
   },
 
   // Task endpoints

@@ -1,43 +1,33 @@
 // Fix corrupted user records with null IDs
 // Run with: npx wrangler d1 execute farm-management-db --file=backend/fix-user-ids.js
 
-import { DatabaseOperations } from "./api/_database.js";
+export default {
+  async fetch(request, env) {
+    const db = env.DB;
 
-export async function fixUserIds(env) {
-  const db = new DatabaseOperations(env);
+    console.log("Checking for users with null IDs...");
 
-  console.log("Checking for users with null IDs...");
+    // Find users with null IDs using raw SQL since id is PRIMARY KEY
+    const nullIdUsers = await db.prepare(
+      "SELECT rowid, email, name FROM users WHERE id IS NULL"
+    ).all();
 
-  // Find users with null IDs
-  const nullIdUsers = await db.findMany("users", { id: null });
+    if (!nullIdUsers.results || nullIdUsers.results.length === 0) {
+      console.log("No users with null IDs found.");
+      return new Response("No corrupted users found.");
+    }
 
-  if (nullIdUsers.length === 0) {
-    console.log("No users with null IDs found.");
-    return;
+    console.log(`Found ${nullIdUsers.results.length} users with null IDs`);
+
+    // Delete corrupted users since we can't update PRIMARY KEY
+    for (const user of nullIdUsers.results) {
+      console.log(`Deleting corrupted user: ${user.email} (rowid: ${user.rowid})`);
+
+      await db.prepare("DELETE FROM users WHERE rowid = ?").bind(user.rowid).run();
+    }
+
+    console.log("Corrupted users deleted. Users should sign up again with proper IDs.");
+
+    return new Response(`Fixed ${nullIdUsers.results.length} corrupted user records. Please sign up again.`);
   }
-
-  console.log(`Found ${nullIdUsers.length} users with null IDs`);
-
-  for (const user of nullIdUsers) {
-    const newId = crypto.randomUUID();
-    console.log(`Updating user ${user.email} with new ID: ${newId}`);
-
-    await db.updateById(
-      "users",
-      user.rowid || user.email,
-      { id: newId },
-      {
-        userId: "system",
-        skipRateLimit: true,
-      }
-    );
-  }
-
-  console.log("User ID fix completed.");
-}
-
-// For direct execution
-if (import.meta.url === `file://${process.argv[1]}`) {
-  // This would be run directly, but we need env
-  console.log("Run this script via wrangler d1 execute");
-}
+};

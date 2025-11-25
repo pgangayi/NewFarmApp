@@ -27,6 +27,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { useAuth } from '../hooks/AuthContext';
+import { Farm } from '../types/entities';
 
 interface FinanceEntry {
   id: number;
@@ -408,7 +409,9 @@ export function FinancePage() {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as unknown)}
+                onClick={() =>
+                  setViewMode(key as 'entries' | 'analytics' | 'overview' | 'budgets' | 'reports')
+                }
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   viewMode === key
                     ? 'border-blue-500 text-blue-600'
@@ -1078,7 +1081,7 @@ export function FinancePage() {
 
 interface FinanceEntryModalProps {
   entry?: FinanceEntry | null;
-  farms: unknown[];
+  farms: Farm[];
   onSave: (data: FinanceFormData) => void;
   onClose: () => void;
   isLoading: boolean;
@@ -1086,8 +1089,10 @@ interface FinanceEntryModalProps {
 
 function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: FinanceEntryModalProps) {
   const [formData, setFormData] = useState<FinanceFormData>({
-    farm_id: entry?.farm_id || farms[0]?.id || 1,
-    entry_date: entry?.entry_date || new Date().toISOString().split('T')[0],
+    farm_id:
+      entry?.farm_id ||
+      (farms[0]?.id ? (typeof farms[0].id === 'string' ? parseInt(farms[0].id) : farms[0].id) : 1),
+    entry_date: entry?.entry_date || (new Date().toISOString().split('T')[0] as string),
     type: entry?.type || 'expense',
     amount: entry?.amount || 0,
     currency: entry?.currency || 'USD',
@@ -1152,7 +1157,12 @@ function FinanceEntryModal({ entry, farms, onSave, onClose, isLoading }: Finance
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
                 <select
                   value={formData.type}
-                  onChange={e => setFormData({ ...formData, type: e.target.value as unknown })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      type: e.target.value as 'income' | 'expense' | 'investment',
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >

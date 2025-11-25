@@ -1,7 +1,7 @@
 // Smart import/export system for comprehensive data management
 // Supports multiple formats, smart parsing, and intelligent data handling
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useSmartDataValidation, ValidationError } from './useSmartDataValidation';
 
 export type ImportFormat = 'csv' | 'xlsx' | 'json' | 'xml' | 'yaml';
@@ -138,7 +138,7 @@ export function useSmartImportExport() {
   const [isExporting, setIsExporting] = useState(false);
   const [fieldMappings, setFieldMappings] = useState<SmartMapping[]>([]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const _fileInputRef = useRef<HTMLInputElement>(null);
   const { validateData } = useSmartDataValidation();
 
   // Detect file format from extension
@@ -190,7 +190,7 @@ export function useSmartImportExport() {
 
         for (let i = startIndex; i < lines.length; i++) {
           const values = parseCSVLine(lines[i], delimiter);
-          const row: unknown = {};
+          const row: Record<string, unknown> = {};
 
           headers.forEach((header, index) => {
             row[header] = values[index] || '';
@@ -290,14 +290,14 @@ export function useSmartImportExport() {
         let year, month, day;
 
         if (format.source.includes('YYYY.*MM.*DD')) {
-          year = parseInt(match[1]);
-          month = parseInt(match[2]) - 1; // 0-based month
-          day = parseInt(match[3]);
+          year = parseInt(match[1] || '0');
+          month = parseInt(match[2] || '0') - 1; // 0-based month
+          day = parseInt(match[3] || '0');
         } else {
           // Assume MM/DD/YYYY format
-          month = parseInt(match[1]) - 1;
-          day = parseInt(match[2]);
-          year = parseInt(match[3]);
+          month = parseInt(match[1] || '0') - 1;
+          day = parseInt(match[2] || '0');
+          year = parseInt(match[3] || '0');
         }
 
         const date = new Date(year, month, day);
@@ -312,10 +312,10 @@ export function useSmartImportExport() {
   const applyMappings = useCallback(
     (data: unknown[], mappings: SmartMapping[]): unknown[] => {
       return data.map(row => {
-        const mappedRow: unknown = {};
+        const mappedRow: Record<string, unknown> = {};
 
         mappings.forEach(mapping => {
-          const sourceValue = row[mapping.sourceField];
+          const sourceValue = (row as Record<string, unknown>)[mapping.sourceField];
           const transformedValue = transformValue(sourceValue, mapping.transformation);
           mappedRow[mapping.targetField] =
             transformedValue !== undefined ? transformedValue : mapping.defaultValue;
@@ -335,7 +335,7 @@ export function useSmartImportExport() {
     if (data.length === 0) return detectedMappings;
 
     const firstRow = data[0];
-    const availableFields = Object.keys(firstRow);
+    const availableFields = Object.keys(firstRow as Record<string, unknown>);
 
     // Try to match available fields to target fields
     availableFields.forEach(sourceField => {
@@ -453,11 +453,11 @@ export function useSmartImportExport() {
             const rowIndex = i + j;
 
             try {
-              let processedItem = { ...item };
+              let processedItem = { ...(item as Record<string, unknown>) };
 
               // Add required fields
-              processedItem.id = item.id || generateId();
-              processedItem.created_at = item.created_at || new Date();
+              processedItem.id = (item as Record<string, unknown>).id || generateId();
+              processedItem.created_at = (item as Record<string, unknown>).created_at || new Date();
               processedItem.updated_at = new Date();
 
               // Validate if requested
@@ -534,7 +534,8 @@ export function useSmartImportExport() {
         const errorTypes: Record<string, number> = {};
         errors.forEach(({ errors: rowErrors }) => {
           rowErrors.forEach(error => {
-            errorTypes[error.code] = (errorTypes[error.code] || 0) + 1;
+            const errorCode = error.code || 'unknown';
+            errorTypes[errorCode] = (errorTypes[errorCode] || 0) + 1;
           });
         });
 
@@ -556,7 +557,7 @@ export function useSmartImportExport() {
             successRate,
             commonErrors,
             dataQuality: {
-              completeness: calculateCompleteness(mappedData),
+              completeness: calculateCompleteness(mappedData as Record<string, unknown>[]),
               accuracy: 95, // Placeholder
               consistency: 90, // Placeholder
             },
@@ -613,17 +614,13 @@ export function useSmartImportExport() {
 
         // Process data based on format
         const processedData = data.map(item => {
-          const processed: unknown = { ...item };
+          const processed = { ...(item as Record<string, unknown>) };
 
           // Format dates
           if (options.dateFormat) {
             Object.keys(processed).forEach(key => {
               if (processed[key] instanceof Date) {
-                processed[key] = formatDate(
-                  processed[key],
-                  options.dateFormat,
-                  options.customDateFormat
-                );
+                processed[key] = formatDate(processed[key] as Date, options.dateFormat || 'ISO');
               }
             });
           }
@@ -700,7 +697,8 @@ export function useSmartImportExport() {
   const generateCSV = useCallback((data: unknown[], options: ExportOptions): string => {
     if (data.length === 0) return '';
 
-    const selectedFields = options.selectedFields || Object.keys(data[0]);
+    const selectedFields =
+      options.selectedFields || Object.keys(data[0] as Record<string, unknown>);
     const headers = options.includeHeader !== false ? selectedFields : [];
 
     let csv = '';
@@ -713,7 +711,7 @@ export function useSmartImportExport() {
     // Add data rows
     data.forEach(item => {
       const values = selectedFields.map(field => {
-        const value = item[field];
+        const value = (item as Record<string, unknown>)[field];
         if (value === null || value === undefined) return '';
         if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
           return `"${value.replace(/"/g, '""')}"`;
@@ -775,12 +773,12 @@ export function useSmartImportExport() {
     return suggestions[errorType] || 'Review the data and try again';
   }, []);
 
-  const calculateCompleteness = useCallback((data: unknown[]): number => {
+  const calculateCompleteness = useCallback((data: Record<string, unknown>[]): number => {
     if (data.length === 0) return 0;
 
-    const totalFields = Object.keys(data[0]).length;
+    const totalFields = Object.keys(data[0] as Record<string, unknown>).length;
     const totalCells = data.length * totalFields;
-    const filledCells = data.reduce((count, row) => {
+    const filledCells = data.reduce((count: number, row: Record<string, unknown>) => {
       return (
         count +
         Object.values(row).filter(value => value !== null && value !== undefined && value !== '')

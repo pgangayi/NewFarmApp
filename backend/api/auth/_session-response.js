@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { createErrorResponse } from "../_auth.js";
 
 const ACCESS_TOKEN_EXPIRES_IN = 60 * 60; // 1 hour
@@ -17,6 +18,56 @@ export function buildPublicUser(user) {
     createdAt: user.created_at,
     updatedAt: user.updated_at,
   };
+}
+
+export class SimpleUserRepository {
+  constructor(db) {
+    this.db = db;
+  }
+
+  async findByEmail(email) {
+    const normalizedEmail = email?.toLowerCase().trim();
+    if (!normalizedEmail) {
+      return null;
+    }
+
+    const { results } = await this.db
+      .prepare("SELECT * FROM users WHERE email = ?")
+      .bind(normalizedEmail)
+      .all();
+
+    return Array.isArray(results) && results.length > 0 ? results[0] : null;
+  }
+
+  async createUser(userData) {
+    const { email, password_hash, name } = userData;
+    const id = crypto.randomUUID();
+    const timestamp = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `
+        INSERT INTO users (id, email, name, password_hash, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `
+      )
+      .bind(
+        id,
+        email.toLowerCase().trim(),
+        name.trim(),
+        password_hash,
+        timestamp
+      )
+      .run();
+
+    return {
+      id,
+      email,
+      name,
+      password_hash,
+      created_at: timestamp,
+    };
+  }
 }
 
 export function createBaseResponseHeaders(rateLimitHeaders = {}) {
@@ -76,6 +127,17 @@ export async function createSessionResponse({
     return {
       error: createErrorResponse("Failed to initialize CSRF token", 500),
     };
+  }
+
+  // Propagate CSRF cookie and header from the temporary response to the final headers
+  const csrfCookie = tempResponse.headers.get("Set-Cookie");
+  if (csrfCookie) {
+    responseHeaders.append("Set-Cookie", csrfCookie);
+  }
+
+  const csrfHeader = tempResponse.headers.get("X-CSRF-Token");
+  if (csrfHeader) {
+    responseHeaders.set("X-CSRF-Token", csrfHeader);
   }
 
   responseHeaders.append(

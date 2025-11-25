@@ -13,11 +13,12 @@ export interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
   warnings?: ValidationError[] | undefined;
+  autoFixesApplied?: boolean;
 }
 
 export interface ValidationContext {
   entityType: string;
-  operation: 'create' | 'update' | 'delete' | 'list';
+  operation: 'create' | 'update' | 'delete' | 'list' | 'import';
   data: unknown;
   timestamp: Date;
 }

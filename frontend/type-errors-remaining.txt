@@ -1,0 +1,542 @@
+src/components/AdvancedManagementDashboard.tsx(233,13): error TS7030: Not all code paths return a value.
+src/components/AdvancedReportingSystem.tsx(366,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"analytics" | "templates" | "generate" | "history">'.
+src/components/AdvancedReportingSystem.tsx(386,25): error TS2322: Type '{ children: Element[]; defaultValue: string; }' is not assignable to type 'IntrinsicAttributes & SelectProps'.
+  Property 'defaultValue' does not exist on type 'IntrinsicAttributes & SelectProps'.
+src/components/AdvancedReportingSystem.tsx(497,31): error TS2322: Type '{ children: Element[]; defaultValue: string; onValueChange: (value: string) => void; }' is not assignable to type 'IntrinsicAttributes & SelectProps'.
+  Property 'defaultValue' does not exist on type 'IntrinsicAttributes & SelectProps'.
+src/components/AdvancedReportingSystem.tsx(584,25): error TS2322: Type '(value: "pdf" | "excel" | "csv") => void' is not assignable to type '(value: string) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type 'string' is not assignable to type '"pdf" | "excel" | "csv"'.
+src/components/AdvancedReportingSystem.tsx(702,25): error TS2322: Type '{ children: Element[]; defaultValue: string; }' is not assignable to type 'IntrinsicAttributes & SelectProps'.
+  Property 'defaultValue' does not exist on type 'IntrinsicAttributes & SelectProps'.
+src/components/AIAnalyticsDashboard.tsx(338,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"optimization" | "comprehensive" | "predictive" | "trends" | "roi" | "efficiency">'.
+src/components/AIAnalyticsDashboard.tsx(472,15): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/AIAnalyticsDashboard.tsx(473,15): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/AIAnalyticsDashboard.tsx(486,99): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(488,62): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(494,62): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(495,64): error TS18046: 'a' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(504,65): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(505,66): error TS18046: 'a' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(508,66): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(509,68): error TS18046: 'a' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(522,15): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/AIAnalyticsDashboard.tsx(536,97): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(538,60): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(544,60): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(545,64): error TS18046: 'c' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(554,61): error TS2339: Property 'yield_performance' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(555,67): error TS18046: 'y' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(557,66): error TS2339: Property 'yield_performance' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(582,99): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(584,62): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(591,64): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(598,63): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(607,63): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(640,77): error TS18046: 'rec' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(641,70): error TS18046: 'rec' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(644,32): error TS18046: 'rec' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(646,73): error TS18046: 'rec' is of type 'unknown'.
+src/components/AIAnalyticsDashboard.tsx(682,62): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(692,62): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(701,72): error TS2339: Property 'overview' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(713,63): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(720,59): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AIAnalyticsDashboard.tsx(727,60): error TS2339: Property 'performance_score' does not exist on type '{}'.
+src/components/AnimalAnalyticsDashboard.tsx(213,63): error TS18046: 'species' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(216,64): error TS18046: 'species' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(218,23): error TS18046: 'species' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(218,61): error TS18046: 'species' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(239,61): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(241,22): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(241,41): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(246,22): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(246,42): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(277,62): error TS18046: 'e' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(283,62): error TS18046: 'e' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(344,20): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(345,20): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(346,20): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(348,63): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(349,59): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(354,31): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalAnalyticsDashboard.tsx(356,68): error TS18046: 'event' is of type 'unknown'.
+src/components/AnimalBreedingManager.tsx(122,26): error TS2339: Property 'id' does not exist on type 'unknown'.
+src/components/AnimalBreedingManager.tsx(122,33): error TS2700: Rest types may only be created from object types.
+src/components/AnimalBreedingManager.tsx(512,39): error TS2698: Spread types may only be created from object types.
+src/components/AnimalBreedingManager.tsx(579,19): error TS2345: Argument of type '(prev: { breeding_date: string | undefined; sire_id: string | number; breeding_type: string; breeding_fee: string | number; expected_calving_date: string; actual_calving_date: string; breeding_result: string; offspring_count: string | number; breeding_notes: string; vet_supervision: boolean; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ breeding_date: string | undefined; sire_id: string | number; breeding_type: string; breeding_fee: string | number; expected_calving_date: string; actual_calving_date: string; breeding_result: string; offspring_count: string | number; breeding_notes: string; vet_supervision: boolean; }>'.
+  Type '(prev: { breeding_date: string | undefined; sire_id: string | number; breeding_type: string; breeding_fee: string | number; expected_calving_date: string; actual_calving_date: string; breeding_result: string; offspring_count: string | number; breeding_notes: string; vet_supervision: boolean; }) => { ...; }' is not assignable to type '(prevState: { breeding_date: string | undefined; sire_id: string | number; breeding_type: string; breeding_fee: string | number; expected_calving_date: string; actual_calving_date: string; breeding_result: string; offspring_count: string | number; breeding_notes: string; vet_supervision: boolean; }) => { ...; }'.
+    Call signature return types '{ expected_calving_date: string | undefined; breeding_date: string | undefined; sire_id: string | number; breeding_type: string; breeding_fee: string | number; actual_calving_date: string; breeding_result: string; offspring_count: string | number; breeding_notes: string; vet_supervision: boolean; }' and '{ breeding_date: string | undefined; sire_id: string | number; breeding_type: string; breeding_fee: string | number; expected_calving_date: string; actual_calving_date: string; breeding_result: string; offspring_count: string | number; breeding_notes: string; vet_supervision: boolean; }' are incompatible.
+      The types of 'expected_calving_date' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+src/components/AnimalBreedingManager.tsx(655,34): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalBreedingManager.tsx(655,52): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalBreedingManager.tsx(656,24): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalBreedingManager.tsx(656,39): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalBreedingManager.tsx(656,58): error TS18046: 'animal' is of type 'unknown'.
+src/components/AnimalForm.tsx(51,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/AnimalForm.tsx(84,24): error TS2339: Property 'id' does not exist on type 'Partial<CreateAnimalForm>'.
+src/components/AnimalForm.tsx(378,52): error TS2339: Property 'id' does not exist on type 'Partial<CreateAnimalForm>'.
+src/components/AnimalHealthManager.tsx(93,26): error TS2339: Property 'id' does not exist on type 'unknown'.
+src/components/AnimalHealthManager.tsx(93,33): error TS2700: Rest types may only be created from object types.
+src/components/AnimalHealthManager.tsx(371,39): error TS2698: Spread types may only be created from object types.
+src/components/AnimalProductionTracker.tsx(142,26): error TS2339: Property 'id' does not exist on type 'unknown'.
+src/components/AnimalProductionTracker.tsx(142,33): error TS2700: Rest types may only be created from object types.
+src/components/AnimalProductionTracker.tsx(462,39): error TS2698: Spread types may only be created from object types.
+src/components/CropRotationPlanner.tsx(46,44): error TS2339: Property 'createRotationPlan' does not exist on type '{ rotationPlans: RotationPlan[]; isLoading: boolean; error: Error | null; refetch: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<RotationPlan[], Error>>; }'.
+src/components/CropRotationPlanner.tsx(46,64): error TS2339: Property 'isCreating' does not exist on type '{ rotationPlans: RotationPlan[]; isLoading: boolean; error: Error | null; refetch: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<RotationPlan[], Error>>; }'.
+src/components/CropRotationPlanner.tsx(79,61): error TS18046: 'crop' is of type 'unknown'.
+src/components/CropRotationPlanner.tsx(99,60): error TS18046: 'crop' is of type 'unknown'.
+src/components/CropRotationPlanner.tsx(105,59): error TS18046: 'crop' is of type 'unknown'.
+src/components/CropRotationPlanner.tsx(128,20): error TS18048: 'randomRotation' is possibly 'undefined'.
+src/components/CropRotationPlanner.tsx(128,39): error TS18048: 'randomRotation' is possibly 'undefined'.
+src/components/CropRotationPlanner.tsx(217,32): error TS18046: 'field' is of type 'unknown'.
+src/components/CropRotationPlanner.tsx(217,49): error TS18046: 'field' is of type 'unknown'.
+src/components/CropRotationPlanner.tsx(218,22): error TS18046: 'field' is of type 'unknown'.
+src/components/dashboard/DashboardRouter.tsx(32,5): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/dashboard/DashboardRouter.tsx(39,5): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/dashboard/DashboardRouter.tsx(47,5): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/dashboard/DashboardRouter.tsx(55,5): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/dashboard/DashboardRouter.tsx(56,5): error TS2322: Type '({ farmId }: AnimalAnalyticsDashboardProps) => Element' is not assignable to type 'ComponentType<unknown>'.
+  Type '({ farmId }: AnimalAnalyticsDashboardProps) => Element' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters '__0' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'AnimalAnalyticsDashboardProps'.
+src/components/dashboard/DashboardRouter.tsx(118,23): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'className' does not exist on type 'IntrinsicAttributes'.
+src/components/dashboard/DashboardRouter.tsx(146,15): error TS2322: Type '{ farmId: string; key: DashboardView; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'farmId' does not exist on type 'IntrinsicAttributes'.
+src/components/EnhancedFarmCalendar.tsx(286,85): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/EnhancedFarmCalendar.tsx(863,65): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/ErrorBoundary.tsx(54,37): error TS2339: Property 'code' does not exist on type 'Error'.
+src/components/ErrorBoundary.tsx(55,87): error TS2339: Property 'code' does not exist on type 'Error'.
+src/components/FarmCalendar.tsx(81,9): error TS2322: Type 'unknown' is not assignable to type '"low" | "normal" | "high" | "urgent"'.
+src/components/FarmCalendar.tsx(83,9): error TS2322: Type 'unknown' is not assignable to type '"pending" | "in_progress" | "completed" | "overdue"'.
+src/components/FarmCalendar.tsx(85,9): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(102,11): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(118,11): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(124,16): error TS2339: Property 'irrigation_schedule' does not exist on type 'Crop'.
+src/components/FarmCalendar.tsx(125,62): error TS2339: Property 'irrigation_schedule' does not exist on type 'Crop'.
+src/components/FarmCalendar.tsx(136,13): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(146,47): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/FarmCalendar.tsx(150,42): error TS2551: Property 'identification' does not exist on type 'Animal'. Did you mean 'identification_tag'?
+src/components/FarmCalendar.tsx(157,11): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(168,43): error TS2551: Property 'identification' does not exist on type 'Animal'. Did you mean 'identification_tag'?
+src/components/FarmCalendar.tsx(175,13): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(195,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/FarmCalendar.tsx(292,42): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"month" | "week" | "day">'.
+src/components/FarmCalendar.tsx(459,3): error TS2322: Type '(string | undefined)[]' is not assignable to type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+src/components/FarmCalendar.tsx(466,5): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
+  Type 'undefined' is not assignable to type 'string | null'.
+src/components/FarmCalendar.tsx(475,3): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
+  Type 'undefined' is not assignable to type 'string | null'.
+src/components/FarmCalendar.tsx(484,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/FarmCalendar.tsx(489,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmCalendar.tsx(495,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/FarmCalendar.tsx(500,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown> | undefined'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/FarmLocationManager.tsx(37,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ 'Content-Type': string; Authorization: string; } | { 'Content-Type': string; Authorization?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ 'Content-Type': string; Authorization?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+        Type '{ 'Content-Type': string; Authorization?: undefined; }' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ 'Content-Type': string; Authorization: string; } | { 'Content-Type': string; Authorization?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ 'Content-Type': string; Authorization?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+        Type '{ 'Content-Type': string; Authorization?: undefined; }' is not assignable to type 'undefined'.
+src/components/IrrigationOptimizer.tsx(118,31): error TS18046: 'schedule' is of type 'unknown'.
+src/components/IrrigationOptimizer.tsx(121,35): error TS18046: 'schedule' is of type 'unknown'.
+src/components/IrrigationOptimizer.tsx(151,24): error TS18046: 'schedule' is of type 'unknown'.
+src/components/IrrigationOptimizer.tsx(157,31): error TS18046: 'schedule' is of type 'unknown'.
+src/components/IrrigationOptimizer.tsx(162,43): error TS18046: 'schedule' is of type 'unknown'.
+src/components/IrrigationOptimizer.tsx(259,34): error TS7006: Parameter 'schedule' implicitly has an 'any' type.
+src/components/IrrigationOptimizer.tsx(489,53): error TS7006: Parameter 'rec' implicitly has an 'any' type.
+src/components/IrrigationOptimizer.tsx(489,58): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/IrrigationOptimizer.tsx(524,36): error TS7006: Parameter 'field' implicitly has an 'any' type.
+src/components/OfflineFirstMobile.tsx(17,3): error TS2305: Module '"lucide-react"' has no exported member 'Sync'.
+src/components/OfflineFirstMobile.tsx(150,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/OfflineFirstMobile.tsx(156,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/OfflineFirstMobile.tsx(162,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/OfflineFirstMobile.tsx(168,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/OfflineFirstMobile.tsx(174,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/OfflineFirstMobile.tsx(180,7): error TS2322: Type 'LucideIcon' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ForwardRefExoticComponent<LucideProps>' is not assignable to type 'FunctionComponent<unknown>'.
+    Types of parameters 'props' and 'props' are incompatible.
+      Type 'unknown' is not assignable to type 'LucideProps'.
+src/components/OfflineFirstMobile.tsx(251,26): error TS2345: Argument of type '(prev: OfflineFeature[]) => { status: "available"; sync_status: "synced"; last_updated: string | undefined; id: string; name: string; description: string; category: "media" | "data" | "navigation" | "communication" | "productivity"; download_progress: number; size_mb: number; priority: "low" | ... 1 more ... | "high...' is not assignable to parameter of type 'SetStateAction<OfflineFeature[]>'.
+  Type '(prev: OfflineFeature[]) => { status: "available"; sync_status: "synced"; last_updated: string | undefined; id: string; name: string; description: string; category: "media" | "data" | "navigation" | "communication" | "productivity"; download_progress: number; size_mb: number; priority: "low" | ... 1 more ... | "high...' is not assignable to type '(prevState: OfflineFeature[]) => OfflineFeature[]'.
+    Type '{ status: "available"; sync_status: "synced"; last_updated: string | undefined; id: string; name: string; description: string; category: "media" | "data" | "navigation" | "communication" | "productivity"; download_progress: number; size_mb: number; priority: "low" | ... 1 more ... | "high"; auto_sync: boolean; }[]' is not assignable to type 'OfflineFeature[]'.
+      Type '{ status: "available"; sync_status: "synced"; last_updated: string | undefined; id: string; name: string; description: string; category: "data" | "media" | "navigation" | "communication" | "productivity"; download_progress: number; size_mb: number; priority: "low" | "medium" | "high"; auto_sync: boolean; }' is not assignable to type 'OfflineFeature'.
+        Types of property 'last_updated' are incompatible.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+src/components/OfflineFirstMobile.tsx(274,26): error TS2345: Argument of type '(prev: OfflineFeature[]) => { download_progress: number; status: string; last_updated: string | undefined; id: string; name: string; description: string; category: "media" | "data" | "navigation" | "communication" | "productivity"; sync_status: "pending" | ... 2 more ... | "synced"; size_mb: number; priority: "low" ...' is not assignable to parameter of type 'SetStateAction<OfflineFeature[]>'.
+  Type '(prev: OfflineFeature[]) => { download_progress: number; status: string; last_updated: string | undefined; id: string; name: string; description: string; category: "media" | "data" | "navigation" | "communication" | "productivity"; sync_status: "pending" | ... 2 more ... | "synced"; size_mb: number; priority: "low" ...' is not assignable to type '(prevState: OfflineFeature[]) => OfflineFeature[]'.
+    Type '{ download_progress: number; status: string; last_updated: string | undefined; id: string; name: string; description: string; category: "media" | "data" | "navigation" | "communication" | "productivity"; sync_status: "pending" | ... 2 more ... | "synced"; size_mb: number; priority: "low" | ... 1 more ... | "high"; a...' is not assignable to type 'OfflineFeature[]'.
+      Type '{ download_progress: number; status: string; last_updated: string | undefined; id: string; name: string; description: string; category: "data" | "media" | "navigation" | "communication" | "productivity"; sync_status: "pending" | "synced" | "conflict" | "error"; size_mb: number; priority: "low" | "medium" | "high"; a...' is not assignable to type 'OfflineFeature'.
+        Types of property 'status' are incompatible.
+          Type 'string' is not assignable to type '"completed" | "error" | "syncing" | "available" | "downloading"'.
+src/components/OfflineFirstMobile.tsx(436,42): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'className' does not exist on type 'IntrinsicAttributes'.
+src/components/PestDiseaseManager.tsx(138,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"issues" | "overview" | "outbreaks" | "prevention">'.
+src/components/PestDiseaseManager.tsx(266,81): error TS7053: Element implicitly has an 'any' type because expression of type '"active" | "treated" | "resolved" | "escalated"' can't be used to index type '{ active: string; treating: string; controlled: string; resolved: string; monitoring: string; }'.
+  Property 'treated' does not exist on type '{ active: string; treating: string; controlled: string; resolved: string; monitoring: string; }'.
+src/components/PestDiseaseManager.tsx(340,81): error TS7053: Element implicitly has an 'any' type because expression of type '"monitoring" | "treating" | "controlled" | "contained"' can't be used to index type '{ active: string; treating: string; controlled: string; resolved: string; monitoring: string; }'.
+  Property 'contained' does not exist on type '{ active: string; treating: string; controlled: string; resolved: string; monitoring: string; }'.
+src/components/PestDiseaseManager.tsx(379,30): error TS18046: 'task' is of type 'unknown'.
+src/components/PestDiseaseManager.tsx(385,57): error TS18046: 'task' is of type 'unknown'.
+src/components/PestDiseaseManager.tsx(387,32): error TS18046: 'task' is of type 'unknown'.
+src/components/PestDiseaseManager.tsx(388,41): error TS18046: 'task' is of type 'unknown'.
+src/components/PestDiseaseManager.tsx(394,29): error TS18046: 'task' is of type 'unknown'.
+src/components/PestDiseaseManager.tsx(396,33): error TS18046: 'task' is of type 'unknown'.
+src/components/PestDiseaseManager.tsx(401,28): error TS18046: 'task' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(274,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"analytics" | "recommendations" | "overview" | "tests">'.
+src/components/SoilHealthMonitor.tsx(537,35): error TS18046: 'fieldRec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(538,61): error TS18046: 'fieldRec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(540,30): error TS18046: 'fieldRec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(544,35): error TS18046: 'rec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(546,39): error TS18046: 'rec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(554,39): error TS18046: 'rec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(556,43): error TS18046: 'rec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(562,65): error TS18046: 'rec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(564,48): error TS18046: 'rec' is of type 'unknown'.
+src/components/SoilHealthMonitor.tsx(564,73): error TS18046: 'rec' is of type 'unknown'.
+src/components/SupplyChainManager.tsx(367,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"inventory" | "analytics" | "overview" | "vendors" | "orders">'.
+src/components/ui/alert.tsx(8,15): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/components/ui/alert.tsx(31,26): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/components/ui/alert.tsx(39,20): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/components/ui/FloatingActionButton.tsx(210,7): error TS2532: Object is possibly 'undefined'.
+src/components/ui/UnifiedList.tsx(213,76): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/components/ui/UnifiedList.tsx(239,33): error TS2322: Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'className' does not exist on type 'IntrinsicAttributes'.
+src/components/ui/UnifiedModal.tsx(92,37): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/components/ui/UnifiedModal.tsx(118,38): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/components/ui/UnifiedModal.tsx(141,13): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/ui/UnifiedModal.tsx(152,13): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/ui/UnifiedModal.tsx(165,13): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/ui/UnifiedModal.tsx(174,13): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/ui/UnifiedModal.tsx(190,13): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/ui/UnifiedModal.tsx(203,15): error TS2322: Type '{}' is not assignable to type 'boolean | undefined'.
+src/components/WeatherAnalytics.tsx(72,7): error TS2571: Object is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(72,38): error TS18046: 'd' is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(75,7): error TS2571: Object is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(75,38): error TS18046: 'd' is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(78,7): error TS2571: Object is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(79,21): error TS18046: 'sum' is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(79,29): error TS18046: 'd' is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(79,62): error TS18046: 'd' is of type 'unknown'.
+src/components/WeatherAnalytics.tsx(260,34): error TS7006: Parameter 'impact' implicitly has an 'any' type.
+src/components/WeatherAnalytics.tsx(320,48): error TS7006: Parameter 'risk' implicitly has an 'any' type.
+src/components/WeatherAnalytics.tsx(320,54): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/WeatherAnalytics.tsx(337,54): error TS7006: Parameter 'rec' implicitly has an 'any' type.
+src/components/WeatherAnalytics.tsx(337,59): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/WeatherCalendar.tsx(110,16): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/WeatherCalendar.tsx(110,27): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/WeatherCalendar.tsx(111,11): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/WeatherCalendar.tsx(155,39): error TS2532: Object is possibly 'undefined'.
+src/components/WeatherCalendar.tsx(160,45): error TS2532: Object is possibly 'undefined'.
+src/components/WeatherCalendar.tsx(165,62): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/WeatherCalendar.tsx(203,50): error TS7006: Parameter 'op' implicitly has an 'any' type.
+src/components/WeatherNotifications.tsx(73,13): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(74,15): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(74,44): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(75,16): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(76,18): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(77,19): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(78,20): error TS18046: 'rec' is of type 'unknown'.
+src/components/WeatherNotifications.tsx(80,18): error TS18046: 'rec' is of type 'unknown'.
+src/config/index.ts(152,7): error TS18046: 'merged' is of type 'unknown'.
+src/config/index.ts(153,13): error TS18046: 'merged' is of type 'unknown'.
+src/config/index.ts(157,7): error TS18046: 'merged' is of type 'unknown'.
+src/hooks/AuthContext.tsx(74,5): error TS2353: Object literal may only specify known properties, and 'csrf_token' does not exist in type '{ access_token: string; refresh_token?: string | undefined; expires_at?: number | undefined; }'.
+src/hooks/useAdvancedFiltering.ts(600,23): error TS2571: Object is of type 'unknown'.
+src/hooks/useAdvancedFiltering.ts(611,25): error TS2571: Object is of type 'unknown'.
+src/hooks/useAdvancedFiltering.ts(620,24): error TS2571: Object is of type 'unknown'.
+src/hooks/useAdvancedFiltering.ts(621,24): error TS2571: Object is of type 'unknown'.
+src/hooks/useAdvancedFiltering.ts(686,23): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/hooks/useAdvancedFiltering.ts(686,45): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+src/hooks/useAdvancedFiltering.ts(688,23): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/hooks/useAdvancedFiltering.ts(688,45): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+src/hooks/useAdvancedFiltering.ts(690,33): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/hooks/useAdvancedFiltering.ts(691,35): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+src/hooks/useBulkOperations.ts(162,67): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useBulkOperations.ts(166,19): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useBulkOperations.ts(172,13): error TS2532: Object is possibly 'undefined'.
+src/hooks/useBulkOperations.ts(186,58): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useBulkOperations.ts(188,42): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useBulkOperations.ts(193,17): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useBulkOperations.ts(445,33): error TS2532: Object is possibly 'undefined'.
+src/hooks/useBulkOperations.ts(445,33): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: {}): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type '{}'.
+  Overload 2 of 2, '(o: object): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'object'.
+src/hooks/useBulkOperations.ts(451,27): error TS18046: 'item.data' is of type 'unknown'.
+src/hooks/useCrops.ts(60,37): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<Crop, Error, CreateCropForm, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<Crop, Error, CreateCropForm, unknown>, { mutate: UseMutateFunction<Crop, Error, CreateCropForm, unknown>; }> & { ...; }'.
+src/hooks/useCrops.ts(76,37): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<Crop, Error, UpdateCropForm, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<Crop, Error, UpdateCropForm, unknown>, { mutate: UseMutateFunction<Crop, Error, UpdateCropForm, unknown>; }> & { ...; }'.
+src/hooks/useCrops.ts(91,37): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<void, Error, string, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<void, Error, string, unknown>, { mutate: UseMutateFunction<void, Error, string, unknown>; }> & { ...; }'.
+src/hooks/useFarm.ts(164,24): error TS2345: Argument of type 'Farm | null | undefined' is not assignable to parameter of type 'SetStateAction<Farm | null>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<Farm | null>'.
+src/hooks/useGlobalSearch.ts(96,24): error TS2345: Argument of type 'SearchResult | undefined' is not assignable to parameter of type 'SearchResult'.
+  Type 'undefined' is not assignable to type 'SearchResult'.
+src/hooks/useKeyboardShortcuts.ts(330,55): error TS18046: 's' is of type 'unknown'.
+src/hooks/useOfflineQueue.ts(186,65): error TS18046: 'op.payload' is of type 'unknown'.
+src/hooks/useOfflineQueue.ts(205,65): error TS18046: 'op.payload' is of type 'unknown'.
+src/hooks/useOfflineQueue.ts(218,34): error TS18046: 'op.payload' is of type 'unknown'.
+src/hooks/useOptimizedAnimals.ts(14,11): error TS2339: Property 'subscribe' does not exist on type '{ connect: () => void; disconnect: () => void; sendMessage: (message: WebSocketMessage) => boolean; subscribeToFarm: (farmId: string) => boolean; unsubscribeFromFarm: (farmId: string) => boolean; ... 5 more ...; connectionError: string | null; }'.
+src/hooks/useOptimizedAnimals.ts(14,22): error TS2339: Property 'unsubscribe' does not exist on type '{ connect: () => void; disconnect: () => void; sendMessage: (message: WebSocketMessage) => boolean; subscribeToFarm: (farmId: string) => boolean; unsubscribeFromFarm: (farmId: string) => boolean; ... 5 more ...; connectionError: string | null; }'.
+src/hooks/useOptimizedAnimals.ts(20,13): error TS7006: Parameter 'failureCount' implicitly has an 'any' type.
+src/hooks/useOptimizedAnimals.ts(20,27): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/hooks/useOptimizedAnimals.ts(75,39): error TS2339: Property 'data' does not exist on type '{ pageParam: number; animals: Animal[]; pagination: { page: number; limit: number; total: number; pages: number; }; }'.
+src/hooks/useOptimizedAnimals.ts(108,20): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(109,30): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(147,20): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(148,26): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(148,43): error TS7006: Parameter 'animal' implicitly has an 'any' type.
+src/hooks/useOptimizedAnimals.ts(185,20): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(186,26): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(186,46): error TS7006: Parameter 'animal' implicitly has an 'any' type.
+src/hooks/useOptimizedAnimals.ts(202,3): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/hooks/useOptimizedAnimals.ts(213,24): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(214,40): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(226,24): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(227,30): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(227,47): error TS7006: Parameter 'animal' implicitly has an 'any' type.
+src/hooks/useOptimizedAnimals.ts(241,24): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(242,30): error TS2339: Property 'data' does not exist on type '{}'.
+src/hooks/useOptimizedAnimals.ts(242,50): error TS7006: Parameter 'animal' implicitly has an 'any' type.
+src/hooks/useOptimizedAnimals.ts(299,32): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/hooks/useOptimizedAnimals.ts(322,27): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/hooks/useOptimizedAnimals.ts(333,76): error TS2339: Property 'error' does not exist on type 'Query<unknown, Error, unknown, readonly unknown[]>'.
+src/hooks/useOptimizedAnimals.ts(338,28): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/hooks/usePWACapabilities.ts(104,29): error TS2571: Object is of type 'unknown'.
+src/hooks/usePWACapabilities.ts(105,27): error TS2571: Object is of type 'unknown'.
+src/hooks/usePWACapabilities.ts(201,15): error TS18046: 'event' is of type 'unknown'.
+src/hooks/usePWACapabilities.ts(202,19): error TS18046: 'event' is of type 'unknown'.
+src/hooks/usePWACapabilities.ts(322,29): error TS2571: Object is of type 'unknown'.
+src/hooks/useRealtime.ts(167,11): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useRealtime.ts(185,11): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useResponsiveDesign.ts(171,28): error TS2571: Object is of type 'unknown'.
+src/hooks/useResponsiveDesign.ts(209,28): error TS2571: Object is of type 'unknown'.
+src/hooks/useResponsiveDesign.ts(276,32): error TS18048: 'bp' is possibly 'undefined'.
+src/hooks/useResponsiveDesign.ts(285,33): error TS18048: 'bp' is possibly 'undefined'.
+src/hooks/useResponsiveDesign.ts(293,14): error TS2532: Object is possibly 'undefined'.
+src/hooks/useResponsiveDesign.ts(301,19): error TS2532: Object is possibly 'undefined'.
+src/hooks/useSmartImportExport.ts(183,34): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(187,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(192,39): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(196,13): error TS18046: 'row' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(293,27): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(294,28): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(295,26): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(298,28): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(299,26): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(300,27): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(318,31): error TS18046: 'row' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(320,11): error TS18046: 'mappedRow' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(338,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: {}): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type '{}'.
+  Overload 2 of 2, '(o: object): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'object'.
+src/hooks/useSmartImportExport.ts(370,28): error TS7030: Not all code paths return a value.
+src/hooks/useSmartImportExport.ts(456,37): error TS2698: Spread types may only be created from object types.
+src/hooks/useSmartImportExport.ts(459,34): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(460,42): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(467,19): error TS2322: Type '"import"' is not assignable to type '"list" | "create" | "update" | "delete"'.
+src/hooks/useSmartImportExport.ts(479,61): error TS2339: Property 'autoFixesApplied' does not exist on type 'ValidationResult'.
+src/hooks/useSmartImportExport.ts(537,24): error TS2538: Type 'undefined' cannot be used as an index type.
+src/hooks/useSmartImportExport.ts(537,50): error TS2538: Type 'undefined' cannot be used as an index type.
+src/hooks/useSmartImportExport.ts(616,40): error TS2698: Spread types may only be created from object types.
+src/hooks/useSmartImportExport.ts(620,25): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: {}): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type '{}'.
+  Overload 2 of 2, '(o: object): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'object'.
+src/hooks/useSmartImportExport.ts(621,19): error TS18046: 'processed' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(622,17): error TS18046: 'processed' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(623,19): error TS18046: 'processed' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(624,19): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/hooks/useSmartImportExport.ts(703,66): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: {}): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type '{}'.
+  Overload 2 of 2, '(o: object): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'object'.
+src/hooks/useSmartImportExport.ts(716,23): error TS18046: 'item' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(781,37): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: {}): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type '{}'.
+  Overload 2 of 2, '(o: object): string[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'object'.
+src/hooks/useSmartImportExport.ts(785,9): error TS18046: 'count' is of type 'unknown'.
+src/hooks/useSmartImportExport.ts(786,23): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'ArrayLike<unknown> | { [s: string]: unknown; }'.
+  Overload 2 of 2, '(o: {}): any[]', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type '{}'.
+src/hooks/useSmartImportExport.ts(791,24): error TS18046: 'filledCells' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(80,24): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(80,41): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(80,58): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(84,19): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(84,51): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(89,32): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(100,33): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(100,63): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(104,25): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(109,28): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(120,24): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(124,19): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(129,30): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(140,24): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(140,49): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(144,40): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(160,24): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(160,51): error TS18046: 'data' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(164,19): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(164,64): error TS18046: 'context' is of type 'unknown'.
+src/hooks/useSmartNotifications.ts(169,28): error TS18046: 'context' is of type 'unknown'.
+src/pages/CropsPage.tsx(56,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/CropsPage.tsx(126,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/FieldsPage.tsx(31,38): error TS2322: Type 'T | undefined' is not assignable to type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'T | undefined'.
+src/pages/FieldsPage.tsx(51,7): error TS2322: Type 'Farm[] | undefined' is not assignable to type 'Farm[]'.
+  Type 'undefined' is not assignable to type 'Farm[]'.
+src/pages/FieldsPage.tsx(139,36): error TS2322: Type 'string' is not assignable to type 'number'.
+src/pages/FieldsPage.tsx(453,46): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<number | null>'.
+src/pages/FieldsPage.tsx(466,47): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/pages/FieldsPage.tsx(633,67): error TS2345: Argument of type '() => { farm_id: string | number; name: string; area_hectares: number | undefined; crop_type: string; notes: string; soil_type: string; field_capacity: number | undefined; current_cover_crop: string; ... 4 more ...; maintenance_schedule: string; }' is not assignable to parameter of type 'FieldFormDataInternal | (() => FieldFormDataInternal)'.
+  Type '() => { farm_id: string | number; name: string; area_hectares: number | undefined; crop_type: string; notes: string; soil_type: string; field_capacity: number | undefined; current_cover_crop: string; ... 4 more ...; maintenance_schedule: string; }' is not assignable to type '() => FieldFormDataInternal'.
+    Call signature return types '{ farm_id: string | number; name: string; area_hectares: number | undefined; crop_type: string; notes: string; soil_type: string; field_capacity: number | undefined; current_cover_crop: string; ... 4 more ...; maintenance_schedule: string; }' and 'FieldFormDataInternal' are incompatible.
+      The types of 'farm_id' are incompatible between these types.
+        Type 'string | number' is not assignable to type 'number'.
+          Type 'string' is not assignable to type 'number'.
+src/pages/FieldsPage.tsx(735,25): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'string | number | null'.
+  Type 'undefined' is not assignable to type 'string | number | null'.
+src/pages/FieldsPage.tsx(826,25): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'string | number | null'.
+  Type 'undefined' is not assignable to type 'string | number | null'.
+src/pages/FieldsPage.tsx(864,25): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'string | number | null'.
+  Type 'undefined' is not assignable to type 'string | number | null'.
+src/pages/FinancePage.tsx(411,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"entries" | "analytics" | "overview" | "budgets" | "reports">'.
+src/pages/FinancePage.tsx(1089,42): error TS2339: Property 'id' does not exist on type '{}'.
+src/pages/FinancePage.tsx(1090,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/FinancePage.tsx(1133,34): error TS18046: 'farm' is of type 'unknown'.
+src/pages/FinancePage.tsx(1133,50): error TS18046: 'farm' is of type 'unknown'.
+src/pages/FinancePage.tsx(1134,24): error TS18046: 'farm' is of type 'unknown'.
+src/pages/FinancePage.tsx(1155,61): error TS2322: Type 'unknown' is not assignable to type '"income" | "expense" | "investment"'.
+src/pages/InventoryPage.tsx(169,29): error TS2345: Argument of type 'InventoryFormData' is not assignable to parameter of type 'CreateInventoryForm'.
+  Types of property 'category' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/pages/InventoryPage.tsx(302,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"items" | "analytics" | "overview" | "alerts" | "suppliers">'.
+src/pages/InventoryPage.tsx(457,57): error TS2345: Argument of type 'InventoryItem' is not assignable to parameter of type 'SetStateAction<InventoryItem | null>'.
+  Property 'farm_name' is missing in type 'import("C:/Users/MunyaradziGangayi/Documents/Coder/Retry/frontend/src/types/entities").InventoryItem' but required in type 'InventoryItem'.
+src/pages/InventoryPage.tsx(593,61): error TS2345: Argument of type 'InventoryItem' is not assignable to parameter of type 'SetStateAction<InventoryItem | null>'.
+  Property 'farm_name' is missing in type 'import("C:/Users/MunyaradziGangayi/Documents/Coder/Retry/frontend/src/types/entities").InventoryItem' but required in type 'InventoryItem'.
+src/pages/InventoryPage.tsx(866,20): error TS2304: Cannot find name 'farms'.
+src/pages/InventoryPage.tsx(873,24): error TS2304: Cannot find name 'createItemMutation'.
+src/pages/InventoryPage.tsx(873,56): error TS2304: Cannot find name 'updateItemMutation'.
+src/pages/InventoryPage.tsx(899,41): error TS2339: Property 'id' does not exist on type '{}'.
+src/pages/InventoryPage.tsx(940,34): error TS18046: 'farm' is of type 'unknown'.
+src/pages/InventoryPage.tsx(940,50): error TS18046: 'farm' is of type 'unknown'.
+src/pages/InventoryPage.tsx(941,24): error TS18046: 'farm' is of type 'unknown'.
+src/routes/forgot-password.tsx(4,38): error TS2345: Argument of type '"/forgot-password"' is not assignable to parameter of type 'undefined'.

@@ -57,7 +57,7 @@ export function useCrops() {
   // Expose both the callback-style mutate and the promise-style mutateAsync
   const createCrop = createMutation.mutate;
   const createCropAsync = createMutation.mutateAsync;
-  const isCreating = createMutation.isLoading || createMutation.isPending;
+  const isCreating = createMutation.isPending;
   const createError = createMutation.error;
 
   // Update crop mutation
@@ -73,7 +73,7 @@ export function useCrops() {
 
   const updateCrop = updateMutation.mutate;
   const updateCropAsync = updateMutation.mutateAsync;
-  const isUpdating = updateMutation.isLoading || updateMutation.isPending;
+  const isUpdating = updateMutation.isPending;
   const updateError = updateMutation.error;
 
   // Delete crop mutation
@@ -88,7 +88,7 @@ export function useCrops() {
 
   const deleteCrop = deleteMutation.mutate;
   const deleteCropAsync = deleteMutation.mutateAsync;
-  const isDeleting = deleteMutation.isLoading || deleteMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
   const deleteError = deleteMutation.error;
 
   return {

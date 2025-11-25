@@ -7,21 +7,18 @@ import { Breadcrumbs } from '../components/Breadcrumbs';
 import {
   Leaf,
   Sprout,
-  Droplets,
-  Bug,
-  TestTube,
-  Calendar,
-  MapPin,
-  AlertTriangle,
-  TrendingUp,
   BarChart3,
-  Settings,
-  Target,
   Plus,
   X,
   AlertCircle,
   CheckCircle,
   Calculator,
+  Settings,
+  Target,
+  Droplets,
+  Bug,
+  TestTube,
+  AlertTriangle,
 } from 'lucide-react';
 
 import { CropRotationPlanner } from '../components/CropRotationPlanner';
@@ -31,7 +28,7 @@ import { SoilHealthMonitor } from '../components/SoilHealthMonitor';
 import { CropPlanning } from '../components/CropPlanning';
 
 export function CropsPage() {
-  const { user, getAuthHeaders, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { currentFarm } = useFarm();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'planning' | 'rotation' | 'irrigation' | 'pests' | 'soil'
@@ -53,21 +50,12 @@ export function CropsPage() {
     field_id: '',
     crop_type: '',
     variety: '',
-    planting_date: new Date().toISOString().split('T')[0],
+    planting_date: new Date().toISOString().split('T')[0] as string,
     expected_harvest_date: '',
     status: 'planned',
   });
 
-  const {
-    crops,
-    isLoading,
-    error,
-    createCrop,
-    updateCrop,
-    deleteCrop,
-    createCropAsync,
-    isCreating,
-  } = useCrops();
+  const { crops, isLoading, error, createCropAsync, isCreating } = useCrops();
   const stats = useCropsStats();
 
   if (!isAuthenticated()) {
@@ -114,7 +102,7 @@ export function CropsPage() {
       };
 
       // Awaitable create
-      const created = (await createCropAsync) ? createCropAsync(payload) : Promise.resolve(null);
+      const _created = createCropAsync ? await createCropAsync(payload) : null;
 
       // Optionally inspect created result here
       setFormData({
@@ -123,14 +111,15 @@ export function CropsPage() {
         field_id: '',
         crop_type: '',
         variety: '',
-        planting_date: new Date().toISOString().split('T')[0],
+        planting_date: new Date().toISOString().split('T')[0] as string,
         expected_harvest_date: '',
         status: 'planned',
       });
       setShowCreateForm(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to create crop', err);
-      alert(err?.message || 'Failed to create crop');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create crop';
+      alert(errorMessage);
     }
   };
 
