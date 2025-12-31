@@ -506,25 +506,46 @@ export class SearchRepository extends BaseRepository {
     let countQuery = "";
 
     // Build query based on entity type
+    const count = farmIds.length;
     switch (entity_type) {
       case "animals":
-        sqlQuery = this.buildAnimalSearchQuery(filters, sort_by, sort_order);
-        countQuery = this.buildAnimalCountQuery(filters);
+        sqlQuery = this.buildAnimalSearchQuery(
+          filters,
+          sort_by,
+          sort_order,
+          count
+        );
+        countQuery = this.buildAnimalCountQuery(filters, count);
         params = params.concat(farmIds);
         break;
       case "crops":
-        sqlQuery = this.buildCropSearchQuery(filters, sort_by, sort_order);
-        countQuery = this.buildCropCountQuery(filters);
+        sqlQuery = this.buildCropSearchQuery(
+          filters,
+          sort_by,
+          sort_order,
+          count
+        );
+        countQuery = this.buildCropCountQuery(filters, count);
         params = params.concat(farmIds);
         break;
       case "tasks":
-        sqlQuery = this.buildTaskSearchQuery(filters, sort_by, sort_order);
-        countQuery = this.buildTaskCountQuery(filters);
+        sqlQuery = this.buildTaskSearchQuery(
+          filters,
+          sort_by,
+          sort_order,
+          count
+        );
+        countQuery = this.buildTaskCountQuery(filters, count);
         params = params.concat(farmIds);
         break;
       case "inventory":
-        sqlQuery = this.buildInventorySearchQuery(filters, sort_by, sort_order);
-        countQuery = this.buildInventoryCountQuery(filters);
+        sqlQuery = this.buildInventorySearchQuery(
+          filters,
+          sort_by,
+          sort_order,
+          count
+        );
+        countQuery = this.buildInventoryCountQuery(filters, count);
         params = params.concat(farmIds);
         break;
       default:
@@ -574,174 +595,199 @@ export class SearchRepository extends BaseRepository {
   }
 
   /**
+   * Validate sort parameters to prevent SQL injection
+   */
+  validateSortParams(sortBy, sortOrder, allowedColumns) {
+    const validOrder = ["ASC", "DESC"];
+    const direction =
+      sortOrder && validOrder.includes(sortOrder.toUpperCase())
+        ? sortOrder.toUpperCase()
+        : "DESC";
+
+    const column = allowedColumns.includes(sortBy) ? sortBy : "created_at";
+
+    return { column, direction };
+  }
+
+  /**
    * Build animal search query
    */
-  buildAnimalSearchQuery(filters, sort_by, sort_order) {
+  buildAnimalSearchQuery(filters, sort_by, sort_order, farmIdsCount) {
     const searchFields = ["name", "species", "breed", "health_status"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
 
-    let orderBy = "created_at DESC";
-    if (sort_by === "name") {
-      orderBy = `name ${sort_order.toUpperCase()}`;
-    } else if (sort_by === "species") {
-      orderBy = `species ${sort_order.toUpperCase()}`;
-    }
+    // Whitelist allowed sort columns
+    const allowedSorts = [
+      "name",
+      "species",
+      "breed",
+      "health_status",
+      "created_at",
+    ];
+    const { column, direction } = this.validateSortParams(
+      sort_by,
+      sort_order,
+      allowedSorts
+    );
+
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT *,
              'animal' as entity_type
       FROM animals
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
-      ORDER BY ${orderBy}
+      ORDER BY ${column} ${direction}
     `;
   }
 
   /**
    * Build crop search query
    */
-  buildCropSearchQuery(filters, sort_by, sort_order) {
+  buildCropSearchQuery(filters, sort_by, sort_order, farmIdsCount) {
     const searchFields = ["name", "crop_type", "growth_stage"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
 
-    let orderBy = "created_at DESC";
-    if (sort_by === "name") {
-      orderBy = `name ${sort_order.toUpperCase()}`;
-    } else if (sort_by === "crop_type") {
-      orderBy = `crop_type ${sort_order.toUpperCase()}`;
-    }
+    // Whitelist allowed sort columns
+    const allowedSorts = ["name", "crop_type", "growth_stage", "created_at"];
+    const { column, direction } = this.validateSortParams(
+      sort_by,
+      sort_order,
+      allowedSorts
+    );
+
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT *,
              'crop' as entity_type
       FROM crops
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
-      ORDER BY ${orderBy}
+      ORDER BY ${column} ${direction}
     `;
   }
 
   /**
    * Build task search query
    */
-  buildTaskSearchQuery(filters, sort_by, sort_order) {
+  buildTaskSearchQuery(filters, sort_by, sort_order, farmIdsCount) {
     const searchFields = ["title", "description", "task_category"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
 
-    let orderBy = "created_at DESC";
-    if (sort_by === "title") {
-      orderBy = `title ${sort_order.toUpperCase()}`;
-    } else if (sort_by === "priority") {
-      orderBy = `priority ${sort_order.toUpperCase()}`;
-    } else if (sort_by === "due_date") {
-      orderBy = `due_date ${sort_order.toUpperCase()}`;
-    }
+    // Whitelist allowed sort columns
+    const allowedSorts = [
+      "title",
+      "priority",
+      "due_date",
+      "created_at",
+      "status",
+    ];
+    const { column, direction } = this.validateSortParams(
+      sort_by,
+      sort_order,
+      allowedSorts
+    );
+
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT *,
              'task' as entity_type
       FROM tasks
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
-      ORDER BY ${orderBy}
+      ORDER BY ${column} ${direction}
     `;
   }
 
   /**
    * Build inventory search query
    */
-  buildInventorySearchQuery(filters, sort_by, sort_order) {
+  buildInventorySearchQuery(filters, sort_by, sort_order, farmIdsCount) {
     const searchFields = ["name", "category", "supplier"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
 
-    let orderBy = "created_at DESC";
-    if (sort_by === "name") {
-      orderBy = `name ${sort_order.toUpperCase()}`;
-    } else if (sort_by === "category") {
-      orderBy = `category ${sort_order.toUpperCase()}`;
-    }
+    // Whitelist allowed sort columns
+    const allowedSorts = ["name", "category", "quantity", "created_at"];
+    const { column, direction } = this.validateSortParams(
+      sort_by,
+      sort_order,
+      allowedSorts
+    );
+
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT *,
              'inventory' as entity_type
       FROM inventory_items
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
-      ORDER BY ${orderBy}
+      ORDER BY ${column} ${direction}
     `;
   }
 
   /**
    * Build count queries for pagination
    */
-  buildAnimalCountQuery(filters) {
+  buildAnimalCountQuery(filters, farmIdsCount) {
     const searchFields = ["name", "species", "breed", "health_status"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT COUNT(*) as count
       FROM animals
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
     `;
   }
 
-  buildCropCountQuery(filters) {
+  buildCropCountQuery(filters, farmIdsCount) {
     const searchFields = ["name", "crop_type", "growth_stage"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT COUNT(*) as count
       FROM crops
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
     `;
   }
 
-  buildTaskCountQuery(filters) {
+  buildTaskCountQuery(filters, farmIdsCount) {
     const searchFields = ["title", "description", "task_category"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT COUNT(*) as count
       FROM tasks
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
     `;
   }
 
-  buildInventoryCountQuery(filters) {
+  buildInventoryCountQuery(filters, farmIdsCount) {
     const searchFields = ["name", "category", "supplier"];
     const whereConditions = this.buildWhereConditions(filters, searchFields);
+    const farmPlaceholders = Array(farmIdsCount).fill("?").join(",");
 
     return `
       SELECT COUNT(*) as count
       FROM inventory_items
       WHERE (${searchFields.map(() => "LOWER(?) LIKE ?").join(" OR ")})
-      AND farm_id IN (${Array(filters.farm_id ? 2 : 1)
-        .fill("?")
-        .join(",")})
+      AND farm_id IN (${farmPlaceholders})
       ${whereConditions}
     `;
   }

@@ -80,9 +80,22 @@ export function createBaseResponseHeaders(rateLimitHeaders = {}) {
 
 export function buildRefreshCookie(
   refreshToken,
-  maxAge = REFRESH_TOKEN_EXPIRES_IN
+  maxAge = REFRESH_TOKEN_EXPIRES_IN,
+  isDev = false
 ) {
-  return `refresh_token=${refreshToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAge}`;
+  const cookieParts = [
+    `refresh_token=${refreshToken}`,
+    `Max-Age=${maxAge}`,
+    "HttpOnly",
+    "SameSite=Strict",
+    "Path=/",
+  ];
+
+  if (!isDev) {
+    cookieParts.push("Secure");
+  }
+
+  return cookieParts.join("; ");
 }
 
 export function buildAuthPayload({
@@ -95,7 +108,6 @@ export function buildAuthPayload({
   return {
     user,
     accessToken,
-    refreshToken,
     csrfToken,
     expiresIn,
   };
@@ -113,7 +125,11 @@ export async function createSessionResponse({
   status = 200,
   expiresIn = ACCESS_TOKEN_EXPIRES_IN,
   refreshMaxAge = REFRESH_TOKEN_EXPIRES_IN,
+  env,
 }) {
+  // Determine if development mode
+  const isDev =
+    (env?.NODE_ENV || env?.ENVIRONMENT || "").toLowerCase() === "development";
   const responseHeaders = createBaseResponseHeaders(rateLimitHeaders);
   const tempResponse = new Response(null, { headers: responseHeaders });
 
@@ -142,7 +158,7 @@ export async function createSessionResponse({
 
   responseHeaders.append(
     "Set-Cookie",
-    buildRefreshCookie(refreshToken, refreshMaxAge)
+    buildRefreshCookie(refreshToken, refreshMaxAge, isDev)
   );
 
   const payload = buildAuthPayload({

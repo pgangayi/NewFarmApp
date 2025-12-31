@@ -84,6 +84,7 @@ export async function onRequest(context) {
       ipAddress,
       userAgent: request.headers.get("user-agent") || "unknown",
       status: 200,
+      env,
     });
 
     if (sessionResponse.error) {

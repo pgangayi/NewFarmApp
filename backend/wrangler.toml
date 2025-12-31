@@ -4,18 +4,19 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 JWT_SECRET = "farmers_boot_jwt_secret_2024_secure_random_key_generated_for_authentication_tokens"
 RESEND_API_KEY = "re_gYQWMQY1_5fqkWdXxrJXVSuXAMygXzGLs"
 FROM_EMAIL = "noreply@farmersboot.com"
-APP_URL = "http://localhost:3000"
-NODE_ENV = "development"
+APP_URL = "https://cfa73f19.farmers-boot.pages.dev"
+NODE_ENV = "production"
+FRONTEND_ORIGIN = "https://47cfb08b.farmers-boot.pages.dev"
 
 # Database binding for D1
 [[d1_databases]]
 binding = "DB"
-database_name = "farmers-boot-local"
-database_id = "106c9d2b-c97a-483e-9eff-e713150d8a9a"
+database_name = "farmers_boot"
+database_id = "96ba79d2-c66e-4421-9116-3d231666266c"
 
 # Environment variables should be set externally:
 # JWT_SECRET - for JWT token signing

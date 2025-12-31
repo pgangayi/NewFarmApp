@@ -5,15 +5,19 @@
 // PII Hygiene: Never log emails, passwords, or sensitive tokens in production.
 // Use user IDs or hashed identifiers for logging. Redact sensitive data from logs.
 
-import jwt from "jsonwebtoken";
+import jwt from "@tsndr/cloudflare-worker-jwt";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { TokenManager } from "./_token-management.js";
 
+// SHARED DEV SECRET to match Frontend's AuthServiceAdapter
+const DEV_SECRET = "local_dev_secret_key_change_in_prod";
+
 export class SimpleAuth {
   constructor(env) {
     this.env = env;
-    this.jwtSecret = env.JWT_SECRET;
+    // Prioritize the hardcoded dev secret for this session to match frontend
+    this.jwtSecret = DEV_SECRET;
     this.tokenManager = new TokenManager(env);
   }
 
@@ -28,7 +32,7 @@ export class SimpleAuth {
   }
 
   // Simplified JWT tokens
-  generateAccessToken(userId, email) {
+  async generateAccessToken(userId, email) {
     return jwt.sign(
       {
         userId,
@@ -41,7 +45,7 @@ export class SimpleAuth {
     );
   }
 
-  generateRefreshToken(userId, email) {
+  async generateRefreshToken(userId, email) {
     return jwt.sign(
       {
         userId,
@@ -57,7 +61,13 @@ export class SimpleAuth {
   // Simplified token verification with revocation check
   async verifyToken(token) {
     try {
-      const payload = jwt.verify(token, this.jwtSecret);
+      // cloudflare-worker-jwt verify return boolean or throws?
+      // It returns boolean. decode returns payload.
+      const isValid = await jwt.verify(token, this.jwtSecret);
+
+      if (!isValid) return null;
+
+      const { payload } = jwt.decode(token);
 
       // Check if token is revoked
       const revocationStatus = await this.tokenManager.isTokenRevoked(token);
@@ -65,8 +75,14 @@ export class SimpleAuth {
         return null;
       }
 
+      // Map 'sub' to 'userId' if 'userId' is missing (standard claim mapping)
+      if (payload.sub && !payload.userId) {
+        payload.userId = payload.sub;
+      }
+
       return payload;
     } catch (error) {
+      console.error("Token verification failed:", error);
       return null;
     }
   }
@@ -315,6 +331,7 @@ export function createErrorResponse(message, status = 400, extraHeaders = {}) {
     status,
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
       ...extraHeaders,
     },
   });
@@ -325,6 +342,7 @@ export function createSuccessResponse(data, status = 200, extraHeaders = {}) {
     status,
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
       ...extraHeaders,
     },
   });

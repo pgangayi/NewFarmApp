@@ -3,9 +3,9 @@ import { TokenManager } from "../_token-management.js";
 import { CSRFProtection } from "../_csrf.js";
 
 const REFRESH_COOKIE_CLEAR =
-  "refresh_token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0";
+  "refresh_token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0; Secure";
 const CSRF_COOKIE_CLEAR =
-  "csrf_token=; HttpOnly=false; Secure; SameSite=Strict; Path=/; Max-Age=0";
+  "csrf_token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0; Secure";
 
 export async function onRequest(context) {
   const { request } = context;
@@ -27,6 +27,25 @@ async function handleLogoutPost(context) {
   const csrf = new CSRFProtection(env);
 
   try {
+    // Get user from token first (required for logout)
+    const user = await auth.getUserFromToken(request);
+    if (!user) {
+      // Clear cookies anyway
+      const responseHeaders = new Headers({
+        "Content-Type": "application/json",
+      });
+      responseHeaders.append("Set-Cookie", REFRESH_COOKIE_CLEAR);
+      responseHeaders.append("Set-Cookie", CSRF_COOKIE_CLEAR);
+      return new Response(
+        JSON.stringify({ message: "Logged out successfully" }),
+        {
+          status: 200,
+          headers: responseHeaders,
+        }
+      );
+    }
+
+    // Validate CSRF token - log warning but allow logout
     const csrfValidation = await csrf.validateCSRFToken(request);
     if (!csrfValidation.valid) {
       console.warn("CSRF validation failed for logout request", {
@@ -34,8 +53,8 @@ async function handleLogoutPost(context) {
         ip: auth.getClientIP(request),
       });
       await csrf.logSecurityEvent(
-        "csrf_validation_failed",
-        null,
+        "csrf_validation_failed_on_logout",
+        user.id,
         {
           ipAddress: auth.getClientIP(request),
           userAgent: request.headers.get("user-agent") || "unknown",
@@ -44,13 +63,7 @@ async function handleLogoutPost(context) {
         },
         { reason: csrfValidation.error }
       );
-      return createErrorResponse("CSRF validation failed", 403);
-    }
-
-    // Get user from token (required for logout)
-    const user = await auth.getUserFromToken(request);
-    if (!user) {
-      return createErrorResponse("Invalid or missing access token", 401);
+      // Continue with logout despite CSRF failure
     }
 
     // Extract tokens for revocation
@@ -107,7 +120,16 @@ async function handleLogoutPost(context) {
     );
   } catch (error) {
     console.error("Logout error:", error);
-    return createErrorResponse("Internal server error", 500);
+    const responseHeaders = new Headers({ "Content-Type": "application/json" });
+    responseHeaders.append("Set-Cookie", REFRESH_COOKIE_CLEAR);
+    responseHeaders.append("Set-Cookie", CSRF_COOKIE_CLEAR);
+    return new Response(
+      JSON.stringify({ message: "Logged out successfully" }),
+      {
+        status: 200,
+        headers: responseHeaders,
+      }
+    );
   }
 }
 

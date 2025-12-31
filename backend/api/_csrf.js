@@ -7,6 +7,34 @@ import crypto from "crypto";
 export class CSRFProtection {
   constructor(env) {
     this.env = env;
+    this._csrfTableEnsured = false;
+  }
+
+  async ensureCSRFTokensTable() {
+    if (this._csrfTableEnsured) {
+      return true;
+    }
+
+    try {
+      await this.env.DB.prepare(
+        `
+        CREATE TABLE IF NOT EXISTS csrf_tokens (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          token TEXT UNIQUE NOT NULL,
+          expires_at DATETIME NOT NULL,
+          used INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `
+      ).run();
+
+      this._csrfTableEnsured = true;
+      return true;
+    } catch (error) {
+      console.error("Failed to ensure csrf_tokens table:", error);
+      return false;
+    }
   }
 
   // Generate a cryptographically secure CSRF token
@@ -27,12 +55,16 @@ export class CSRFProtection {
       `csrf_token=${token}`,
       `Max-Age=${maxAge}`,
       "Path=/",
-      "HttpOnly=false", // Must be readable by JavaScript for double-submit
+      "HttpOnly", // Secure CSRF cookie
       "SameSite=Strict", // Prevents cross-site requests
     ];
 
     // Only mark cookie as Secure outside of local development
-    const envName = (this.env?.ENVIRONMENT || this.env?.NODE_ENV || "").toLowerCase();
+    const envName = (
+      this.env?.ENVIRONMENT ||
+      this.env?.NODE_ENV ||
+      ""
+    ).toLowerCase();
     const isDev = envName === "development";
     if (!isDev) {
       cookieParts.push("Secure");
@@ -116,6 +148,14 @@ export class CSRFProtection {
   // Store CSRF token in database for validation
   async storeCSRFToken(userId, token, requestContext = {}) {
     try {
+      const tableReady = await this.ensureCSRFTokensTable();
+      if (!tableReady) {
+        return {
+          success: false,
+          error: "Failed to initialize CSRF token storage",
+        };
+      }
+
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
       const result = await this.env.DB.prepare(
