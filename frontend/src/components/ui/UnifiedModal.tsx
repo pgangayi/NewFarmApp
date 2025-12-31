@@ -21,6 +21,7 @@ export interface UnifiedModalProps {
   onClose: () => void;
   onSubmit: (data: Record<string, unknown>) => void;
   title: string;
+  description?: string;
   fields: ModalField[];
   initialData?: Record<string, unknown>;
   isLoading?: boolean;
@@ -41,6 +42,7 @@ export function UnifiedModal({
   onClose,
   onSubmit,
   title,
+  description,
   fields,
   initialData = {},
   isLoading = false,
@@ -89,7 +91,8 @@ export function UnifiedModal({
       }
 
       if (field.type === 'number' && formData[field.name]) {
-        const numValue = parseFloat(formData[field.name]);
+        const value = formData[field.name] as string;
+        const numValue = parseFloat(value);
         if (isNaN(numValue)) {
           newErrors[field.name] = `${field.label} must be a valid number`;
         }
@@ -115,7 +118,7 @@ export function UnifiedModal({
       if (field?.type === 'checkbox') {
         submitData[key] = formData[key] || false;
       } else if (field?.type === 'number' && formData[key]) {
-        submitData[key] = parseFloat(formData[key]);
+        submitData[key] = parseFloat(formData[key] as string);
       } else {
         submitData[key] = formData[key];
       }
@@ -138,7 +141,7 @@ export function UnifiedModal({
         return (
           <input
             type="text"
-            value={value}
+            value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             className={baseInputClasses}
@@ -149,7 +152,7 @@ export function UnifiedModal({
         return (
           <input
             type="number"
-            value={value}
+            value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             step={field.step}
@@ -162,7 +165,7 @@ export function UnifiedModal({
         return (
           <input
             type="date"
-            value={value}
+            value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
             className={baseInputClasses}
           />
@@ -171,7 +174,7 @@ export function UnifiedModal({
       case 'select':
         return (
           <select
-            value={value}
+            value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
             className={baseInputClasses}
           >
@@ -187,7 +190,7 @@ export function UnifiedModal({
       case 'textarea':
         return (
           <textarea
-            value={value}
+            value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             rows={field.rows || 3}
@@ -200,7 +203,7 @@ export function UnifiedModal({
           <div className="flex items-center">
             <input
               type="checkbox"
-              checked={value}
+              checked={(value as boolean) || false}
               onChange={e => handleFieldChange(field.name, e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
@@ -224,8 +227,11 @@ export function UnifiedModal({
       >
         <div className="p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+              {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
+            </div>
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"

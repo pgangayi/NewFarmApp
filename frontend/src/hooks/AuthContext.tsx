@@ -1,326 +1,106 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, AuthResponse } from '../types/entities';
-import {
-  setAuth,
-  getAuth,
-  clearAuth,
-  getAccessToken,
-  getAuthHeadersFromStorage,
-} from '../lib/authStorage';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AuthServiceAdapter } from '../services/adapters/authServiceAdapter';
+import { User } from '../types/entities';
+import { authStorage } from '../lib/authStorage';
 
-interface AuthSession {
-  access_token: string;
-  refresh_token?: string;
-  csrf_token?: string;
-  expires_at?: number;
-}
-
-type AuthenticatedUser = User & { session?: AuthSession };
-
-interface AuthError {
-  message: string;
-}
-
-interface AuthResult {
-  data?: AuthResponse;
-  error?: AuthError;
-}
-
-interface AuthContextValue {
-  user: AuthenticatedUser | null;
-  session: AuthSession | null;
+// Reusing generic User type but ensuring alignment
+interface AuthContextType {
+  user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<AuthResult>;
-  signUp: (email: string, password: string, name: string) => Promise<AuthResult>;
-  signOut: () => Promise<{ error?: AuthError }>;
-  refreshToken: () => Promise<AuthResult>;
-  getAuthHeaders: () => Record<string, string>;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>;
+  signOut: () => void;
   isAuthenticated: () => boolean;
-  isTokenValid: () => boolean;
+  getAuthHeaders: () => HeadersInit;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-const isBrowser = typeof window !== 'undefined';
-
-const extractErrorMessage = (body: unknown, fallback: string): string => {
-  if (!body || typeof body !== 'object') return fallback;
-
-  const payload = body as Record<string, unknown>;
-  if (typeof payload.error === 'string') return payload.error;
-  if (typeof payload.message === 'string') return payload.message;
-  if (payload.errors && Array.isArray(payload.errors) && payload.errors.length > 0) {
-    const first = payload.errors[0];
-    if (typeof first === 'string') return first;
-    if (typeof first === 'object' && first && 'message' in first) {
-      const message = (first as Record<string, unknown>).message;
-      if (typeof message === 'string') return message;
-    }
-  }
-
-  return fallback;
-};
-
-const buildAuthResponse = (
-  user: User,
-  token: string,
-  refreshToken?: string,
-  csrfToken?: string
-): AuthResponse => ({
-  user,
-  session: {
-    access_token: token,
-    refresh_token: refreshToken,
-    csrf_token: csrfToken,
-  },
-});
-
-const createUserWithSession = (user: User, session: AuthSession): AuthenticatedUser => ({
-  ...user,
-  session,
-});
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthenticatedUser | null>(null);
-  const [session, setSession] = useState<AuthSession | null>(null);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const updateState = (
-    nextUser: User,
-    token: string,
-    refreshToken?: string,
-    csrfToken?: string
-  ) => {
-    const nextSession: AuthSession = {
-      access_token: token,
-      refresh_token: refreshToken,
-      csrf_token: csrfToken,
-    };
-    setSession(nextSession);
-    setUser(createUserWithSession(nextUser, nextSession));
-    // Persist full auth info
-    try {
-      setAuth({ user: nextUser, session: nextSession });
-    } catch (_) {
-      // ignore
-    }
-  };
-
-  const clearState = () => {
-    setUser(null);
-    setSession(null);
-    try {
-      clearAuth();
-    } catch (_) {}
-  };
-
-  const getAuthHeaders = useCallback(() => {
-    // Prefer in-memory session, fall back to storage
-    const headersFromStorage = getAuthHeadersFromStorage();
-    // Merge with session-based CSRF if present
-    const headers: Record<string, string> = { ...headersFromStorage };
-    if (session?.csrf_token) {
-      headers['X-CSRF-Token'] = session.csrf_token;
-    }
-    return headers;
-  }, [session]);
-
-  const validateToken = useCallback(async () => {
-    const stored = getAuth();
-    const token = stored?.session?.access_token || (isBrowser ? getAccessToken() : null);
-
-    if (!token) {
-      clearState();
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/auth/validate', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        clearState();
-        setLoading(false);
-        return;
-      }
-
-      const body = await response.json();
-      if (!body?.data?.user) {
-        clearState();
-        setLoading(false);
-        return;
-      }
-
-      updateState(body.data.user as User, token);
-    } catch (error) {
-      console.warn('Auth validation failed:', error);
-      clearState();
-    } finally {
-      setLoading(false);
-    }
-  }, [getAuthHeaders]);
-
   useEffect(() => {
-    void validateToken();
-  }, [validateToken]);
-
-  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const body = await response.json();
-
-      if (!response.ok || !body?.user || !body?.accessToken) {
-        const message = extractErrorMessage(body, 'Invalid credentials');
-        return { error: { message } };
+    const init = async () => {
+      const token = authStorage.getToken();
+      if (!token) {
+        setLoading(false);
+        return;
       }
 
-      updateState(
-        body.user as User,
-        body.accessToken as string,
-        body.refreshToken as string,
-        body.csrfToken as string
-      );
-      return {
-        data: buildAuthResponse(
-          body.user as User,
-          body.accessToken as string,
-          body.refreshToken as string,
-          body.csrfToken as string
-        ),
-      };
-    } catch (error) {
-      console.error('Sign in failed:', error);
-      return { error: { message: 'Unable to sign in. Please try again.' } };
+      // Verify token purely client-side
+      const validUser = await AuthServiceAdapter.verifyToken(token);
+      if (validUser) {
+        setUser(validUser as User);
+        authStorage.setUser(validUser);
+      } else {
+        authStorage.clear();
+        setUser(null);
+      }
+      setLoading(false);
+    };
+    init();
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    try {
+      // Local Auth Call - No Network API
+      const response = await AuthServiceAdapter.login(email, password);
+
+      if (response.requiresMFA) {
+        // Handle MFA flow (not implemented in UI yet, avoiding complexity)
+        return { error: 'MFA required (not implemented yet)' };
+      }
+
+      const { user, session } = response as any;
+
+      authStorage.setToken(session.access_token);
+      authStorage.setUser(user);
+      setUser(user);
+      return {};
+    } catch (e: any) {
+      console.error(e);
+      return { error: e.message || 'Login failed' };
     }
   }, []);
 
-  const signUp = useCallback(
-    async (email: string, password: string, name: string): Promise<AuthResult> => {
-      try {
-        const response = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password, name }),
-        });
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
+    try {
+      // Local Auth Call
+      const { user, session } = await AuthServiceAdapter.signup(email, password, name);
 
-        const body = await response.json();
-
-        if (!response.ok || !body?.user || !body?.accessToken) {
-          const message = extractErrorMessage(body, 'Unable to create an account');
-          return { error: { message } };
-        }
-
-        updateState(
-          body.user as User,
-          body.accessToken as string,
-          body.refreshToken as string,
-          body.csrfToken as string
-        );
-        return {
-          data: buildAuthResponse(
-            body.user as User,
-            body.accessToken as string,
-            body.refreshToken as string,
-            body.csrfToken as string
-          ),
-        };
-      } catch (error) {
-        console.error('Sign up failed:', error);
-        return { error: { message: 'Unable to sign up. Please try again.' } };
-      }
-    },
-    []
-  );
-
-  const signOut = useCallback(async () => {
-    const token = getAccessToken();
-    const headers = getAuthHeaders();
-
-    clearState();
-
-    if (!token) {
+      authStorage.setToken(session.access_token);
+      authStorage.setUser(user);
+      setUser(user);
       return {};
+    } catch (e: any) {
+      console.error(e);
+      return { error: e.message || 'Signup failed' };
     }
+  }, []);
 
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers,
-      });
-    } catch (error) {
-      console.warn('Server sign out failed:', error);
-    }
+  const signOut = useCallback(() => {
+    authStorage.clear();
+    setUser(null);
+  }, []);
 
-    return {};
-  }, [getAuthHeaders]);
+  const getAuthHeaders = useCallback(() => {
+    const token = authStorage.getToken();
+    return {
+      Authorization: token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json',
+    };
+  }, []);
 
-  const isAuthenticated = useCallback(() => Boolean(user), [user]);
+  const isAuthenticated = useCallback(() => !!user, [user]);
 
-  const isTokenValid = useCallback(() => Boolean(getAccessToken()), []);
-
-  const refreshToken = useCallback(async (): Promise<AuthResult> => {
-    try {
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-      });
-
-      const body = await response.json();
-
-      if (!response.ok || !body?.user || !body?.accessToken) {
-        const message = extractErrorMessage(body, 'Unable to refresh session');
-        clearState();
-        return { error: { message } };
-      }
-
-      updateState(
-        body.user as User,
-        body.accessToken as string,
-        body.refreshToken as string,
-        body.csrfToken as string
-      );
-      return {
-        data: buildAuthResponse(
-          body.user as User,
-          body.accessToken as string,
-          body.refreshToken as string,
-          body.csrfToken as string
-        ),
-      };
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      clearState();
-      return { error: { message: 'Unable to refresh session. Please sign in again.' } };
-    }
-  }, [getAuthHeaders]);
-
-  const value: AuthContextValue = {
-    user,
-    session,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    refreshToken,
-    getAuthHeaders,
-    isAuthenticated,
-    isTokenValid,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, loading, signIn, signUp, signOut, isAuthenticated, getAuthHeaders }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

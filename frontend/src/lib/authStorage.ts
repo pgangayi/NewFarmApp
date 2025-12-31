@@ -1,86 +1,100 @@
-// Centralized auth storage helper
-// Persists the full auth payload (user + session) and keeps the legacy `auth_token` in sync
+/**
+ * AUTH STORAGE
+ * ============
+ * Handles authentication token and user data storage.
+ * Uses the unified STORAGE_KEYS from the API layer.
+ */
 
-export const AUTH_SESSION_KEY = 'auth_session';
-export const AUTH_TOKEN_KEY = 'auth_token';
+import { STORAGE_KEYS } from '../api/config';
 
-export interface AuthSession {
-  access_token: string;
-  refresh_token?: string;
-  csrf_token?: string;
-  expires_at?: number;
-}
-
-export interface StoredAuth {
-  user?: unknown;
-  session?: AuthSession | null;
-}
-
-export function setAuth(stored: StoredAuth) {
-  try {
-    if (typeof window === 'undefined') return;
-    if (stored) {
-      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(stored));
-      if (stored.session && stored.session.access_token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, stored.session.access_token);
-      }
-    }
-  } catch (err) {
-    // ignore storage errors
-  }
-}
-
-export function getAuth(): StoredAuth | null {
-  try {
-    if (typeof window === 'undefined') return null;
-    const raw = localStorage.getItem(AUTH_SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as StoredAuth;
-  } catch (err) {
-    return null;
-  }
-}
-
-export function clearAuth() {
-  try {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(AUTH_SESSION_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-  } catch (err) {
-    // ignore
-  }
-}
+// ============================================================================
+// TOKEN MANAGEMENT
+// ============================================================================
 
 export function getAccessToken(): string | null {
   try {
-    const auth = getAuth();
-    if (auth?.session?.access_token) return auth.session.access_token;
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return localStorage.getItem(STORAGE_KEYS.authToken);
   } catch {
     return null;
   }
 }
 
-export function getAuthHeadersFromStorage(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  const token = getAccessToken();
-  const auth = getAuth();
-  const csrf = auth?.session?.csrf_token;
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (csrf) headers['X-CSRF-Token'] = csrf;
-
-  return headers;
+export function setAccessToken(token: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.authToken, token);
+  } catch (error) {
+    console.error('Failed to save auth token:', error);
+  }
 }
 
-export default {
-  setAuth,
-  getAuth,
-  clearAuth,
-  getAccessToken,
-  getAuthHeadersFromStorage,
+export function removeAccessToken(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.authToken);
+  } catch {
+    // Ignore errors
+  }
+}
+
+// ============================================================================
+// USER DATA MANAGEMENT
+// ============================================================================
+
+export function getStoredUser(): unknown | null {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.authUser);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user: unknown): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.authUser, JSON.stringify(user));
+  } catch (error) {
+    console.error('Failed to save user data:', error);
+  }
+}
+
+export function removeStoredUser(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.authUser);
+  } catch {
+    // Ignore errors
+  }
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+export function getAuthHeaders(): Record<string, string> {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export function clearAuthData(): void {
+  removeAccessToken();
+  removeStoredUser();
+}
+
+// ============================================================================
+// LEGACY EXPORTS (for backward compatibility)
+// ============================================================================
+
+export const authStorage = {
+  getToken: getAccessToken,
+  setToken: setAccessToken,
+  removeToken: removeAccessToken,
+  getUser: getStoredUser,
+  setUser: setStoredUser,
+  removeUser: removeStoredUser,
+  getHeaders: getAuthHeaders,
+  clear: clearAuthData,
 };
+
+// Legacy named export
+export const getAuthHeadersFromStorage = getAuthHeaders;
+export const getAuthToken = getAccessToken;
+
+export default authStorage;

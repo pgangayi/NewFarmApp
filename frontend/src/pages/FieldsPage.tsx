@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/AuthContext';
-import { useApiClient } from '../hooks/useApiClient';
+import { useApiClient } from '../hooks';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { Plus, MapPin, Activity, Droplets, TrendingUp, Leaf } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { apiEndpoints } from '../config/env';
 import { Field, Farm, ApiResponse } from '../types/entities';
 import { FieldFormDataInternal, SoilAnalysisData } from '../types/ui';
+import { FieldMap } from '../components/fields/FieldMap';
 
 /**
  * Safely get first farm from array
@@ -39,7 +40,7 @@ export function FieldsPage() {
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingField, setEditingField] = useState<Field | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'analytics' | 'soil'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'analytics' | 'soil' | 'map'>('grid');
   const [selectedFieldId, setSelectedFieldId] = useState<number | null>(null);
   const [selectedFarmId, setSelectedFarmId] = useState<string>('');
 
@@ -196,6 +197,301 @@ export function FieldsPage() {
         fields.length
       : 0;
 
+  const renderContent = () => {
+    if (viewMode === 'grid' && selectedFarmId) {
+      if (fields && fields.length > 0) {
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fields.map((field: Field) => (
+              <Card key={field.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-xl">{field.name}</CardTitle>
+                      <CardDescription className="flex items-center mt-1">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {field.farm_name}
+                      </CardDescription>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => setEditingField(field)}>
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {field.area_hectares && (
+                      <div>
+                        <span className="font-medium">Area:</span> {field.area_hectares} ha
+                      </div>
+                    )}
+                    {field.soil_type && (
+                      <div>
+                        <span className="font-medium">Soil:</span> {field.soil_type}
+                      </div>
+                    )}
+                    {field.crop_type && (
+                      <div>
+                        <span className="font-medium">Crop:</span> {field.crop_type}
+                      </div>
+                    )}
+                    {field.irrigation_system && (
+                      <div>
+                        <span className="font-medium">Irrigation:</span> {field.irrigation_system}
+                      </div>
+                    )}
+                    {field.accessibility_score && (
+                      <div>
+                        <span className="font-medium">Access:</span> {field.accessibility_score}
+                        /10
+                      </div>
+                    )}
+                    {field.drainage_quality && (
+                      <div>
+                        <span className="font-medium">Drainage:</span> {field.drainage_quality}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Active Crops</span>
+                      <Badge variant="secondary">{field.crop_count || 0}</Badge>
+                    </div>
+                    {field.avg_profitability && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Profitability</span>
+                        <Badge variant={field.avg_profitability > 70 ? 'default' : 'secondary'}>
+                          {field.avg_profitability.toFixed(1)}%
+                        </Badge>
+                      </div>
+                    )}
+                    {field.avg_ph_level && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">pH Level</span>
+                        <Badge
+                          variant={
+                            field.avg_ph_level >= 6.0 && field.avg_ph_level <= 7.5
+                              ? 'default'
+                              : 'destructive'
+                          }
+                        >
+                          {field.avg_ph_level.toFixed(1)}
+                        </Badge>
+                      </div>
+                    )}
+                    {field.best_yield_per_hectare && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Best Yield</span>
+                        <Badge variant="secondary">
+                          {field.best_yield_per_hectare.toFixed(1)} t/ha
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedFieldId(parseInt(field.id));
+                        setViewMode('soil');
+                      }}
+                    >
+                      <Droplets className="h-4 w-4 mr-1" />
+                      Soil Health
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        if (confirm(`Delete field "${field.name}"?`)) {
+                          handleDeleteField(parseInt(field.id));
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+
+                  <div className="text-xs text-gray-500 pt-2 border-t">
+                    Created: {new Date(field.created_at).toLocaleDateString()}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+      } else {
+        return (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow p-8">
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No fields yet</h3>
+              <p className="text-gray-600 mb-4">Get started by creating your first field.</p>
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Create Field
+              </Button>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    if (viewMode === 'map' && selectedFarmId) {
+      return (
+        <div className="space-y-6">
+          <FieldMap
+            fields={fields || []}
+            selectedFieldId={selectedFieldId ? selectedFieldId.toString() : null}
+            onSelectField={field => setSelectedFieldId(parseInt(field.id))}
+          />
+          {selectedFieldId && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Selected Field Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {fields
+                  ?.filter(field => parseInt(field.id.toString()) === selectedFieldId)
+                  .map(f => (
+                    <div key={f.id} className="grid grid-cols-2 gap-4">
+                      <div>
+                        <strong>Name:</strong> {f.name}
+                      </div>
+                      <div>
+                        <strong>Area:</strong> {f.area_hectares} ha
+                      </div>
+                      <div>
+                        <strong>Crop:</strong> {f.crop_type || 'None'}
+                      </div>
+                      <div>
+                        <Button size="sm" variant="outline" onClick={() => setEditingField(f)}>
+                          Edit Field
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      );
+    }
+
+    if (viewMode === 'analytics' && selectedFarmId) {
+      return (
+        <div className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Field Performance Analytics</CardTitle>
+              <CardDescription>
+                Comprehensive analysis of your field operations and productivity
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p>Advanced field analytics dashboard coming soon...</p>
+                <p className="text-sm">
+                  This will include soil health trends, productivity analysis, and optimization
+                  recommendations.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (viewMode === 'soil') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Soil Health Analysis</CardTitle>
+              <CardDescription>
+                Monitor soil conditions and track improvements over time
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedFieldId && soilAnalysis && soilAnalysis.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {soilAnalysis.slice(0, 6).map((analysis, index) => (
+                      <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium mb-2">
+                          {new Date(analysis.analysis_date).toLocaleDateString()}
+                        </h4>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>pH Level:</span>
+                            <span
+                              className={
+                                analysis.ph_level &&
+                                analysis.ph_level >= 6.0 &&
+                                analysis.ph_level <= 7.5
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                              }
+                            >
+                              {analysis.ph_level?.toFixed(1) || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Nitrogen:</span>
+                            <span>{analysis.nitrogen_content?.toFixed(1) || 'N/A'} ppm</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Phosphorus:</span>
+                            <span>{analysis.phosphorus_content?.toFixed(1) || 'N/A'} ppm</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Potassium:</span>
+                            <span>{analysis.potassium_content?.toFixed(1) || 'N/A'} ppm</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Soil Moisture:</span>
+                            <span>{analysis.soil_moisture?.toFixed(1) || 'N/A'}%</span>
+                          </div>
+                        </div>
+                        {analysis.recommendations && (
+                          <div className="mt-2 text-xs text-gray-600">
+                            <strong>Recommendations:</strong> {analysis.recommendations}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : !selectedFieldId ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p>Select a field from the Grid View to load soil analysis data.</p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p>No soil analysis data available for the selected field.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumbs */}
@@ -248,10 +544,24 @@ export function FieldsPage() {
               <button
                 type="button"
                 onClick={() => {
+                  setViewMode('map');
+                  setSelectedFieldId(null);
+                }}
+                className={`px-4 py-2 text-sm font-medium border-t border-b border-l-0 ${
+                  viewMode === 'map'
+                    ? 'bg-green-600 text-white border-green-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Map View
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   setViewMode('analytics');
                   setSelectedFieldId(null);
                 }}
-                className={`px-4 py-2 text-sm font-medium border-t border-b ${
+                className={`px-4 py-2 text-sm font-medium border-t border-b border-l-0 ${
                   viewMode === 'analytics'
                     ? 'bg-green-600 text-white border-green-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -262,7 +572,7 @@ export function FieldsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('soil')}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-r border-b ${
+                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-r border-b border-l-0 ${
                   viewMode === 'soil'
                     ? 'bg-green-600 text-white border-green-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -346,251 +656,7 @@ export function FieldsPage() {
           </div>
         )}
 
-        {/* Content based on view mode */}
-        {viewMode === 'grid' && selectedFarmId ? (
-          /* Grid View */
-          fields && fields.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {fields.map((field: Field) => (
-                <Card key={field.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-xl">{field.name}</CardTitle>
-                        <CardDescription className="flex items-center mt-1">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {field.farm_name}
-                        </CardDescription>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => setEditingField(field)}>
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Field Details */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {field.area_hectares && (
-                        <div>
-                          <span className="font-medium">Area:</span> {field.area_hectares} ha
-                        </div>
-                      )}
-                      {field.soil_type && (
-                        <div>
-                          <span className="font-medium">Soil:</span> {field.soil_type}
-                        </div>
-                      )}
-                      {field.crop_type && (
-                        <div>
-                          <span className="font-medium">Crop:</span> {field.crop_type}
-                        </div>
-                      )}
-                      {field.irrigation_system && (
-                        <div>
-                          <span className="font-medium">Irrigation:</span> {field.irrigation_system}
-                        </div>
-                      )}
-                      {field.accessibility_score && (
-                        <div>
-                          <span className="font-medium">Access:</span> {field.accessibility_score}
-                          /10
-                        </div>
-                      )}
-                      {field.drainage_quality && (
-                        <div>
-                          <span className="font-medium">Drainage:</span> {field.drainage_quality}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Performance Metrics */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Active Crops</span>
-                        <Badge variant="secondary">{field.crop_count || 0}</Badge>
-                      </div>
-                      {field.avg_profitability && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Profitability</span>
-                          <Badge variant={field.avg_profitability > 70 ? 'default' : 'secondary'}>
-                            {field.avg_profitability.toFixed(1)}%
-                          </Badge>
-                        </div>
-                      )}
-                      {field.avg_ph_level && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">pH Level</span>
-                          <Badge
-                            variant={
-                              field.avg_ph_level >= 6.0 && field.avg_ph_level <= 7.5
-                                ? 'default'
-                                : 'destructive'
-                            }
-                          >
-                            {field.avg_ph_level.toFixed(1)}
-                          </Badge>
-                        </div>
-                      )}
-                      {field.best_yield_per_hectare && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Best Yield</span>
-                          <Badge variant="secondary">
-                            {field.best_yield_per_hectare.toFixed(1)} t/ha
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex space-x-2 pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          setSelectedFieldId(parseInt(field.id));
-                          setViewMode('soil');
-                        }}
-                      >
-                        <Droplets className="h-4 w-4 mr-1" />
-                        Soil Health
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          if (confirm(`Delete field "${field.name}"?`)) {
-                            handleDeleteField(parseInt(field.id));
-                          }
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-
-                    {/* Created Date */}
-                    <div className="text-xs text-gray-500 pt-2 border-t">
-                      Created: {new Date(field.created_at).toLocaleDateString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="bg-white rounded-lg shadow p-8">
-                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No fields yet</h3>
-                <p className="text-gray-600 mb-4">Get started by creating your first field.</p>
-                <Button
-                  onClick={() => setShowCreateForm(true)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Create Field
-                </Button>
-              </div>
-            </div>
-          )
-        ) : viewMode === 'analytics' && selectedFarmId ? (
-          /* Analytics View */
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Field Performance Analytics</CardTitle>
-                <CardDescription>
-                  Comprehensive analysis of your field operations and productivity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Advanced field analytics dashboard coming soon...</p>
-                  <p className="text-sm">
-                    This will include soil health trends, productivity analysis, and optimization
-                    recommendations.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : viewMode === 'soil' ? (
-          /* Soil Health View */
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Soil Health Analysis</CardTitle>
-                <CardDescription>
-                  Monitor soil conditions and track improvements over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedFieldId && soilAnalysis && soilAnalysis.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {soilAnalysis.slice(0, 6).map((analysis, index) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="font-medium mb-2">
-                            {new Date(analysis.analysis_date).toLocaleDateString()}
-                          </h4>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span>pH Level:</span>
-                              <span
-                                className={
-                                  analysis.ph_level &&
-                                  analysis.ph_level >= 6.0 &&
-                                  analysis.ph_level <= 7.5
-                                    ? 'text-green-600'
-                                    : 'text-red-600'
-                                }
-                              >
-                                {analysis.ph_level?.toFixed(1) || 'N/A'}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Nitrogen:</span>
-                              <span>{analysis.nitrogen_content?.toFixed(1) || 'N/A'} ppm</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Phosphorus:</span>
-                              <span>{analysis.phosphorus_content?.toFixed(1) || 'N/A'} ppm</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Potassium:</span>
-                              <span>{analysis.potassium_content?.toFixed(1) || 'N/A'} ppm</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Soil Moisture:</span>
-                              <span>{analysis.soil_moisture?.toFixed(1) || 'N/A'}%</span>
-                            </div>
-                          </div>
-                          {analysis.recommendations && (
-                            <div className="mt-2 text-xs text-gray-600">
-                              <strong>Recommendations:</strong> {analysis.recommendations}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : !selectedFieldId ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p>Select a field from the Grid View to load soil analysis data.</p>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Droplets className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p>No soil analysis data available for the selected field.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
+        {renderContent()}
 
         {/* Create/Edit Field Modal */}
         {(showCreateForm || editingField) && (
@@ -632,16 +698,10 @@ function FieldFormModal({
 }: FieldFormModalProps) {
   const [formData, setFormData] = useState<FieldFormDataInternal>(() => {
     const firstFarm = getFirstFarm(farms);
-    const defaultFarmId = selectedFarmId
-      ? parseInt(selectedFarmId)
-      : firstFarm
-        ? typeof firstFarm.id === 'string'
-          ? parseInt(firstFarm.id)
-          : firstFarm.id
-        : 0;
+    const defaultFarmId = selectedFarmId ? selectedFarmId : firstFarm ? firstFarm.id : '';
 
     return {
-      farm_id: (field?.farm_id ?? defaultFarmId) as number,
+      farm_id: field?.farm_id ?? defaultFarmId,
       name: field?.name || '',
       area_hectares: field?.area_hectares || null,
       crop_type: field?.crop_type || '',
@@ -659,7 +719,7 @@ function FieldFormModal({
 
   useEffect(() => {
     if (selectedFarmId && !field) {
-      setFormData(prev => ({ ...prev, farm_id: parseInt(selectedFarmId) }));
+      setFormData(prev => ({ ...prev, farm_id: selectedFarmId }));
     }
   }, [selectedFarmId, field]);
 
@@ -700,11 +760,11 @@ function FieldFormModal({
                   <select
                     required
                     value={formData.farm_id}
-                    onChange={e => updateField('farm_id', parseInt(e.target.value))}
+                    onChange={e => updateField('farm_id', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     disabled={!!field}
                   >
-                    <option value={0}>Select farm</option>
+                    <option value="">Select farm</option>
                     {farms.map(farm => (
                       <option key={farm.id} value={farm.id}>
                         {farm.name}

@@ -1,152 +1,96 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/AuthContext';
-import { useFarm } from '../hooks/useFarm';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Location } from '../types/entities';
-import {
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  MapPin,
-  Home,
-  TreePine,
-  Warehouse,
-  Fence,
-  Loader2,
-  AlertTriangle,
-} from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MapPin, Home, TreePine, Warehouse, Fence } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { LoadingErrorContent } from '../components/ui/LoadingStates';
+import { useConfirmation, ConfirmDialogs } from '../components/ui/ConfirmationDialog';
+import { UnifiedModal } from '../components/ui/UnifiedModal';
+import { ModalField } from '../components/ui/UnifiedModal';
 
-interface LocationFormData {
-  name: string;
-  type: 'barn' | 'pasture' | 'field' | 'stable' | 'corral' | 'other';
-  description?: string;
-  capacity?: number;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-}
+// Import from unified API layer
+import {
+  useLocations,
+  useFarmWithSelection,
+  useCreateLocation,
+  useUpdateLocation,
+  useDeleteLocation,
+} from '../api';
+import type { Location, CreateRequest, UpdateRequest } from '../api';
 
-const locationTypeIcons = {
+// Map location types to icons
+const locationTypeIcons: Record<string, any> = {
+  field: MapPin,
+  structure: Home,
+  building: Home,
+  greenhouse: TreePine,
   barn: Warehouse,
-  pasture: TreePine,
-  field: Fence,
-  stable: Home,
   corral: Fence,
+  paddock: Fence,
+  storage: Warehouse,
   other: MapPin,
 };
 
-const locationTypeLabels = {
-  barn: 'Barn',
-  pasture: 'Pasture',
+const locationTypeLabels: Record<string, string> = {
   field: 'Field',
-  stable: 'Stable',
+  structure: 'Structure',
+  building: 'Building',
+  greenhouse: 'Greenhouse',
+  barn: 'Barn',
   corral: 'Corral',
+  paddock: 'Paddock',
+  storage: 'Storage',
   other: 'Other',
 };
 
+// Location form fields definition for UnifiedModal
+const locationFormFields: ModalField[] = [
+  {
+    name: 'name',
+    label: 'Location Name',
+    type: 'text',
+    required: true,
+    placeholder: 'Enter location name',
+  },
+  {
+    name: 'type',
+    label: 'Location Type',
+    type: 'select',
+    required: true,
+    options: Object.entries(locationTypeLabels).map(([value, label]) => ({
+      value,
+      label,
+    })),
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    type: 'textarea',
+    placeholder: 'Enter description (optional)',
+    rows: 3,
+  },
+  {
+    name: 'capacity',
+    label: 'Capacity (animals)',
+    type: 'number',
+    min: '0',
+    placeholder: 'Enter capacity (optional)',
+  },
+];
+
 export function LocationsPage() {
-  const { user, isAuthenticated, getAuthHeaders } = useAuth();
-  const { currentFarm } = useFarm();
-  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+  const { currentFarm } = useFarmWithSelection();
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const { confirm, ConfirmationDialog } = useConfirmation();
 
-  // Fetch locations for current farm
-  const {
-    data: locations = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['locations', currentFarm?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/locations?farm_id=${currentFarm?.id}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch locations');
-      }
-
-      const data = await response.json();
-      return data.data?.locations || [];
-    },
-    enabled: !!currentFarm?.id && isAuthenticated(),
-  });
-
-  // Create location mutation
-  const createLocationMutation = useMutation({
-    mutationFn: async (locationData: LocationFormData) => {
-      const response = await fetch('/api/locations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.session?.access_token}`,
-        },
-        body: JSON.stringify({
-          ...locationData,
-          farm_id: currentFarm?.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create location');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['locations'] });
-      setShowCreateModal(false);
-    },
-  });
-
-  // Update location mutation
-  const updateLocationMutation = useMutation({
-    mutationFn: async ({ id, ...locationData }: LocationFormData & { id: string }) => {
-      const response = await fetch(`/api/locations/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.session?.access_token}`,
-        },
-        body: JSON.stringify(locationData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update location');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['locations'] });
-      setEditingLocation(null);
-    },
-  });
-
-  // Delete location mutation
-  const deleteLocationMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/locations/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${user?.session?.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete location');
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['locations'] });
-    },
-  });
+  // Use new API hooks
+  const { data: locations = [], isLoading, error, refetch } = useLocations(currentFarm?.id);
+  const createMutation = useCreateLocation();
+  const updateMutation = useUpdateLocation();
+  const deleteMutation = useDeleteLocation();
 
   if (!isAuthenticated()) {
     return (
@@ -183,13 +127,43 @@ export function LocationsPage() {
   );
 
   const handleDelete = async (location: Location) => {
-    if (window.confirm(`Are you sure you want to delete "${location.name}"?`)) {
-      try {
-        await deleteLocationMutation.mutateAsync(location.id);
-      } catch (error) {
-        console.error('Failed to delete location:', error);
-      }
+    const confirmed = await confirm(ConfirmDialogs.delete(location.name));
+    if (confirmed && location.id) {
+      deleteMutation.mutate(location.id);
     }
+  };
+
+  const handleCreate = (data: Record<string, any>) => {
+    // Transform simple form data to typed request
+    const request: CreateRequest<Location> = {
+      name: data.name,
+      type: data.type,
+      description: data.description,
+      capacity: data.capacity ? Number(data.capacity) : undefined,
+      farm_id: currentFarm.id,
+    };
+    createMutation.mutate(request, {
+      onSuccess: () => setShowCreateModal(false),
+    });
+  };
+
+  const handleUpdate = (data: Record<string, any>) => {
+    if (!editingLocation || !editingLocation.id) return;
+
+    // Transform simple form data to typed request
+    const request: UpdateRequest<Location> = {
+      name: data.name,
+      type: data.type,
+      description: data.description,
+      capacity: data.capacity ? Number(data.capacity) : undefined,
+    };
+
+    updateMutation.mutate(
+      { id: editingLocation.id, data: request },
+      {
+        onSuccess: () => setEditingLocation(null),
+      }
+    );
   };
 
   return (
@@ -282,7 +256,12 @@ export function LocationsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pastures</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {locations.filter((l: Location) => l.type === 'pasture').length}
+                  {
+                    locations.filter(
+                      (l: Location) =>
+                        l.type === 'paddock' || l.type === 'field' || l.type === 'corral'
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -294,9 +273,14 @@ export function LocationsPage() {
                 <Home className="h-6 w-6 text-orange-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Stables</p>
+                <p className="text-sm font-medium text-gray-600">Structures</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {locations.filter((l: Location) => l.type === 'stable').length}
+                  {
+                    locations.filter(
+                      (l: Location) =>
+                        l.type === 'structure' || l.type === 'building' || l.type === 'storage'
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -304,20 +288,40 @@ export function LocationsPage() {
         </div>
 
         {/* Locations Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-green-600" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Locations</h3>
-            <p className="text-gray-600">Failed to load location data. Please try again.</p>
-          </div>
-        ) : (
+        <LoadingErrorContent
+          isLoading={isLoading}
+          error={error}
+          loadingMessage="Loading locations..."
+          errorTitle="Error Loading Locations"
+          errorMessage="Failed to load location data. Please try again."
+          onRetry={() => refetch()}
+          empty={!isLoading && !error && filteredLocations.length === 0}
+          emptyTitle={searchTerm ? 'No locations found' : 'No locations yet'}
+          emptyDescription={
+            searchTerm
+              ? 'Try adjusting your search terms.'
+              : 'Get started by adding your first farm location to organize your animals.'
+          }
+          emptyAction={
+            !searchTerm ? (
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Location
+              </Button>
+            ) : undefined
+          }
+          emptyIcon={
+            <div className="p-4 bg-green-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+              <MapPin className="h-10 w-10 text-green-600" />
+            </div>
+          }
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLocations.map((location: Location) => {
-              const IconComponent = locationTypeIcons[location.type];
+              const IconComponent = locationTypeIcons[location.type] || locationTypeIcons.other;
               return (
                 <div
                   key={location.id}
@@ -331,7 +335,7 @@ export function LocationsPage() {
                       <div>
                         <h3 className="font-semibold text-gray-900">{location.name}</h3>
                         <p className="text-sm text-gray-600 capitalize">
-                          {locationTypeLabels[location.type]}
+                          {locationTypeLabels[location.type] || location.type}
                         </p>
                       </div>
                     </div>
@@ -364,6 +368,7 @@ export function LocationsPage() {
                         <span className="text-gray-900">{location.capacity} animals</span>
                       </div>
                     )}
+                    {/* Occupancy isn't always in the base model but if the API returns it we can show it */}
                     {location.current_occupancy !== undefined && (
                       <div className="flex justify-between">
                         <span className="text-gray-500">Current Occupancy:</span>
@@ -375,173 +380,27 @@ export function LocationsPage() {
               );
             })}
           </div>
-        )}
-
-        {filteredLocations.length === 0 && !isLoading && (
-          <div className="text-center py-12">
-            <div className="p-4 bg-green-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-              <MapPin className="h-10 w-10 text-green-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {searchTerm ? 'No locations found' : 'No locations yet'}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm
-                ? 'Try adjusting your search terms.'
-                : 'Get started by adding your first farm location to organize your animals.'}
-            </p>
-            {!searchTerm && (
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Location
-              </Button>
-            )}
-          </div>
-        )}
+        </LoadingErrorContent>
       </div>
 
       {/* Create/Edit Modals */}
-      {(showCreateModal || editingLocation) && (
-        <LocationFormModal
-          location={editingLocation}
-          onClose={() => {
-            setShowCreateModal(false);
-            setEditingLocation(null);
-          }}
-          onSubmit={data => {
-            if (editingLocation) {
-              updateLocationMutation.mutate({ ...data, id: editingLocation.id });
-            } else {
-              createLocationMutation.mutate(data);
-            }
-          }}
-          isLoading={createLocationMutation.isPending || updateLocationMutation.isPending}
-        />
-      )}
-    </div>
-  );
-}
+      <UnifiedModal
+        isOpen={showCreateModal || editingLocation !== null}
+        onClose={() => {
+          setShowCreateModal(false);
+          setEditingLocation(null);
+        }}
+        onSubmit={editingLocation ? handleUpdate : handleCreate}
+        title={editingLocation ? 'Edit Location' : 'Add New Location'}
+        fields={locationFormFields}
+        initialData={editingLocation || undefined}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+        submitLabel={editingLocation ? 'Update Location' : 'Create Location'}
+        size="lg"
+      />
 
-// Location Form Modal Component
-interface LocationFormModalProps {
-  location?: Location | null;
-  onClose: () => void;
-  onSubmit: (data: LocationFormData) => void;
-  isLoading: boolean;
-}
-
-function LocationFormModal({ location, onClose, onSubmit, isLoading }: LocationFormModalProps) {
-  const [formData, setFormData] = useState<LocationFormData>({
-    name: location?.name || '',
-    type: location?.type || 'barn',
-    description: location?.description || '',
-    capacity: location?.capacity,
-    coordinates: location?.coordinates,
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <MapPin className="h-6 w-6 text-green-600" />
-              </div>
-              {location ? 'Edit Location' : 'Add New Location'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <span className="sr-only">Close</span>×
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="Enter location name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location Type *
-              </label>
-              <select
-                required
-                value={formData.type}
-                onChange={e =>
-                  setFormData(prev => ({ ...prev, type: e.target.value as Location['type'] }))
-                }
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {Object.entries(locationTypeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="Enter description (optional)"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Capacity (animals)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.capacity || ''}
-                onChange={e =>
-                  setFormData(prev => ({
-                    ...prev,
-                    capacity: parseInt(e.target.value) || undefined,
-                  }))
-                }
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="Enter capacity (optional)"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Saving...' : location ? 'Update Location' : 'Create Location'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
+      {/* Confirmation Dialog */}
+      {ConfirmationDialog}
     </div>
   );
 }

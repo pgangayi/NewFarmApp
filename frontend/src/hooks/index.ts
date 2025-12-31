@@ -1,28 +1,73 @@
-// Barrel export for all hooks
-// This file provides a single import point for all custom hooks
+/**
+ * HOOKS BARREL EXPORT
+ * ===================
+ * This file provides a single import point for all custom hooks.
+ * Core data hooks are now provided by the unified API layer with
+ * legacy-compatible interfaces where needed.
+ */
 
-// Farm management
-export { useFarm } from './useFarm';
+import { apiClient } from '../api';
 
-// Core data hooks
-export { useAnimals } from './useAnimals';
-export { useCrops } from './useCrops';
-export { useFinance } from './useFinance';
-export { useInventory } from './useInventory';
-export { useTasks } from './useTasks';
+// ============================================================================
+// RE-EXPORTS FROM LEGACY COMPATIBILITY LAYER
+// (These provide backward-compatible interfaces using the new API layer)
+// ============================================================================
 
-// Specialized hooks
-export { useIrrigation } from './useIrrigation';
-export { useOfflineQueue } from './useOfflineQueue';
-export { usePestDisease } from './usePestDisease';
-export { useRotation } from './useRotation';
-export { useSoilHealth } from './useSoilHealth';
+export {
+  useFarm,
+  useAnimals,
+  useCrops,
+  useCropsStats,
+  useTasks,
+  useInventory,
+  useLowStockItems,
+} from './legacyHooks';
 
-// UI and utilities
+// ============================================================================
+// SPECIALIZED HOOKS (Migrated to API layer)
+// ============================================================================
+
+export {
+  // Irrigation
+  useIrrigation,
+  useIrrigationByFarm,
+  useIrrigationAnalytics,
+  useIrrigationRecommendations,
+
+  // Pest & Disease
+  usePestDisease,
+  usePestDiseaseByFarm,
+  usePreventionCalendar,
+
+  // Soil Health
+  useSoilHealth,
+  useSoilTestsByFarm,
+  useSoilHealthMetrics,
+
+  // Crop Rotation
+  useRotation,
+  useRotationByFarm,
+
+  // Offline
+  useOfflineQueue,
+} from '../api';
+
+// ============================================================================
+// UTILITY HOOKS
+// ============================================================================
+
 export { useTheme } from './useTheme';
+export { useDebounce } from './useDebounce';
 
-// Auth context
+// ============================================================================
+// AUTH
+// ============================================================================
+
 export { useAuth, AuthProvider } from './AuthContext';
 
-// API client with auth
-export { useApiClient } from './useApiClient';
+// ============================================================================
+// API CLIENT
+// ============================================================================
+
+// Legacy hook wrapper that returns the singleton client
+export const useApiClient = () => apiClient;
