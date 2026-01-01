@@ -1,2 +1,0 @@
-src/hooks/usePerformanceOptimizations.tsx(616,78): error TS1005: '}' expected.
-src/hooks/useUnifiedCRUD.ts(287,78): error TS1005: '}' expected.

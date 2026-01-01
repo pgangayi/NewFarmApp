@@ -1,26 +1,31 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DollarSign, Receipt, Target, FileText, BarChart3, Plus } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { useAuth } from '../hooks/AuthContext';
-import { Farm } from '../types/entities';
 import {
-  FinanceEntry,
-  BudgetCategory,
-  FinanceFormData,
-  FinancialReport,
-} from '../components/finance/types';
+  useFinance,
+  useCreateFinanceRecord,
+  useUpdateFinanceRecord,
+  useDeleteFinanceRecord,
+  useBudgets,
+  useFarmWithSelection,
+  apiClient,
+} from '../api';
+import { FinanceEntry, BudgetCategory, FinanceFormData } from '../components/finance/types';
 import { FinanceOverview } from '../components/finance/FinanceOverview';
 import { FinanceEntryList } from '../components/finance/FinanceEntryList';
 import { BudgetProgress } from '../components/finance/BudgetProgress';
 import { FinanceReports } from '../components/finance/FinanceReports';
 import { FinanceAnalytics } from '../components/finance/FinanceAnalytics';
 import { FinanceEntryModal } from '../components/finance/FinanceEntryModal';
+import type { Farm } from '../api';
 
 export function FinancePage() {
-  const { getAuthHeaders, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { currentFarm } = useFarmWithSelection();
   const [viewMode, setViewMode] = useState<
     'overview' | 'entries' | 'budgets' | 'reports' | 'analytics'
   >('overview');
@@ -30,181 +35,70 @@ export function FinancePage() {
   const [editingEntry, setEditingEntry] = useState<FinanceEntry | null>(null);
   const [showCreateBudget, setShowCreateBudget] = useState(false);
 
-  // Get farms for dropdown
-  const { data: farms } = useQuery({
-    queryKey: ['farms'],
-    queryFn: async () => {
-      const response = await fetch('/api/farms', {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch farms');
-      return response.json();
-    },
-    enabled: isAuthenticated(),
-  });
-
-  // Get enhanced finance entries
+  // Use unified hooks
   const {
-    data: entries,
+    data: entries = [],
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['finance', 'entries'],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        analytics: 'true',
-      });
-
-      const response = await fetch(`/api/finance?${params}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch finance entries: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<FinanceEntry[]>;
-    },
-    enabled: isAuthenticated(),
-  });
+  } = useFinance(currentFarm?.id ? { farm_id: currentFarm.id } : undefined);
+  const createMutation = useCreateFinanceRecord();
+  const updateMutation = useUpdateFinanceRecord();
+  const deleteMutation = useDeleteFinanceRecord();
 
   // Get budget categories
-  const { data: budgets } = useQuery({
-    queryKey: ['finance', 'budgets'],
-    queryFn: async () => {
-      const fiscalYear = new Date().getFullYear();
-      const response = await fetch(`/api/finance/budgets?fiscal_year=${fiscalYear}`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch budgets: ${response.statusText}`);
-      }
-
-      return response.json() as Promise<BudgetCategory[]>;
-    },
-    enabled: isAuthenticated(),
-  });
+  const { data: budgets = [] } = useBudgets(currentFarm?.id);
 
   // Get financial analytics
   const { data: analytics } = useQuery({
-    queryKey: ['finance', 'analytics'],
+    queryKey: ['finance', 'analytics', currentFarm?.id],
     queryFn: async () => {
-      if (!farms || farms.length === 0) return null;
-
-      const response = await fetch(
-        `/api/finance/analytics?farm_id=${farms[0].id}&period=12months`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        }
+      if (!currentFarm?.id) return null;
+      const response = await apiClient.get<any>(
+        `/api/finance/analytics?farm_id=${currentFarm.id}&period=12months`
       );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch analytics: ${response.statusText}`);
-      }
-
-      return response.json();
+      return response;
     },
-    enabled: isAuthenticated() && farms && farms.length > 0,
+    enabled: !!currentFarm?.id && isAuthenticated(),
   });
 
-  const createEntryMutation = useMutation({
-    mutationFn: async (entryData: FinanceFormData) => {
-      const response = await fetch('/api/finance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(entryData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create finance entry');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance'] });
+  const handleCreateEntry = async (entryData: FinanceFormData) => {
+    try {
+      await createMutation.mutateAsync({
+        ...entryData,
+        farm_id: currentFarm?.id || '',
+      } as any);
       setShowCreateForm(false);
-    },
-  });
-
-  const updateEntryMutation = useMutation({
-    mutationFn: async ({ id, ...entryData }: FinanceFormData & { id: number }) => {
-      const response = await fetch('/api/finance', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ id, ...entryData }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update finance entry');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance'] });
-      setEditingEntry(null);
-    },
-  });
-
-  const generateReportMutation = useMutation({
-    mutationFn: async ({
-      farm_id,
-      report_type,
-      report_period,
-    }: {
-      farm_id: number;
-      report_type: string;
-      report_period: string;
-    }) => {
-      const response = await fetch('/api/finance/reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ farm_id, report_type, report_period }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate report');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance'] });
-    },
-  });
-
-  const handleCreateEntry = (entryData: FinanceFormData) => {
-    createEntryMutation.mutate(entryData);
-  };
-
-  const handleUpdateEntry = (entryData: FinanceFormData) => {
-    if (editingEntry) {
-      updateEntryMutation.mutate({ id: editingEntry.id, ...entryData });
+    } catch (error) {
+      console.error('Failed to create entry', error);
     }
   };
 
-  const handleGenerateReport = () => {
-    if (farms && farms.length > 0) {
-      generateReportMutation.mutate({
-        farm_id: typeof farms[0].id === 'string' ? parseInt(farms[0].id) : farms[0].id,
-        report_type: 'monthly',
-        report_period: new Date().toISOString().substring(0, 7),
-      });
+  const handleUpdateEntry = async (entryData: FinanceFormData) => {
+    if (editingEntry) {
+      try {
+        await updateMutation.mutateAsync({
+          id: editingEntry.id,
+          data: entryData as any,
+        });
+        setEditingEntry(null);
+      } catch (error) {
+        console.error('Failed to update entry', error);
+      }
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (currentFarm) {
+      try {
+        await apiClient.post('/api/finance/reports', {
+          farm_id: currentFarm.id,
+          report_type: 'monthly',
+          report_period: new Date().toISOString().substring(0, 7),
+        });
+        // Maybe show a toast or download the report
+      } catch (error) {
+        console.error('Failed to generate report', error);
+      }
     }
   };
 
@@ -325,7 +219,7 @@ export function FinancePage() {
         {viewMode === 'reports' && (
           <FinanceReports
             onGenerateReport={handleGenerateReport}
-            isGenerating={generateReportMutation.isPending}
+            isGenerating={false} // TODO: Add loading state for report generation
           />
         )}
 
@@ -336,13 +230,13 @@ export function FinancePage() {
         {(showCreateForm || editingEntry) && (
           <FinanceEntryModal
             entry={editingEntry}
-            farms={farms || []}
+            farms={currentFarm ? [currentFarm as unknown as Farm] : []}
             onSave={editingEntry ? handleUpdateEntry : handleCreateEntry}
             onClose={() => {
               setShowCreateForm(false);
               setEditingEntry(null);
             }}
-            isLoading={createEntryMutation.isPending || updateEntryMutation.isPending}
+            isLoading={createMutation.isPending || updateMutation.isPending}
           />
         )}
       </div>

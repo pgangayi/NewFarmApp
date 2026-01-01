@@ -1,5 +1,3 @@
-import { Heart, Search, TrendingUp, Stethoscope } from 'lucide-react';
-import { StatCard } from '../shared/StatCard';
 import type { Livestock } from '../../api';
 
 interface OverviewTabProps {
@@ -7,19 +5,24 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ livestock }: OverviewTabProps) {
-  const stats = {
-    total: livestock.length,
-    active: livestock.filter(l => l.status === 'active').length,
-    healthy: livestock.filter(l => !l.health_status || l.health_status === 'healthy').length,
-    sick: livestock.filter(l => l.health_status === 'sick').length,
-  };
+  const activeCount = livestock.filter(l => l.status === 'active').length;
+  const soldCount = livestock.filter(l => l.status === 'sold').length;
+  const deceasedCount = livestock.filter(l => l.status === 'deceased').length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatCard title="Total Livestock" value={stats.total} icon={Heart} color="blue" />
-      <StatCard title="Active Animals" value={stats.active} icon={Search} color="green" />
-      <StatCard title="Healthy" value={stats.healthy} icon={Stethoscope} color="emerald" />
-      <StatCard title="Sick / Injured" value={stats.sick} icon={TrendingUp} color="red" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h3 className="text-sm font-medium text-gray-500">Total Active</h3>
+        <p className="text-2xl font-bold text-gray-900 mt-2">{activeCount}</p>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h3 className="text-sm font-medium text-gray-500">Total Sold</h3>
+        <p className="text-2xl font-bold text-blue-600 mt-2">{soldCount}</p>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h3 className="text-sm font-medium text-gray-500">Total Deceased</h3>
+        <p className="text-2xl font-bold text-red-600 mt-2">{deceasedCount}</p>
+      </div>
     </div>
   );
 }

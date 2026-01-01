@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { buildApiUrl } from '../lib/api/baseUrl';
+import { apiClient } from '../api';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -21,28 +21,18 @@ export function ForgotPasswordPage() {
     setMessage('');
 
     try {
-      const response = await fetch(buildApiUrl('/api/auth/forgot-password'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      const data = await apiClient.post<{ message: string }>('/api/auth/forgot-password', {
+        email,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to request password reset');
-        return;
-      }
 
       setMessage(
         data.message ||
           'Password reset instructions have been sent to your email. Please check your email for the reset link.'
       );
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      setError('Failed to request password reset. Please try again.');
+    } catch (err: any) {
+      console.error('Forgot password error:', err);
+      // apiClient throws an Error with the message from the server response (error.message)
+      setError(err.message || 'Failed to request password reset. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -10,6 +10,7 @@ import './App.css';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './hooks/AuthContext';
+import { ToastProvider } from './components/ui/use-toast';
 
 // Route constants for type safety
 export const ROUTES = {
@@ -225,112 +226,114 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-          <BrowserRouter>
-            <Suspense fallback={<LoadingScreen />}>
-              <Routes>
-                <Route path={ROUTES.HOME} element={<Home />} />
-                <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-                <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
-                <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-                <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+        <ToastProvider>
+          <QueryClientProvider client={queryClient}>
+            {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+            <BrowserRouter>
+              <Suspense fallback={<LoadingScreen />}>
+                <Routes>
+                  <Route path={ROUTES.HOME} element={<Home />} />
+                  <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+                  <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
+                  <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+                  <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
 
-                {/* Protected Routes */}
-                <Route
-                  path={ROUTES.DASHBOARD}
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.FARMS}
-                  element={
-                    <ProtectedRoute>
-                      <FarmsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.FIELDS}
-                  element={
-                    <ProtectedRoute>
-                      <FieldsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.LIVESTOCK}
-                  element={
-                    <ProtectedRoute>
-                      <LivestockPage />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Redirect legacy /animals to /livestock if needed, or handle via ROUTES constant aliases */}
-                {ROUTES.ANIMALS !== ROUTES.LIVESTOCK && (
+                  {/* Protected Routes */}
                   <Route
-                    path={ROUTES.ANIMALS}
-                    element={<Navigate to={ROUTES.LIVESTOCK} replace />}
+                    path={ROUTES.DASHBOARD}
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
                   />
-                )}
-                <Route
-                  path={ROUTES.CROPS}
-                  element={
-                    <ProtectedRoute>
-                      <CropsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.TASKS}
-                  element={
-                    <ProtectedRoute>
-                      <TasksPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.INVENTORY}
-                  element={
-                    <ProtectedRoute>
-                      <InventoryPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.FINANCE}
-                  element={
-                    <ProtectedRoute>
-                      <FinancePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.QUEUE}
-                  element={
-                    <ProtectedRoute>
-                      <QueuePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.ANALYTICS}
-                  element={
-                    <ProtectedRoute>
-                      <AnalyticsPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path={ROUTES.FARMS}
+                    element={
+                      <ProtectedRoute>
+                        <FarmsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.FIELDS}
+                    element={
+                      <ProtectedRoute>
+                        <FieldsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.LIVESTOCK}
+                    element={
+                      <ProtectedRoute>
+                        <LivestockPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Redirect legacy /animals to /livestock if needed, or handle via ROUTES constant aliases */}
+                  {ROUTES.ANIMALS !== ROUTES.LIVESTOCK && (
+                    <Route
+                      path={ROUTES.ANIMALS}
+                      element={<Navigate to={ROUTES.LIVESTOCK} replace />}
+                    />
+                  )}
+                  <Route
+                    path={ROUTES.CROPS}
+                    element={
+                      <ProtectedRoute>
+                        <CropsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.TASKS}
+                    element={
+                      <ProtectedRoute>
+                        <TasksPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.INVENTORY}
+                    element={
+                      <ProtectedRoute>
+                        <InventoryPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.FINANCE}
+                    element={
+                      <ProtectedRoute>
+                        <FinancePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.QUEUE}
+                    element={
+                      <ProtectedRoute>
+                        <QueuePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.ANALYTICS}
+                    element={
+                      <ProtectedRoute>
+                        <AnalyticsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* 404 Not Found */}
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </QueryClientProvider>
+                  {/* 404 Not Found */}
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </QueryClientProvider>{' '}
+        </ToastProvider>{' '}
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>

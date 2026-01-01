@@ -18,7 +18,11 @@ import {
   createErrorResponse,
   createSuccessResponse,
 } from "./_auth.js";
-import { TaskRepository } from "./repositories/index.js";
+import {
+  TaskRepository,
+  TimeLogRepository,
+  CommentRepository,
+} from "./repositories/index.js";
 import { DatabaseOperations } from "./_database.js";
 
 export async function onRequest(context) {
@@ -39,6 +43,8 @@ export async function onRequest(context) {
     // Initialize repository with DatabaseOperations
     const dbOps = new DatabaseOperations(env);
     const taskRepository = new TaskRepository(dbOps);
+    const timeLogRepository = new TimeLogRepository(dbOps);
+    const commentRepository = new CommentRepository(dbOps);
 
     // Enhanced tasks listing with comprehensive data
     if (method === "GET") {
@@ -67,16 +73,14 @@ export async function onRequest(context) {
           return createErrorResponse("Task not found or access denied", 404);
         }
 
-        // Get time logs if requested (placeholder for now - would need TimeLogRepository)
+        // Get time logs if requested
         if (timeLogs === "true") {
-          // TODO: Implement time logs with TimeLogRepository
-          task.time_logs = [];
+          task.time_logs = await timeLogRepository.findByTaskId(taskId);
         }
 
-        // Get comments if requested (placeholder for now - would need CommentRepository)
+        // Get comments if requested
         if (comments === "true") {
-          // TODO: Implement comments with CommentRepository
-          task.comments = [];
+          task.comments = await commentRepository.findByTaskId(taskId);
         }
 
         return createSuccessResponse(task);

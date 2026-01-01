@@ -85,15 +85,7 @@ function customRenderHook<Result, Props>(
 // MOCK DATA FACTORIES
 // ============================================================================
 
-import type {
-  User,
-  Farm,
-  Animal,
-  Field,
-  Task,
-  InventoryItem,
-  ApiResponse,
-} from '../types/entities';
+import type { User, Farm, Animal, Field, Task, InventoryItem, ApiResponse } from '../api/types';
 
 export interface TestUser {
   id: string;

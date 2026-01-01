@@ -26,9 +26,9 @@ if not exist "frontend\node_modules" (
     cd ..
 )
 
-if not exist "functions\node_modules" (
-    echo Installing functions dependencies...
-    cd functions
+if not exist "backend\node_modules" (
+    echo Installing backend dependencies...
+    cd backend
     call npm install
     cd ..
 )
@@ -45,7 +45,7 @@ if "%JWT_SECRET%"=="" (
 
 echo [3/4] Starting development servers...
 echo Starting Cloudflare Functions server on port 8787...
-start cmd /k "cd functions && npx wrangler dev --local --port 8787"
+start cmd /k "cd backend && npx wrangler dev --local --port 8787"
 
 echo Waiting 3 seconds for functions server to start...
 timeout /t 3 /nobreak >nul

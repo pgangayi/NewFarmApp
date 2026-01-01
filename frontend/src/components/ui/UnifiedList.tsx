@@ -31,7 +31,8 @@ export interface ColumnConfig {
 export interface ActionConfig {
   key: string;
   label: string;
-  icon: React.ComponentType<unknown>;
+  icon: React.ComponentType<any>;
+  getIcon?: (item: UnifiedListItem) => React.ComponentType<any>;
   color?: 'default' | 'blue' | 'green' | 'red' | 'yellow';
   onClick: (item: UnifiedListItem) => void;
   show?: (item: UnifiedListItem) => boolean;
@@ -223,7 +224,7 @@ export function UnifiedList({
                   {actions
                     .filter(action => action.show?.(item) !== false)
                     .map(action => {
-                      const Icon = action.icon;
+                      const Icon = action.getIcon ? action.getIcon(item) : action.icon;
                       const isDisabled = action.disabled?.(item) || false;
 
                       return (

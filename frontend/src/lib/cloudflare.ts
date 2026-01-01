@@ -6,7 +6,7 @@ const getAuthToken = () => {
 };
 
 export const apiClient = {
-  async request(endpoint: string, options: RequestInit = {}) {
+  async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     const token = getAuthToken();
 
@@ -27,30 +27,30 @@ export const apiClient = {
     return response.json();
   },
 
-  get(endpoint: string) {
-    return this.request(endpoint, { method: 'GET' });
+  get<T = unknown>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET' });
   },
 
-  post(endpoint: string, data: Record<string, unknown>) {
-    return this.request(endpoint, {
+  post<T = unknown>(endpoint: string, data: Record<string, unknown>): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  put(endpoint: string, data: Record<string, unknown>) {
-    return this.request(endpoint, {
+  put<T = unknown>(endpoint: string, data: Record<string, unknown>): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
-  delete(endpoint: string) {
-    return this.request(endpoint, { method: 'DELETE' });
+  delete<T = unknown>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   },
 
   // File upload method (doesn't set Content-Type to allow FormData boundary)
-  upload(endpoint: string, formData: FormData) {
+  upload<T = unknown>(endpoint: string, formData: FormData): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     const token = getAuthToken();
 

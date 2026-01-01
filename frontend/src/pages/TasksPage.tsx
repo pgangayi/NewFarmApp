@@ -9,11 +9,12 @@ import {
   useTasks,
   useCreateTask,
   useUpdateTask,
+  useStartTimeLog,
+  useStopTimeLog,
   useFarmWithSelection,
-  apiClient, // Ensure apiClient is imported for direct calls or replace with custom hooks
-  ApiClient, // Just in case type is needed
+  apiClient,
 } from '../api';
-import { Farm, User } from '../api/types'; // Import User type
+import type { Farm, User, Task } from '../api/types';
 
 import { ExtendedTask, TaskFormData, TaskTemplate } from '../components/tasks/types';
 import { TaskOverview } from '../components/tasks/TaskOverview';
@@ -40,11 +41,17 @@ export function TasksPage() {
   const [activeLogMap, setActiveLogMap] = useState<Record<string, number | null>>({});
 
   const { currentFarm } = useFarmWithSelection();
-  const { data: rawTasks = [], isLoading, error } = useTasks(currentFarm?.id);
+  const {
+    data: rawTasks = [],
+    isLoading,
+    error,
+  } = useTasks(currentFarm?.id ? { farm_id: currentFarm.id } : undefined);
   const tasks = rawTasks as ExtendedTask[];
 
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
+  const startTimerMutation = useStartTimeLog();
+  const stopTimerMutation = useStopTimeLog();
 
   const createTask = (data: any) => createMutation.mutate(data);
   const updateTask = (data: any) => updateMutation.mutate({ id: data.id, ...data });
@@ -61,16 +68,15 @@ export function TasksPage() {
     setIsTimerLoading(true);
     const now = new Date().toISOString();
     try {
-      const res = await apiClient.post<any>('/api/tasks/time-logs', {
-        task_id: task.id,
-        start_time: now,
+      const res = await startTimerMutation.mutateAsync({
+        taskId: task.id,
+        startTime: now,
       });
       // expect res.id or res.data.id
       const id = (res && (res.id || (res.data && res.data.id))) as number | undefined;
       setActiveLogMap(prev => ({ ...prev, [task.id]: id || null }));
       setTimerActive(prev => ({ ...prev, [task.id]: true }));
       setCurrentTimer({ taskId: task.id, startTime: new Date() });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     } catch (err) {
       console.error('Failed to start timer', err);
     } finally {
@@ -84,9 +90,18 @@ export function TasksPage() {
     const logId = activeLogMap[task.id];
     try {
       if (logId) {
-        await apiClient.patch(`/api/tasks/time-logs/${logId}`, { end_time: now });
+        await stopTimerMutation.mutateAsync({
+          logId,
+          endTime: now,
+        });
       } else {
-        // fallback: send end by task id
+        // fallback: send end by task id if logId is missing (though hook expects logId)
+        // If logId is missing, we can't use the hook as is.
+        // We might need to fetch active log first or just use the fallback endpoint if it supports it.
+        // For now, we'll assume logId is present or we can't stop it properly via ID.
+        // But wait, the original code had a fallback:
+        // await apiClient.post('/api/tasks/time-logs', { task_id: task.id, end_time: now });
+        // I should probably support that in the hook or just use apiClient here for the fallback.
         await apiClient.post('/api/tasks/time-logs', { task_id: task.id, end_time: now });
       }
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -154,7 +169,8 @@ export function TasksPage() {
 
   const overdueTasks =
     tasks?.filter(
-      task => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed'
+      (task: Task) =>
+        task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed'
     ).length || 0;
 
   return (
@@ -241,7 +257,7 @@ export function TasksPage() {
           <TaskList
             tasks={tasks}
             onEditTask={setEditingTask}
-            onViewTask={task => console.log('View task', task)}
+            onViewTask={(task: ExtendedTask) => console.log('View task', task)}
             onStartTimer={handleStartTimer}
             onStopTimer={handleStopTimer}
             timerActive={timerActive}

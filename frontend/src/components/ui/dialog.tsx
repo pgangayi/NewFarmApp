@@ -105,4 +105,21 @@ const DialogDescription = ({ children, className }: DialogDescriptionProps) => {
   return <p className={cn('text-sm text-muted-foreground', className)}>{children}</p>;
 };
 
-export { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger };
+const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div
+      className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
+      {...props}
+    />
+  );
+};
+
+export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+};

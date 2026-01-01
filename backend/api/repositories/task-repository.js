@@ -266,6 +266,36 @@ export class TaskRepository extends BaseRepository {
       const result = await this.db.executeTransaction(transaction);
       const newTaskId = result.results[0].lastRowId;
 
+      // Handle costs if provided
+      if (
+        taskData.costs &&
+        Array.isArray(taskData.costs) &&
+        taskData.costs.length > 0
+      ) {
+        const costTransaction = taskData.costs.map((cost) => ({
+          query: `
+            INSERT INTO finance_entries (
+              farm_id, entry_date, type, amount, currency, description, 
+              reference_type, reference_id, created_by
+            ) VALUES (?, date('now'), 'expense', ?, ?, ?, 'task', ?, ?)
+          `,
+          params: [
+            taskData.farm_id,
+            cost.amount,
+            cost.currency || "USD",
+            cost.description,
+            newTaskId,
+            userId,
+          ],
+          operation: "run",
+          table: "finance_entries",
+        }));
+
+        if (costTransaction.length > 0) {
+          await this.db.executeTransaction(costTransaction);
+        }
+      }
+
       // Log task creation in audit trail
       await this.logTaskOperation("create", newTaskId, taskRecord, userId);
 
@@ -323,6 +353,45 @@ export class TaskRepository extends BaseRepository {
 
     // Add updated timestamp
     updateData.updated_at = new Date().toISOString();
+
+    // Handle costs if provided (Replace All strategy)
+    if (updateData.costs && Array.isArray(updateData.costs)) {
+      // 1. Delete existing costs linked to this task
+      await this.db.executeQuery(
+        "DELETE FROM finance_entries WHERE reference_type = 'task' AND reference_id = ?",
+        [id],
+        { operation: "run", table: "finance_entries" }
+      );
+
+      // 2. Insert new costs
+      if (updateData.costs.length > 0) {
+        const costTransaction = updateData.costs.map((cost) => ({
+          query: `
+            INSERT INTO finance_entries (
+              farm_id, entry_date, type, amount, currency, description, 
+              reference_type, reference_id, created_by
+            ) VALUES (?, date('now'), 'expense', ?, ?, ?, 'task', ?, ?)
+          `,
+          params: [
+            existing.farm_id,
+            cost.amount,
+            cost.currency || "USD",
+            cost.description,
+            id,
+            userId,
+          ],
+          operation: "run",
+          table: "finance_entries",
+        }));
+
+        if (costTransaction.length > 0) {
+          await this.db.executeTransaction(costTransaction);
+        }
+      }
+
+      // Remove costs from updateData to avoid updating non-existent column in tasks table
+      delete updateData.costs;
+    }
 
     // Perform update
     const updated = await this.updateById(id, updateData);
@@ -421,6 +490,23 @@ export class TaskRepository extends BaseRepository {
     }
 
     const task = results[0];
+
+    // Get task costs (finance entries)
+    const { results: costResults } = await this.db.executeQuery(
+      `
+      SELECT id, description, amount, currency, type, entry_date
+      FROM finance_entries
+      WHERE reference_type = 'task' AND reference_id = ?
+      ORDER BY entry_date DESC
+      `,
+      [taskId],
+      {
+        operation: "query",
+        table: "finance_entries",
+        context: { getTaskCosts: true, taskId },
+      }
+    );
+    task.costs = costResults || [];
 
     // Get task dependencies if any
     if (task.dependencies) {

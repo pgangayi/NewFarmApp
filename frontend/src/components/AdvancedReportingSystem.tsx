@@ -497,7 +497,9 @@ export default function AdvancedReportingSystem() {
                           <div className="flex items-center gap-1">
                             <Select
                               defaultValue="pdf"
-                              onValueChange={value => downloadReport(template.id, value)}
+                              onValueChange={value =>
+                                downloadReport(template.id, value as 'pdf' | 'excel' | 'csv')
+                              }
                             >
                               <SelectTrigger className="w-20 h-8">
                                 <SelectValue />
@@ -583,7 +585,7 @@ export default function AdvancedReportingSystem() {
                       </label>
                       <Select
                         value={format}
-                        onValueChange={(value: 'pdf' | 'excel' | 'csv') => setFormat(value)}
+                        onValueChange={value => setFormat(value as 'pdf' | 'excel' | 'csv')}
                       >
                         <SelectTrigger>
                           <SelectValue />

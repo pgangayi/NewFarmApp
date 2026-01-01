@@ -4,6 +4,7 @@
 
 import { SimpleAuth, createErrorResponse } from "../_auth.js";
 import { CSRFProtection } from "../_csrf.js";
+import { EmailService } from "../_email.js";
 import {
   buildPublicUser,
   createSessionResponse,
@@ -81,6 +82,15 @@ export async function onRequest(context) {
       ipAddress,
       true
     );
+
+    // Send welcome email
+    try {
+      const emailService = new EmailService(env);
+      await emailService.sendWelcomeEmail(createdUser.email, createdUser.name);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+      // Don't fail the signup if email fails
+    }
 
     // Create session response
     const sessionResponse = await createSessionResponse({

@@ -2,55 +2,70 @@
  * HOOKS BARREL EXPORT
  * ===================
  * This file provides a single import point for all custom hooks.
- * Core data hooks are now provided by the unified API layer with
- * legacy-compatible interfaces where needed.
  */
 
-import { apiClient } from '../api';
-
 // ============================================================================
-// RE-EXPORTS FROM LEGACY COMPATIBILITY LAYER
-// (These provide backward-compatible interfaces using the new API layer)
+// RE-EXPORTS FROM NEW API LAYER
 // ============================================================================
 
 export {
+  // Farms
+  useFarms,
   useFarm,
+  useFarmWithSelection,
+  useCreateFarm,
+  useUpdateFarm,
+  useDeleteFarm,
+
+  // Animals
   useAnimals,
+  useCreateAnimal,
+  useUpdateAnimal,
+  useDeleteAnimal,
+
+  // Crops
   useCrops,
-  useCropsStats,
+  useCreateCrop,
+  useUpdateCrop,
+  useDeleteCrop,
+  useStrains,
+
+  // Tasks
   useTasks,
+  useCreateTask,
+  useUpdateTask,
+  useDeleteTask,
+
+  // Inventory
   useInventory,
-  useLowStockItems,
-} from './legacyHooks';
+  useInventoryLowStock,
+  useCreateInventoryItem,
+  useUpdateInventoryItem,
+  useDeleteInventoryItem,
 
-// ============================================================================
-// SPECIALIZED HOOKS (Migrated to API layer)
-// ============================================================================
+  // Locations
+  useLocations,
+  useCreateLocation,
+  useUpdateLocation,
+  useDeleteLocation,
 
-export {
-  // Irrigation
-  useIrrigation,
-  useIrrigationByFarm,
-  useIrrigationAnalytics,
-  useIrrigationRecommendations,
+  // Finance
+  useFinance,
+  useFinanceSummary,
+  useCreateFinanceRecord,
+  useUpdateFinanceRecord,
+  useDeleteFinanceRecord,
 
-  // Pest & Disease
-  usePestDisease,
-  usePestDiseaseByFarm,
-  usePreventionCalendar,
-
-  // Soil Health
-  useSoilHealth,
-  useSoilTestsByFarm,
-  useSoilHealthMetrics,
-
-  // Crop Rotation
-  useRotation,
-  useRotationByFarm,
-
-  // Offline
-  useOfflineQueue,
+  // API Client
+  apiClient,
 } from '../api';
+
+// ============================================================================
+// SPECIALIZED HOOKS
+// ============================================================================
+
+// Re-export specialized hooks that aren't entity CRUD
+// (These hooks are kept in the hooks/ directory for specialized functionality)
 
 // ============================================================================
 // UTILITY HOOKS
@@ -64,10 +79,3 @@ export { useDebounce } from './useDebounce';
 // ============================================================================
 
 export { useAuth, AuthProvider } from './AuthContext';
-
-// ============================================================================
-// API CLIENT
-// ============================================================================
-
-// Legacy hook wrapper that returns the singleton client
-export const useApiClient = () => apiClient;

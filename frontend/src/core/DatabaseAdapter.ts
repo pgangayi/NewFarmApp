@@ -14,12 +14,13 @@ interface DBSchema {
   locations: Array<any>;
   animals: Array<any>;
   crops: Array<any>;
+  inventory: Array<any>;
 }
 
 export class DatabaseAdapter {
   private static load(): DBSchema {
     const raw = localStorage.getItem(DB_KEY);
-    const defaults = { users: [], farms: [], locations: [], animals: [], crops: [] };
+    const defaults = { users: [], farms: [], locations: [], animals: [], crops: [], inventory: [] };
 
     if (!raw) {
       return defaults;

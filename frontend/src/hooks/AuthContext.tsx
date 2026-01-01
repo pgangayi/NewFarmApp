@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { AuthServiceAdapter } from '../services/adapters/authServiceAdapter';
-import { User } from '../types/entities';
+import type { User } from '../api/types';
 import { authStorage } from '../lib/authStorage';
 
 // Reusing generic User type but ensuring alignment

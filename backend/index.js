@@ -7,7 +7,14 @@ import { onRequest as farmsHandler } from "./api/farms.js";
 import { onRequest as cropsHandler } from "./api/crops.js";
 import { onRequest as livestockHandler } from "./api/livestock/index.js";
 import { onRequest as tasksHandler } from "./api/tasks-enhanced.js";
+import {
+  onRequest as inventoryHandler,
+  onRequestAlerts as inventoryAlertsHandler,
+} from "./api/inventory-enhanced.js";
 import { onRequest as financeHandler } from "./api/finance-enhanced.js";
+import { onRequest as lookupHandler } from "./api/lookup.js";
+import { onRequest as rotationsHandler } from "./api/rotations.js";
+import { onRequest as pestDiseaseHandler } from "./api/pest-disease.js";
 
 // --- CORS Configuration (The "Foolproof" Approach) ---
 const corsHeaders = {
@@ -77,29 +84,61 @@ router.all("/api/tasks/:id?", (req, env) =>
   tasksHandler({ request: req, env })
 );
 
+// Inventory
+router.all("/api/inventory/alerts", (req, env) =>
+  inventoryAlertsHandler({ request: req, env })
+);
+router.all("/api/inventory", (req, env) =>
+  inventoryHandler({ request: req, env })
+);
+router.all("/api/inventory/:id?", (req, env) =>
+  inventoryHandler({ request: req, env })
+);
+
 // Finance Enhanced
 router.all("/api/finance-enhanced", (req, env) =>
   financeHandler({ request: req, env })
 );
 
-// Fallback
-router.all(
-  "*",
-  () =>
-    new Response(JSON.stringify({ error: "Endpoint not found" }), {
-      status: 404,
-    })
+// Lookup
+router.all("/api/lookup/*", (req, env) => lookupHandler({ request: req, env }));
+
+// Rotations
+router.all("/api/rotations", (req, env) =>
+  rotationsHandler({ request: req, env })
 );
+router.all("/api/rotations/:id", (req, env) =>
+  rotationsHandler({ request: req, env })
+);
+
+// Pest & Disease
+router.all("/api/pest-disease", (req, env) =>
+  pestDiseaseHandler({ request: req, env })
+);
+router.all("/api/pest-disease/:id", (req, env) =>
+  pestDiseaseHandler({ request: req, env })
+);
+
+// Fallback
+router.all("*", () => {
+  console.log("Fallback hit");
+  return new Response(JSON.stringify({ error: "Endpoint not found" }), {
+    status: 404,
+  });
+});
 
 export default {
   async fetch(request, env, ctx) {
+    console.log("Incoming request:", request.method, request.url);
     // 1. Handle Preflight
     const preflight = handleCors(request);
     if (preflight) return preflight;
 
     // 2. Handle Request
     try {
+      console.log("Calling router.handle");
       const response = await router.handle(request, env, ctx);
+      console.log("Router handled");
       // 3. Wrap Response with CORS
       return wrapCors(response);
     } catch (e) {

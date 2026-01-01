@@ -1,307 +1,278 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { TaskFormData, ExtendedTask } from './types';
-import { Farm, User } from '../../api';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Plus, Trash2, DollarSign } from 'lucide-react';
+import type { ExtendedTask } from './types';
+import type { Farm, User } from '../../api/types';
 
 interface TaskModalProps {
-  task?: ExtendedTask | null;
+  task: ExtendedTask | null;
   farms: Farm[];
   users: User[];
-  onSave: (data: TaskFormData) => void;
+  onSave: (data: any) => void;
   onClose: () => void;
   isLoading: boolean;
 }
 
+interface CostItem {
+  description: string;
+  amount: number;
+  currency: string;
+}
+
 export function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModalProps) {
-  const [formData, setFormData] = useState<TaskFormData>({
-    farm_id:
-      task?.farm_id ||
-      (farms.length > 0
-        ? typeof farms[0].id === 'string'
-          ? farms[0].id
-          : String(farms[0].id)
-        : '') ||
-      '',
-    title: task?.title || '',
-    description: task?.description || '',
-    status: task?.status || 'pending',
-    priority: (task?.priority as 'low' | 'normal' | 'high' | 'urgent') || 'normal',
-    due_date: task?.due_date || '',
-    assigned_to: task?.assigned_to || '',
-    priority_score: task?.priority_score || undefined,
-    estimated_duration: task?.estimated_duration || undefined,
-    dependencies: task?.dependencies || '',
-    resource_requirements: task?.resource_requirements || '',
-    task_category: task?.task_category || '',
-    completion_criteria: task?.completion_criteria || '',
-    progress_percentage: task?.progress_percentage || 0,
-    tags: task?.tags || '',
-    location: task?.location || '',
+  const [formData, setFormData] = useState<any>({
+    title: '',
+    description: '',
+    status: 'pending',
+    priority: 'medium',
+    due_date: '',
+    farm_id: '',
+    assigned_to_id: '',
   });
+
+  const [costs, setCosts] = useState<CostItem[]>([]);
+
+  useEffect(() => {
+    if (task) {
+      setFormData({
+        title: task.title || '',
+        description: task.description || '',
+        status: task.status || 'pending',
+        priority: task.priority || 'medium',
+        due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
+        farm_id: task.farm_id?.toString() || '',
+        assigned_to_id: task.assigned_to || '',
+      });
+      if (task.costs && Array.isArray(task.costs)) {
+        setCosts(
+          task.costs.map((c: any) => ({
+            description: c.description,
+            amount: c.amount,
+            currency: c.currency || 'USD',
+          }))
+        );
+      }
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        status: 'pending',
+        priority: 'medium',
+        due_date: '',
+        farm_id: farms.length > 0 ? farms[0].id.toString() : '',
+        assigned_to_id: '',
+      });
+      setCosts([]);
+    }
+  }, [task, farms]);
+
+  const handleChange = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddCost = () => {
+    setCosts([...costs, { description: '', amount: 0, currency: 'USD' }]);
+  };
+
+  const handleRemoveCost = (index: number) => {
+    setCosts(costs.filter((_, i) => i !== index));
+  };
+
+  const handleCostChange = (index: number, field: keyof CostItem, value: any) => {
+    const newCosts = [...costs];
+    newCosts[index] = { ...newCosts[index], [field]: value };
+    setCosts(newCosts);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      id: task?.id,
+      costs: costs.filter(c => c.description && c.amount > 0),
+    });
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h3 className="text-lg font-semibold mb-4">{task ? 'Edit Task' : 'Create New Task'}</h3>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{task ? 'Edit Task' : 'Create Task'}</DialogTitle>
+        </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Farm *</label>
-                <select
-                  value={formData.farm_id}
-                  onChange={e => setFormData({ ...formData, farm_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select a farm</option>
-                  {farms.map(farm => (
-                    <option key={farm.id} value={farm.id}>
-                      {farm.name}
-                    </option>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={e => handleChange('title', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="farm_id">Farm *</Label>
+              <Select value={formData.farm_id} onValueChange={val => handleChange('farm_id', val)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Farm" />
+                </SelectTrigger>
+                <SelectContent>
+                  {farms.map(f => (
+                    <SelectItem key={f.id} value={f.id.toString()}>
+                      {f.name}
+                    </SelectItem>
                   ))}
-                </select>
-              </div>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Task Title *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status *</Label>
+              <Select value={formData.status} onValueChange={val => handleChange('status', val)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as
-                        | 'pending'
-                        | 'in_progress'
-                        | 'completed'
-                        | 'cancelled',
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority *</Label>
+              <Select
+                value={formData.priority}
+                onValueChange={val => handleChange('priority', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                <select
-                  value={formData.priority}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      priority: e.target.value as 'low' | 'normal' | 'high' | 'urgent',
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="due_date">Due Date *</Label>
+              <Input
+                id="due_date"
+                type="date"
+                value={formData.due_date}
+                onChange={e => handleChange('due_date', e.target.value)}
+                required
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
-                <select
-                  value={formData.assigned_to}
-                  onChange={e => setFormData({ ...formData, assigned_to: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Unassigned</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
+            <div className="space-y-2">
+              <Label htmlFor="assigned_to">Assign To</Label>
+              <Select
+                value={formData.assigned_to_id}
+                onValueChange={val => handleChange('assigned_to_id', val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map(u => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}
+                    </SelectItem>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <input
-                  type="date"
-                  value={
-                    formData.due_date ? new Date(formData.due_date).toISOString().split('T')[0] : ''
-                  }
-                  onChange={e => setFormData({ ...formData, due_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={formData.task_category}
-                  onChange={e => setFormData({ ...formData, task_category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select category</option>
-                  <option value="Livestock">Livestock</option>
-                  <option value="Crop Management">Crop Management</option>
-                  <option value="Field Management">Field Management</option>
-                  <option value="Maintenance">Maintenance</option>
-                  <option value="Administration">Administration</option>
-                  <option value="Inventory">Inventory</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Equipment">Equipment</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estimated Duration (hours)
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={formData.estimated_duration || ''}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      estimated_duration: parseFloat(e.target.value) || undefined,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.progress_percentage || 0}
-                  onChange={e =>
-                    setFormData({ ...formData, progress_percentage: parseInt(e.target.value) || 0 })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Priority Score (1-10)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.priority_score || ''}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      priority_score: parseInt(e.target.value) || undefined,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe the task requirements..."
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={e => handleChange('description', e.target.value)}
+              rows={3}
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dependencies</label>
-              <textarea
-                value={formData.dependencies}
-                onChange={e => setFormData({ ...formData, dependencies: e.target.value })}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Task dependencies (comma-separated IDs or descriptions)..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Resource Requirements
-              </label>
-              <textarea
-                value={formData.resource_requirements}
-                onChange={e => setFormData({ ...formData, resource_requirements: e.target.value })}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Equipment, tools, materials needed..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Completion Criteria
-              </label>
-              <textarea
-                value={formData.completion_criteria}
-                onChange={e => setFormData({ ...formData, completion_criteria: e.target.value })}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="What constitutes task completion..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-              <input
-                type="text"
-                value={formData.tags}
-                onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Comma-separated tags..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={e => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Specific location or area..."
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
-                {isLoading ? 'Saving...' : task ? 'Update Task' : 'Create Task'}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Cost Components
+              </Label>
+              <Button type="button" variant="outline" size="sm" onClick={handleAddCost}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Cost
               </Button>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
+
+            {costs.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No cost components added.</p>
+            )}
+
+            <div className="space-y-3">
+              {costs.map((cost, index) => (
+                <div key={index} className="flex items-end gap-3 bg-gray-50 p-3 rounded-md">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">Description</Label>
+                    <Input
+                      value={cost.description}
+                      onChange={e => handleCostChange(index, 'description', e.target.value)}
+                      placeholder="e.g. Fertilizer, Labor"
+                    />
+                  </div>
+                  <div className="w-32 space-y-1">
+                    <Label className="text-xs">Amount</Label>
+                    <Input
+                      type="number"
+                      value={cost.amount}
+                      onChange={e => handleCostChange(index, 'amount', parseFloat(e.target.value))}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleRemoveCost(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {costs.length > 0 && (
+              <div className="mt-4 text-right font-medium">
+                Total Estimated Cost: $
+                {costs.reduce((sum, c) => sum + (c.amount || 0), 0).toFixed(2)}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Task'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

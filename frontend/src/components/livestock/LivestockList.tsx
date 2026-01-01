@@ -1,14 +1,13 @@
-import { Search, Filter } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { LivestockCard } from './LivestockCard';
+import { Badge } from '../ui/badge';
 import type { Livestock } from '../../api';
 import type { FilterState } from '../../types/ui';
 
 interface LivestockListProps {
   livestock: Livestock[];
   filters: FilterState;
-  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+  setFilters: (filters: FilterState) => void;
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
   onEdit: (item: Livestock) => void;
@@ -18,55 +17,63 @@ interface LivestockListProps {
 export function LivestockList({
   livestock,
   filters,
-  setFilters,
   showFilters,
   setShowFilters,
   onEdit,
   onDelete,
 }: LivestockListProps) {
-  // Filter Logic
-  const filtered = livestock.filter((l: Livestock) => {
-    if (
-      filters.search &&
-      !l.name?.toLowerCase().includes(filters.search.toLowerCase()) &&
-      !l.identification_tag?.toLowerCase().includes(filters.search.toLowerCase())
-    )
-      return false;
-    if (filters.species && l.species !== filters.species) return false;
-    return true;
-  });
-
   return (
-    <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search by name, tag, or ID..."
-            className="pl-9"
-            value={filters.search}
-            onChange={(e: any) => setFilters((prev: any) => ({ ...prev, search: e.target.value }))}
-          />
-        </div>
-        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Livestock ({livestock.length})</h2>
+        <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+          {showFilters ? 'Hide Filters' : 'Show Filters'}
         </Button>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filtered.map((item: Livestock) => (
-          <LivestockCard key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          No livestock found matching your criteria.
+      {showFilters && (
+        <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <p className="text-sm text-gray-500">Filter implementation coming soon...</p>
         </div>
       )}
+
+      <div className="grid gap-4">
+        {livestock.map(item => (
+          <div
+            key={item.id}
+            className="bg-white p-4 rounded-lg flex items-center justify-between shadow-sm border"
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-900">
+                  {item.name || item.identification_tag}
+                </span>
+                <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
+                  {item.status}
+                </Badge>
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                {item.species} • {item.breed || 'Unknown Breed'} • {item.sex}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
+                <Edit className="h-4 w-4 text-gray-500" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(item)}>
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            </div>
+          </div>
+        ))}
+
+        {livestock.length === 0 && (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed">
+            <p className="text-gray-500">No livestock found matching your criteria.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

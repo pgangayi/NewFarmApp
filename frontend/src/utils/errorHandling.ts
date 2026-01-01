@@ -4,7 +4,9 @@
  */
 
 import React from 'react';
-import type { ApiErrorResponse } from '../types/entities';
+import * as Sentry from '@sentry/react';
+// ApiErrorResponse type will be defined if needed, commenting out for now
+// import type { ApiErrorResponse } from '../api/types';
 
 // ============================================================================
 // ERROR TYPES
@@ -88,12 +90,19 @@ export class DefaultErrorHandler implements ErrorHandler {
   }
 
   reportError(error: unknown, context?: string): void {
-    // TODO: Integrate with error tracking service (e.g., Sentry)
     const appError = error instanceof AppError ? error : AppError.fromUnknownError(error);
 
-    // For now, just log to console in production
-    if (!import.meta.env.DEV) {
-      console.error('Error reported:', {
+    if (import.meta.env.PROD) {
+      Sentry.captureException(appError, {
+        extra: {
+          context,
+          code: appError.code,
+          statusCode: appError.statusCode,
+          details: appError.details,
+        },
+      });
+    } else {
+      console.error('Error reported (Dev):', {
         message: appError.message,
         code: appError.code,
         context,

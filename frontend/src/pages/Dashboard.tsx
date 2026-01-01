@@ -21,7 +21,7 @@ import {
   AlertTriangle,
   MapPin,
 } from 'lucide-react';
-import { useFarm } from '../hooks/useFarm';
+import { useFarms } from '../hooks';
 import { useCrops, useAnimals, useInventory, useTasks, useFinance } from '../hooks';
 import EnhancedFarmCalendar from '../components/EnhancedFarmCalendar';
 import WeatherCalendar from '../components/WeatherCalendar';
@@ -30,6 +30,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import CropCard from '../components/dashboard/CropCard';
 import StatCard from '../components/dashboard/StatCard';
 import type { ColorVariant, TabConfig, BackgroundImageState } from '../types/dashboard';
+import type { Crop, Animal, Task, InventoryItem } from '../api';
 import {
   colorClasses,
   formatStatus,
@@ -63,12 +64,20 @@ export default function Dashboard() {
   const farmSelectorRef = useRef<HTMLDivElement>(null);
 
   // Live data hooks
-  const { farms, isLoading: farmsLoading, error: farmsError } = useFarm();
-  const { crops, isLoading: cropsLoading, error: cropsError } = useCrops();
-  const { animals, isLoading: animalsLoading, error: animalsError } = useAnimals();
-  const { items: inventory, isLoading: inventoryLoading, error: inventoryError } = useInventory();
-  const { tasks, isLoading: tasksLoading, error: tasksError } = useTasks();
-  const { entries: financeEntries, isLoading: financeLoading, error: financeError } = useFinance();
+  const { data: farms = [], isLoading: farmsLoading, error: farmsError } = useFarms();
+  const { data: crops = [], isLoading: cropsLoading, error: cropsError } = useCrops();
+  const { data: animals = [], isLoading: animalsLoading, error: animalsError } = useAnimals();
+  const {
+    data: inventory = [],
+    isLoading: inventoryLoading,
+    error: inventoryError,
+  } = useInventory();
+  const { data: tasks = [], isLoading: tasksLoading, error: tasksError } = useTasks();
+  const {
+    data: financeEntries = [],
+    isLoading: financeLoading,
+    error: financeError,
+  } = useFinance();
 
   // Load background image
   useEffect(() => {
@@ -86,7 +95,7 @@ export default function Dashboard() {
 
   // Enhanced farm data with proper fallback handling
   const farmData = useMemo(() => {
-    return getSelectedFarm(farms, selectedFarm);
+    return getSelectedFarm<Farm>(farms, selectedFarm);
   }, [farms, selectedFarm]);
 
   // Focus management for accessibility
@@ -135,9 +144,9 @@ export default function Dashboard() {
   const cropStats = useMemo(
     () => ({
       total: crops.length,
-      active: crops.filter(c => c.status === 'active').length,
-      healthy: crops.filter(c => c.health_status === 'healthy').length,
-      needsAttention: crops.filter(c => c.health_status !== 'healthy').length,
+      active: crops.filter((c: Crop) => c.status === 'growing').length,
+      healthy: crops.filter((c: Crop) => c.health_status === 'healthy').length,
+      needsAttention: crops.filter((c: Crop) => c.health_status !== 'healthy').length,
     }),
     [crops]
   );
@@ -145,9 +154,9 @@ export default function Dashboard() {
   const animalStats = useMemo(
     () => ({
       total: animals.length,
-      active: animals.filter(a => a.status === 'active').length,
-      sold: animals.filter(a => a.status === 'sold').length,
-      deceased: animals.filter(a => a.status === 'deceased').length,
+      active: animals.filter((a: Animal) => a.status === 'active').length,
+      sold: animals.filter((a: Animal) => a.status === 'sold').length,
+      deceased: animals.filter((a: Animal) => a.status === 'deceased').length,
     }),
     [animals]
   );
@@ -155,9 +164,11 @@ export default function Dashboard() {
   const inventoryStats = useMemo(
     () => ({
       total: inventory.length,
-      lowStock: inventory.filter(i => i.stock_status === 'low').length,
+      lowStock: inventory.filter(
+        (i: InventoryItem) => i.reorder_level && i.quantity < i.reorder_level
+      ).length,
       totalValue: inventory.reduce(
-        (sum, item) => sum + item.qty * (item.current_cost_per_unit || 0),
+        (sum: number, item: InventoryItem) => sum + item.quantity * (item.cost_per_unit || 0),
         0
       ),
     }),
@@ -167,11 +178,11 @@ export default function Dashboard() {
   // Fixed date validation using proper isNaN checks
   const taskStats = useMemo(
     () => ({
-      pending: tasks.filter(t => t.status === 'pending').length,
-      overdue: tasks.filter(t => {
+      pending: tasks.filter((t: Task) => t.status === 'pending').length,
+      overdue: tasks.filter((t: Task) => {
         return !isDateValid(t.due_date) ? false : isOverdue(t.due_date, t.status);
       }).length,
-      inProgress: tasks.filter(t => t.status === 'in_progress').length,
+      inProgress: tasks.filter((t: Task) => t.status === 'in_progress').length,
     }),
     [tasks]
   );
@@ -179,12 +190,12 @@ export default function Dashboard() {
   const financeStats = useMemo(
     () => ({
       income: financeEntries
-        .filter(f => f.entry_type === 'income')
-        .reduce((sum, f) => sum + Math.abs(f.amount), 0),
+        .filter((f: any) => f.type === 'income' || f.entry_type === 'income')
+        .reduce((sum: number, f: any) => sum + Math.abs(f.amount), 0),
       expenses: financeEntries
-        .filter(f => f.entry_type === 'expense')
-        .reduce((sum, f) => sum + Math.abs(f.amount), 0),
-      netBalance: financeEntries.reduce((sum, f) => sum + f.amount, 0),
+        .filter((f: any) => f.type === 'expense' || f.entry_type === 'expense')
+        .reduce((sum: number, f: any) => sum + Math.abs(f.amount), 0),
+      netBalance: financeEntries.reduce((sum: number, f: any) => sum + f.amount, 0),
     }),
     [financeEntries]
   );
@@ -511,6 +522,7 @@ export default function Dashboard() {
                   value={cropStats.total}
                   sublabel={`${cropStats.active} active`}
                   color="green"
+                  onClick={() => setActiveTab('crops')}
                 />
                 <StatCard
                   icon={Activity}
@@ -518,6 +530,7 @@ export default function Dashboard() {
                   value={animalStats.total}
                   sublabel={`${animalStats.active} active`}
                   color="blue"
+                  onClick={() => setActiveTab('animals')}
                 />
                 <StatCard
                   icon={Package}
@@ -525,6 +538,7 @@ export default function Dashboard() {
                   value={inventoryStats.total}
                   sublabel={`${inventoryStats.lowStock} low stock`}
                   color="orange"
+                  onClick={() => navigate('/inventory')}
                 />
                 <StatCard
                   icon={CalendarIcon}
@@ -532,6 +546,7 @@ export default function Dashboard() {
                   value={taskStats.pending}
                   sublabel={`${taskStats.overdue} overdue`}
                   color="purple"
+                  onClick={() => setActiveTab('tasks')}
                 />
               </div>
 
@@ -884,7 +899,7 @@ export default function Dashboard() {
 
               {/* Tasks List */}
               <div className="space-y-3">
-                {tasks.map(task => (
+                {tasks.map((task: Task) => (
                   <div
                     key={task.id}
                     className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"

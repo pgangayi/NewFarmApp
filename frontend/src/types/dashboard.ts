@@ -42,6 +42,7 @@ export interface StatCardProps {
   value: string | number;
   sublabel?: string;
   color: ColorVariant;
+  onClick?: () => void;
 }
 
 export interface TabConfig {

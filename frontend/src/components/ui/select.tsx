@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 
 interface SelectProps {
   value?: string;
+  defaultValue?: string;
   onValueChange?: (value: string) => void;
   children: React.ReactNode;
   className?: string;
@@ -38,11 +39,28 @@ const SelectContext = React.createContext<{
   setIsOpen: (open: boolean) => void;
 }>({ isOpen: false, setIsOpen: () => {} });
 
-const Select = ({ value, onValueChange, children, className }: SelectProps) => {
+const Select = ({
+  value: controlledValue,
+  defaultValue,
+  onValueChange,
+  children,
+  className,
+}: SelectProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [internalValue, setInternalValue] = React.useState(defaultValue);
+
+  const isControlled = controlledValue !== undefined;
+  const value = isControlled ? controlledValue : internalValue;
+
+  const handleValueChange = (newValue: string) => {
+    if (!isControlled) {
+      setInternalValue(newValue);
+    }
+    onValueChange?.(newValue);
+  };
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen }}>
+    <SelectContext.Provider value={{ value, onValueChange: handleValueChange, isOpen, setIsOpen }}>
       <div className={cn('relative', className)}>{children}</div>
     </SelectContext.Provider>
   );

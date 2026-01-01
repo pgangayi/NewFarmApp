@@ -1,5 +1,31 @@
 import React, { useState } from 'react';
-import { CreateAnimalForm } from '../hooks/useAnimals';
+import { useAnimals } from '../hooks';
+
+export interface CreateAnimalForm {
+  id?: string;
+  farm_id: string;
+  name: string;
+  species: string;
+  breed: string;
+  identification_tag: string;
+  birth_date?: string;
+  sex?: 'male' | 'female';
+  health_status?: string;
+  intake_type: string;
+  intake_date: string;
+  purchase_price?: number;
+  seller_details?: string;
+  father_id?: string;
+  mother_id?: string;
+  current_location_id?: string;
+  production_type?: string;
+  status: string;
+  current_weight?: number;
+  target_weight?: number;
+  vaccination_status?: string;
+  acquisition_date?: string;
+  acquisition_cost?: number;
+}
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';

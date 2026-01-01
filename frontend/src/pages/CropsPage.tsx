@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/AuthContext';
-import { useFarmWithSelection, useCrops, useCreateCrop, useStrains } from '../api';
+import {
+  useFarmWithSelection,
+  useCrops,
+  useCreateCrop,
+  useStrains,
+  useAddCropVariety,
+} from '../api';
 import { Button } from '../components/ui/button';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { LoadingErrorContent } from '../components/ui/LoadingStates';
@@ -43,12 +49,14 @@ export function CropsPage() {
   const { currentFarm } = useFarmWithSelection();
   const [activeTab, setActiveTab] = useState<TabValues>('overview');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showVarietyModal, setShowVarietyModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // API Hooks
   const { data: crops = [], isLoading, error, refetch } = useCrops(currentFarm?.id);
   const { data: strains = [] } = useStrains(); // Optional filter by crop type could be added
   const createCropMutation = useCreateCrop();
+  const addVarietyMutation = useAddCropVariety();
 
   if (!isAuthenticated())
     return <div className="min-h-screen flex items-center justify-center">Please log in.</div>;
@@ -154,7 +162,12 @@ export function CropsPage() {
             name: 'variety',
             label: 'Variety/Strain',
             type: 'select',
-            options: strains.map(s => ({ value: s.name, label: s.name })),
+            options: strains.map(s => ({
+              value: s.name,
+              label: `${s.crop_type || 'Unknown'} - ${s.name}`,
+            })),
+            creatable: true,
+            onAdd: () => setShowVarietyModal(true),
           },
           { name: 'planting_date', label: 'Planting Date', type: 'date', required: true },
           {
@@ -174,6 +187,36 @@ export function CropsPage() {
         }}
         onSubmit={handleCreate}
         isLoading={createCropMutation.isPending}
+      />
+
+      {/* Add Variety Modal */}
+      <UnifiedModal
+        isOpen={showVarietyModal}
+        onClose={() => setShowVarietyModal(false)}
+        title="Add New Variety"
+        fields={[
+          {
+            name: 'crop_type',
+            label: 'Crop Type',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g. Corn',
+          },
+          {
+            name: 'name',
+            label: 'Variety Name',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g. Sweet Corn',
+          },
+          { name: 'days_to_maturity', label: 'Days to Maturity', type: 'number' },
+          { name: 'description', label: 'Description', type: 'textarea' },
+        ]}
+        onSubmit={data => {
+          addVarietyMutation.mutate(data as any);
+          setShowVarietyModal(false);
+        }}
+        size="sm"
       />
     </div>
   );

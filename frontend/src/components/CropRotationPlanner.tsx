@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRotation, useRotationByFarm } from '../hooks/useRotation';
-import { useFarm } from '../hooks/useFarm';
+import { useFarm, useRotations, useCreateRotation } from '../api';
 import { Button } from './ui/button';
 import {
   RotateCcw,
@@ -37,14 +36,14 @@ const DISEASE_PREVENTION = {
 };
 
 export function CropRotationPlanner({ farmId }: CropRotationProps) {
-  const { currentFarm } = useFarm();
+  const { data: currentFarm } = useFarm(farmId);
   const [selectedField, setSelectedField] = useState<string>('');
   const [rotationYears, setRotationYears] = useState(3);
   const [isAddingPlan, setIsAddingPlan] = useState(false);
 
-  // Use the rotation hook
-  const { rotationPlans, isLoading, error, createRotationPlan, isCreating } =
-    useRotationByFarm(farmId);
+  const { data: rotationPlans = [], isLoading, error } = useRotations(farmId);
+  const createRotationMutation = useCreateRotation();
+  const isCreating = createRotationMutation.isPending;
 
   // Fetch fields for the farm
   const { data: fields } = useQuery({
@@ -57,9 +56,18 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
     enabled: !!farmId,
   });
 
-  const handleCreateRotationPlan = (plan: unknown) => {
-    createRotationPlan(plan);
-    setIsAddingPlan(false);
+  const handleCreateRotationPlan = (plan: any) => {
+    createRotationMutation.mutate(
+      {
+        ...plan,
+        farm_id: farmId,
+        field_id: selectedField,
+        status: 'active',
+      },
+      {
+        onSuccess: () => setIsAddingPlan(false),
+      }
+    );
   };
 
   const getCropFamily = (cropType: string) => {
@@ -71,12 +79,12 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
     return 'Other';
   };
 
-  const checkRotationHealth = (sequence: unknown[]) => {
+  const checkRotationHealth = (sequence: any[]) => {
     const issues = [];
     const recommendations = [];
 
     // Check for crop family repetition
-    const cropFamilies = sequence.map(crop => getCropFamily(crop.crop_type));
+    const cropFamilies = sequence.map((crop: any) => getCropFamily(crop.crop_type));
     const familyCounts = cropFamilies.reduce(
       (acc, family) => {
         acc[family] = (acc[family] || 0) + 1;
@@ -96,13 +104,13 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
     }
 
     // Check for legumes
-    const hasLegumes = sequence.some(crop => getCropFamily(crop.crop_type) === 'Legumes');
+    const hasLegumes = sequence.some((crop: any) => getCropFamily(crop.crop_type) === 'Legumes');
     if (!hasLegumes) {
       recommendations.push('Consider including legumes to improve soil nitrogen');
     }
 
     // Check for grain breaks
-    const hasGrains = sequence.some(crop => getCropFamily(crop.crop_type) === 'Grains');
+    const hasGrains = sequence.some((crop: any) => getCropFamily(crop.crop_type) === 'Grains');
     if (!hasGrains) {
       recommendations.push('Include grains to break disease cycles');
     }
@@ -213,9 +221,9 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
                 disabled={isCreating}
               >
                 <option value="">Choose a field...</option>
-                {fields?.map((field: unknown) => (
-                  <option key={field.id} value={field.id}>
-                    {field.name}
+                {fields?.map((field: any) => (
+                  <option key={field?.id || Math.random()} value={field?.id}>
+                    {field?.name || 'Unnamed Field'}
                   </option>
                 ))}
               </select>
@@ -274,7 +282,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          {rotationPlans.map(plan => {
+          {rotationPlans.map((plan: any) => {
             const healthCheck = checkRotationHealth(plan.crop_sequence);
             const hasIssues = healthCheck.issues.length > 0;
             const hasRecommendations = healthCheck.recommendations.length > 0;
@@ -308,7 +316,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
 
                 {/* Rotation Sequence */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                  {plan.crop_sequence.map((crop, index) => {
+                  {plan.crop_sequence.map((crop: any, index: number) => {
                     const family = getCropFamily(crop.crop_type);
                     return (
                       <div key={index} className="border rounded p-3">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useIrrigation } from '../hooks/useIrrigation';
-import { useFarm } from '../hooks/useFarm';
+// Note: useIrrigation hook needs to be implemented or removed
+import { useFarm } from '../hooks';
 import { Button } from './ui/button';
 import {
   Droplets,

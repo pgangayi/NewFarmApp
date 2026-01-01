@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useFarm } from '../hooks/useFarm';
+import { useFarm } from '../hooks';
 import { Button } from './ui/button';
 import {
   Calculator,

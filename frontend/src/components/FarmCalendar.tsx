@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -19,9 +20,8 @@ import {
   Calendar as CalendarType,
   Target,
 } from 'lucide-react';
-import { useTasks } from '../hooks/useTasks';
-import { useCrops } from '../hooks/useCrops';
-import { useAnimals } from '../hooks/useAnimals';
+import { useTasks, useCrops, useAnimals } from '../hooks';
+import type { Task, Crop, Animal } from '../api';
 
 interface CalendarEvent {
   id: string;
@@ -42,7 +42,7 @@ interface CalendarEvent {
   location?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'overdue';
   relatedId?: string; // ID of related entity (crop, animal, task)
-  icon?: React.ComponentType<unknown>;
+  icon?: LucideIcon;
   color?: string;
 }
 
@@ -63,32 +63,32 @@ export default function FarmCalendarView({
   const [eventFilter, setEventFilter] = useState<string>('all');
 
   // Data hooks
-  const { tasks } = useTasks();
-  const { crops } = useCrops();
-  const { animals } = useAnimals();
+  const { data: tasks = [] } = useTasks();
+  const { data: crops = [] } = useCrops();
+  const { data: animals = [] } = useAnimals();
 
   // Generate calendar events from all sources
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
     // Add tasks as events
-    tasks.forEach(task => {
+    tasks.forEach((task: Task) => {
       calendarEvents.push({
         id: `task-${task.id}`,
         title: task.title,
         date: task.due_date,
         type: 'task',
-        priority: task.priority as unknown,
-        description: task.description,
-        status: task.status as unknown,
+        priority: (task.priority || 'normal') as 'low' | 'normal' | 'high' | 'urgent',
+        description: task.description || '',
+        status: (task.status || 'pending') as 'pending' | 'in_progress' | 'completed' | 'overdue',
         relatedId: task.id,
         icon: CalendarType,
-        color: getPriorityColor(task.priority),
+        color: getPriorityColor(task.priority || 'normal'),
       });
     });
 
     // Add crop-related events
-    crops.forEach(crop => {
+    crops.forEach((crop: Crop) => {
       if (crop.planting_date) {
         calendarEvents.push({
           id: `planting-${crop.id}`,
@@ -141,7 +141,7 @@ export default function FarmCalendarView({
     });
 
     // Add animal events
-    animals.forEach(animal => {
+    animals.forEach((animal: Animal) => {
       // Veterinary check-ups (monthly mock)
       const vetDate = generateVetScheduleDate(animal.acquisition_date);
       if (vetDate) {
@@ -289,7 +289,7 @@ export default function FarmCalendarView({
               {['month', 'week', 'day'].map(viewType => (
                 <button
                   key={viewType}
-                  onClick={() => setView(viewType as unknown)}
+                  onClick={() => setView(viewType as 'month' | 'week' | 'day')}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     view === viewType
                       ? 'bg-white text-gray-900 shadow-sm'
@@ -449,7 +449,7 @@ export default function FarmCalendarView({
 // Helper functions
 function generateIrrigationDates(schedule: string): string[] {
   // Mock irrigation schedule generation
-  const dates = [];
+  const dates: string[] = [];
   const startDate = new Date();
   for (let i = 0; i < 10; i++) {
     const date = new Date(startDate);

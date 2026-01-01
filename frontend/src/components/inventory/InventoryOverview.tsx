@@ -1,8 +1,8 @@
-import { Package, DollarSign, AlertTriangle, Bell, ShoppingCart } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { InventoryItem, InventoryAlert } from './types';
+import { AlertTriangle, CheckCircle, Package, Truck } from 'lucide-react';
+import type { InventoryItem } from '../../api/types';
+import type { InventoryAlert } from './types';
 
 interface InventoryOverviewProps {
   inventoryItems: InventoryItem[];
@@ -19,184 +19,128 @@ export function InventoryOverview({
   onResolveAlert,
   onReorder,
 }: InventoryOverviewProps) {
-  // Calculate summary statistics
-  const totalItems = inventoryItems?.length || 0;
-  const totalValue =
-    inventoryItems?.reduce((sum, item) => sum + item.qty * (item.current_cost_per_unit || 0), 0) ||
-    0;
-  const criticalItems =
-    inventoryItems?.filter(item => item.stock_status === 'critical').length || 0;
-  const unresolvedAlerts = alerts?.filter(alert => !alert.resolved).length || 0;
-  const categories = [...new Set(inventoryItems?.map(item => item.category).filter(Boolean) || [])];
+  const totalItems = inventoryItems.length;
+  const totalValue = inventoryItems.reduce(
+    (acc, item) => acc + item.quantity * (item.unit_price || 0),
+    0
+  );
+  const lowStockCount = lowStockItems.length;
+  const activeAlerts = alerts.filter(a => !a.resolved).length;
 
   return (
-    <div className="space-y-8">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <OverviewCard
+          title="Total Items"
+          value={totalItems.toString()}
+          icon={Package}
+          color="text-blue-600"
+        />
+        <OverviewCard
+          title="Total Value"
+          value={`$${totalValue.toLocaleString()}`}
+          icon={CheckCircle} // Using generic icon
+          color="text-green-600"
+        />
+        <OverviewCard
+          title="Low Stock"
+          value={lowStockCount.toString()}
+          icon={AlertTriangle}
+          color="text-yellow-600"
+        />
+        <OverviewCard
+          title="Active Alerts"
+          value={activeAlerts.toString()}
+          icon={AlertTriangle}
+          color="text-red-600"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Low Stock Alerts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalItems}</div>
-            <p className="text-xs text-muted-foreground">Across all farms</p>
+            {lowStockItems.length === 0 ? (
+              <p className="text-gray-500 text-sm">No items are currently low on stock.</p>
+            ) : (
+              <div className="space-y-4">
+                {lowStockItems.slice(0, 5).map(item => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center p-2 bg-red-50 rounded"
+                  >
+                    <div>
+                      <p className="font-medium text-red-900">{item.name}</p>
+                      <p className="text-xs text-red-700">
+                        Quantity: {item.quantity} {item.unit}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => onReorder(item)}
+                      className="text-xs bg-white text-red-600 border border-red-200 px-2 py-1 rounded hover:bg-red-50"
+                    >
+                      Reorder
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Recent Alerts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Current inventory value</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Critical Items</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{criticalItems}</div>
-            <p className="text-xs text-muted-foreground">Low stock items</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-            <Bell className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{unresolvedAlerts}</div>
-            <p className="text-xs text-muted-foreground">Need attention</p>
+            {alerts.length === 0 ? (
+              <p className="text-gray-500 text-sm">No system alerts.</p>
+            ) : (
+              <div className="space-y-2">
+                {alerts.slice(0, 5).map(alert => (
+                  <div
+                    key={alert.id}
+                    className={`p-2 rounded border ${alert.resolved ? 'bg-gray-50 border-gray-200' : 'bg-yellow-50 border-yellow-200'}`}
+                  >
+                    <div className="flex justify-between">
+                      <p className="text-sm font-medium">{alert.message}</p>
+                      {!alert.resolved && (
+                        <button
+                          onClick={() => onResolveAlert(alert, true)}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          Dismiss
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {new Date(alert.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Critical Alerts */}
-      {unresolvedAlerts > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              Active Alerts ({unresolvedAlerts})
-            </CardTitle>
-            <CardDescription>Items requiring immediate attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {alerts
-                ?.filter(alert => !alert.resolved)
-                .slice(0, 5)
-                .map(alert => (
-                  <div
-                    key={alert.id}
-                    className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle
-                        className={`h-4 w-4 ${
-                          alert.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
-                        }`}
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{alert.item_name}</p>
-                        <p className="text-xs text-gray-600">
-                          {alert.alert_type === 'low_stock' ? 'Low stock' : alert.alert_type} - Qty:{' '}
-                          {alert.current_quantity} / Threshold: {alert.threshold_quantity}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}>
-                        {alert.severity}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onResolveAlert(alert, true)}
-                      >
-                        Resolve
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Low Stock Items */}
-      {lowStockItems && lowStockItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-blue-500" />
-              Low Stock Items ({lowStockItems.length})
-            </CardTitle>
-            <CardDescription>Items below reorder threshold</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {lowStockItems.slice(0, 6).map(item => (
-                <div key={item.id} className="p-3 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm">{item.name}</h4>
-                    <Badge variant={item.stock_status === 'critical' ? 'destructive' : 'secondary'}>
-                      {item.stock_status}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-1">
-                    Current: {item.qty} {item.unit}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Threshold: {item.reorder_threshold} {item.unit}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-2"
-                    onClick={() => onReorder(item)}
-                  >
-                    <ShoppingCart className="h-3 w-3 mr-1" />
-                    Reorder
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Top Categories */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Categories by Value</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {categories.slice(0, 5).map(category => {
-              const categoryItems =
-                inventoryItems?.filter(item => item.category === category) || [];
-              const categoryValue = categoryItems.reduce(
-                (sum, item) => sum + item.qty * (item.current_cost_per_unit || 0),
-                0
-              );
-              return (
-                <div key={category} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{category}</span>
-                  <span className="text-sm font-medium">${categoryValue.toLocaleString()}</span>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
     </div>
+  );
+}
+
+function OverviewCard({ title, value, icon: Icon, color }: any) {
+  return (
+    <Card>
+      <CardContent className="p-6 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <h3 className="text-2xl font-bold mt-1">{value}</h3>
+        </div>
+        <div className={`p-3 bg-gray-50 rounded-full ${color}`}>
+          <Icon className="h-6 w-6" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

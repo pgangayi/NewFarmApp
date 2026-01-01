@@ -34,24 +34,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
+interface ModuleOverviewObject {
+  health_status?: string;
+  total_animals?: number;
+  production_rate?: number;
+  active_crops?: number;
+  growth_stage?: string;
+  net_profit?: number;
+  revenue?: number;
+  expenses?: number;
+  tax_deductible_amount?: number;
+  avg_temperature?: number;
+  total_precipitation?: number;
+  avg_humidity?: number;
+}
+
+interface ModuleOverviewArrayItem {
+  mature_crops?: number;
+}
+
 interface ModulePerformance {
   performance_score?: number;
-  overview?: {
-    health_status?: string;
-    total_animals?: number;
-    production_rate?: number;
-    active_crops?: number;
-    growth_stage?: string;
-    net_profit?: number;
-    revenue?: number;
-    expenses?: number;
-    tax_deductible_amount?: number;
-    avg_temperature?: number;
-    total_precipitation?: number;
-    avg_humidity?: number;
-  } & Array<{
-    mature_crops?: number;
-  }>;
+  overview?: ModuleOverviewObject | ModuleOverviewArrayItem[];
   yield_performance?: Array<{
     yield_efficiency?: number;
   }>;
@@ -80,19 +84,19 @@ interface ComprehensiveAnalytics {
     finance: ModulePerformance;
     weather: ModulePerformance;
   };
-  insights: unknown[];
-  benchmarks: unknown;
+  insights: any[];
+  benchmarks: any;
   recommendations: Recommendation[];
-  trends: unknown;
+  trends: any;
 }
 
 interface PredictiveAnalytics {
-  yield_predictions: unknown;
-  demand_forecasting: unknown;
-  risk_assessment: unknown;
-  maintenance_predictions: unknown;
-  financial_projections: unknown;
-  weather_impact_analysis: unknown;
+  yield_predictions: any;
+  demand_forecasting: any;
+  risk_assessment: any;
+  maintenance_predictions: any;
+  financial_projections: any;
+  weather_impact_analysis: any;
 }
 
 export function AIAnalyticsDashboard() {
@@ -532,22 +536,28 @@ export function AIAnalyticsDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Health Status</span>
                         <span className="font-medium">
-                          {(comprehensiveData.modules.animals as ModulePerformance).overview
-                            ?.health_status || 'Unknown'}
+                          {(
+                            (comprehensiveData.modules.animals as ModulePerformance)
+                              .overview as ModuleOverviewObject
+                          )?.health_status || 'Unknown'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Total Animals</span>
                         <span className="font-medium">
-                          {(comprehensiveData.modules.animals as ModulePerformance).overview
-                            ?.total_animals || 0}
+                          {(
+                            (comprehensiveData.modules.animals as ModulePerformance)
+                              .overview as ModuleOverviewObject
+                          )?.total_animals || 0}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Production Rate</span>
                         <span className="font-medium">
-                          {(comprehensiveData.modules.animals as ModulePerformance).overview
-                            ?.production_rate || 0}
+                          {(
+                            (comprehensiveData.modules.animals as ModulePerformance)
+                              .overview as ModuleOverviewObject
+                          )?.production_rate || 0}
                           %
                         </span>
                       </div>
@@ -580,7 +590,10 @@ export function AIAnalyticsDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Mature Crops</span>
                         <span className="font-medium">
-                          {(comprehensiveData.modules.crops as ModulePerformance).overview?.reduce(
+                          {(
+                            (comprehensiveData.modules.crops as ModulePerformance)
+                              .overview as ModuleOverviewArrayItem[]
+                          )?.reduce(
                             (sum: number, c: { mature_crops?: number }) =>
                               sum + (c.mature_crops || 0),
                             0
@@ -634,16 +647,20 @@ export function AIAnalyticsDashboard() {
                         <span className="text-sm text-gray-600">Net Profit</span>
                         <span
                           className={`font-medium ${
-                            ((comprehensiveData.modules.finance as ModulePerformance).overview
-                              ?.net_profit || 0) >= 0
+                            ((
+                              (comprehensiveData.modules.finance as ModulePerformance)
+                                .overview as ModuleOverviewObject
+                            )?.net_profit || 0) >= 0
                               ? 'text-green-600'
                               : 'text-red-600'
                           }`}
                         >
                           $
                           {(
-                            (comprehensiveData.modules.finance as ModulePerformance).overview
-                              ?.net_profit || 0
+                            (
+                              (comprehensiveData.modules.finance as ModulePerformance)
+                                .overview as ModuleOverviewObject
+                            )?.net_profit || 0
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -652,8 +669,10 @@ export function AIAnalyticsDashboard() {
                         <span className="font-medium">
                           $
                           {(
-                            (comprehensiveData.modules.finance as ModulePerformance).overview
-                              ?.tax_deductible_amount || 0
+                            (
+                              (comprehensiveData.modules.finance as ModulePerformance)
+                                .overview as ModuleOverviewObject
+                            )?.tax_deductible_amount || 0
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -734,8 +753,10 @@ export function AIAnalyticsDashboard() {
                       <Thermometer className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                       <div className="text-lg font-bold">
                         {Math.round(
-                          (comprehensiveData.modules.weather as ModulePerformance)?.overview
-                            ?.avg_temperature || 0
+                          (
+                            (comprehensiveData.modules.weather as ModulePerformance)
+                              ?.overview as ModuleOverviewObject
+                          )?.avg_temperature || 0
                         )}
                         °C
                       </div>
@@ -745,8 +766,10 @@ export function AIAnalyticsDashboard() {
                       <CloudRain className="h-8 w-8 text-green-500 mx-auto mb-2" />
                       <div className="text-lg font-bold">
                         {Math.round(
-                          (comprehensiveData.modules.weather as ModulePerformance)?.overview
-                            ?.total_precipitation || 0
+                          (
+                            (comprehensiveData.modules.weather as ModulePerformance)
+                              ?.overview as ModuleOverviewObject
+                          )?.total_precipitation || 0
                         )}
                         mm
                       </div>
@@ -756,8 +779,10 @@ export function AIAnalyticsDashboard() {
                       <Wind className="h-8 w-8 text-purple-500 mx-auto mb-2" />
                       <div className="text-lg font-bold">
                         {Math.round(
-                          (comprehensiveData.modules.weather as ModulePerformance)?.overview
-                            ?.avg_humidity || 0
+                          (
+                            (comprehensiveData.modules.weather as ModulePerformance)
+                              ?.overview as ModuleOverviewObject
+                          )?.avg_humidity || 0
                         )}
                         %
                       </div>

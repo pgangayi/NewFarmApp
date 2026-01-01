@@ -52,7 +52,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
     data: analyticsData,
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<AnalyticsData>({
     queryKey: ['animal-analytics', queryParams.toString()],
     queryFn: async () => {
       const response = await fetch(`${apiEndpoints.animals.analytics}?${queryParams.toString()}`, {

@@ -18,6 +18,8 @@ import { FieldRepository } from "./field-repository.js";
 
 // Import Phase 5 repositories
 import { TaskRepository } from "./task-repository.js";
+import { TimeLogRepository } from "./time-log-repository.js";
+import { CommentRepository } from "./comment-repository.js";
 
 // Import crop specialized repositories
 import { CropPlanRepository } from "./crop-plan-repository.js";
@@ -68,6 +70,12 @@ class RepositoryFactory {
           break;
         case "task":
           this.repositories.set(type, new TaskRepository(this.db));
+          break;
+        case "timeLog":
+          this.repositories.set(type, new TimeLogRepository(this.db));
+          break;
+        case "comment":
+          this.repositories.set(type, new CommentRepository(this.db));
           break;
         case "analytics":
           this.repositories.set(type, new AnalyticsRepository(this.db));
@@ -240,6 +248,8 @@ export {
   FinanceRepository,
   InventoryRepository,
   TaskRepository,
+  TimeLogRepository,
+  CommentRepository,
   AnalyticsRepository,
   NotificationRepository,
   SearchRepository,
@@ -260,6 +270,8 @@ export default {
   FinanceRepository,
   InventoryRepository,
   TaskRepository,
+  TimeLogRepository,
+  CommentRepository,
   AnalyticsRepository,
   NotificationRepository,
   SearchRepository,

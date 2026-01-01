@@ -5,29 +5,27 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { useAuth } from '../hooks/AuthContext';
+import { useToast } from '../components/ui/use-toast';
 import {
   useInventory,
   useInventoryLowStock,
   useCreateInventoryItem,
+  useUpdateInventoryItem,
   useFarmWithSelection,
   apiClient,
 } from '../api';
-import { Farm } from '../types/entities';
-import {
-  InventoryItem,
-  InventoryAlert,
-  Supplier,
-  InventoryFormData,
-} from '../components/inventory/types';
+import type { Farm, InventoryItem } from '../api';
 import { InventoryOverview } from '../components/inventory/InventoryOverview';
 import { InventoryList } from '../components/inventory/InventoryList';
 import { InventoryAlerts } from '../components/inventory/InventoryAlerts';
 import { SupplierList } from '../components/inventory/SupplierList';
 import { InventoryAnalytics } from '../components/inventory/InventoryAnalytics';
 import { InventoryItemModal } from '../components/inventory/InventoryItemModal';
+import { Supplier, InventoryAlert, InventoryFormData } from '../components/inventory/types';
 
 export function InventoryPage() {
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<
     'overview' | 'items' | 'alerts' | 'suppliers' | 'analytics'
@@ -37,15 +35,12 @@ export function InventoryPage() {
 
   // Use shared inventory hooks
   const { currentFarm } = useFarmWithSelection();
-  const { data: rawInventoryItems = [], isLoading, error } = useInventory(currentFarm?.id);
-  const inventoryItems = rawInventoryItems as unknown as InventoryItem[];
+  const { data: inventoryItems = [], isLoading, error } = useInventory(currentFarm?.id);
 
-  const { data: lowStockItems = [] } = useInventoryLowStock();
-  const lowStockInventoryItems = lowStockItems as unknown as InventoryItem[];
+  const { data: lowStockInventoryItems = [] } = useInventoryLowStock(currentFarm?.id);
 
   const createMutation = useCreateInventoryItem();
-  const createItemAsync = (data: InventoryFormData) =>
-    createMutation.mutateAsync(data as unknown as any);
+  const updateMutation = useUpdateInventoryItem();
 
   // Suppliers and alerts via apiClient
   const { data: suppliers } = useQuery({
@@ -68,22 +63,30 @@ export function InventoryPage() {
 
   const handleCreateItem = async (itemData: InventoryFormData) => {
     try {
-      await createItemAsync(itemData);
+      await createMutation.mutateAsync({
+        ...itemData,
+        farm_id: currentFarm.id,
+      } as any);
       setShowCreateForm(false);
+      toast('Item created successfully', 'success');
     } catch (err) {
       console.error('Create item failed', err);
-      // TODO: surface error to UI (toast/modal)
+      toast('Failed to create item', 'error');
     }
   };
 
   const handleUpdateItem = async (itemData: InventoryFormData) => {
     try {
       if (!editingItem) return;
-      await apiClient.put('/api/inventory', { id: editingItem.id, ...itemData });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      await updateMutation.mutateAsync({
+        id: editingItem.id,
+        data: itemData as any,
+      });
       setEditingItem(null);
+      toast('Item updated successfully', 'success');
     } catch (err) {
       console.error('Update item failed', err);
+      toast('Failed to update item', 'error');
     }
   };
 

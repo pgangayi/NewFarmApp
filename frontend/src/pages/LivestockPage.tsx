@@ -22,6 +22,7 @@ import {
   useUpdateLivestock,
   useDeleteLivestock,
   useBreeds,
+  useAddBreed,
 } from '../api';
 import type { Livestock, ModalField, Breed } from '../api';
 import type { FilterState } from '../types/ui';
@@ -66,6 +67,7 @@ export default function LivestockPage() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showBreedModal, setShowBreedModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Livestock | null>(null);
 
   const { confirm, ConfirmationDialog } = useConfirmation();
@@ -76,9 +78,15 @@ export default function LivestockPage() {
   const createMutation = useCreateLivestock();
   const updateMutation = useUpdateLivestock();
   const deleteMutation = useDeleteLivestock();
+  const addBreedMutation = useAddBreed();
 
   // Actions
-  const handleCreate = (data: any) => createMutation.mutate(data);
+  const handleCreate = (data: any) => {
+    createMutation.mutate({
+      ...data,
+      farm_id: currentFarm.id,
+    });
+  };
   const handleUpdate = (data: any) => updateMutation.mutate({ id: data.id, data });
   const handleDelete = async (item: Livestock) => {
     const confirmed = await confirm(
@@ -178,7 +186,7 @@ export default function LivestockPage() {
           setEditingItem(null);
         }}
         title={editingItem ? 'Edit Animal' : 'Register New Animal'}
-        fields={getLivestockFields(breeds)}
+        fields={getLivestockFields(breeds, () => setShowBreedModal(true))}
         initialData={
           editingItem || {
             farm_id: currentFarm.id,
@@ -192,6 +200,35 @@ export default function LivestockPage() {
           setShowModal(false);
         }}
         size="xl"
+      />
+
+      {/* Add Breed Modal */}
+      <UnifiedModal
+        isOpen={showBreedModal}
+        onClose={() => setShowBreedModal(false)}
+        title="Add New Breed"
+        fields={[
+          {
+            name: 'species',
+            label: 'Species',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'Cattle', label: 'Cattle' },
+              { value: 'Sheep', label: 'Sheep' },
+              { value: 'Pig', label: 'Pig' },
+              { value: 'Chicken', label: 'Chicken' },
+              { value: 'Goat', label: 'Goat' },
+            ],
+          },
+          { name: 'name', label: 'Breed Name', type: 'text', required: true },
+          { name: 'description', label: 'Description', type: 'textarea' },
+        ]}
+        onSubmit={data => {
+          addBreedMutation.mutate(data as any);
+          setShowBreedModal(false);
+        }}
+        size="sm"
       />
 
       {ConfirmationDialog}
@@ -215,7 +252,7 @@ function NoFarmSelected() {
   return <div className="h-screen flex items-center justify-center">Please select a farm.</div>;
 }
 
-function getLivestockFields(breeds: Breed[]): ModalField[] {
+function getLivestockFields(breeds: Breed[], onAddBreed: () => void): ModalField[] {
   return [
     { name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'e.g. Bessie' },
     {
@@ -231,13 +268,21 @@ function getLivestockFields(breeds: Breed[]): ModalField[] {
       type: 'select',
       required: true,
       options: [
-        { value: 'cattle', label: 'Cattle' },
-        { value: 'sheep', label: 'Sheep' },
-        { value: 'pig', label: 'Pig' },
-        { value: 'chicken', label: 'Chicken' },
+        { value: 'Cattle', label: 'Cattle' },
+        { value: 'Sheep', label: 'Sheep' },
+        { value: 'Pig', label: 'Pig' },
+        { value: 'Chicken', label: 'Chicken' },
+        { value: 'Goat', label: 'Goat' },
       ],
     },
-    { name: 'breed', label: 'Breed', type: 'text', placeholder: 'Enter breed name' }, // Fallback text input
+    {
+      name: 'breed',
+      label: 'Breed',
+      type: 'select',
+      options: breeds.map(b => ({ value: b.name, label: `${b.species} - ${b.name}` })),
+      creatable: true,
+      onAdd: onAddBreed,
+    },
     {
       name: 'sex',
       label: 'Sex',

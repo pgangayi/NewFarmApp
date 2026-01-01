@@ -1,47 +1,21 @@
 /**
- * UNIFIED API LAYER
- * =================
- * Single entry point for all API operations.
- * Import everything from '@/api' or 'src/api'.
+ * API INDEX
+ * =========
+ * Central barrel export for all API functionality
  */
 
 // ============================================================================
-// CORE CLIENT
+// HTTP CLIENT
 // ============================================================================
 
-export { ApiClient, ApiError, apiClient } from './client';
-export type { RequestOptions } from './client';
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-export {
-  // Mode management
-  getApiMode,
-  setApiMode,
-  shouldUseLocalStorage,
-  shouldUseRemoteApi,
-  // Constants
-  API_BASE_URL,
-  ENDPOINTS,
-  STORAGE_KEYS,
-  CACHE_CONFIG,
-  API_CONFIG,
-  FEATURES,
-  // Legacy aliases
-  apiEndpoints,
-  cacheConfig,
-  storageKeys,
-} from './config';
-export type { ApiMode } from './config';
+export { apiClient } from '../lib/cloudflare';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export type {
-  // Base
+  // Base types
   BaseEntity,
   ApiResponse,
   PaginationParams,
@@ -50,25 +24,21 @@ export type {
   CreateRequest,
   UpdateRequest,
 
-  // Auth
+  // Auth types
   User,
   AuthSession,
   AuthResponse,
   LoginCredentials,
   SignupData,
 
-  // Farm
+  // Entity types
   Farm,
   FarmFormData,
-
-  // Location
   Location,
-
-  // Field
   Field,
-
-  // Animal
   Animal,
+  Livestock,
+  Breed,
   AnimalStatus,
   AnimalSex,
   HealthStatus,
@@ -77,188 +47,131 @@ export type {
   AnimalMovement,
   PedigreeNode,
   LivestockStats,
-
-  // Crop
   Crop,
   CropStatus,
   CropHealthStatus,
   CropTreatment,
   CropActivity,
-
-  // Task
   Task,
   TaskPriority,
   TaskStatus,
-
-  // Finance
   FinanceRecord,
   FinanceSummary,
   TransactionType,
-
-  // Inventory
   InventoryItem,
   InventoryAlert,
   InventoryCategory,
+  Supplier,
 
-  // Livestock (New)
-  Livestock,
-  LivestockStatus,
-  LivestockSex,
-  // LivestockStats was already exported
-
-  // Reference / Knowledge Base
-  Breed,
-  Strain,
-  FeedItem,
-  Chemical,
-  Disease,
-  Treatment,
-  GrowthStandard,
-  PlantingGuide,
-  PestIdentifier,
-
-  // UI
+  // UI types
   ModalField,
-
-  // --- Specialized Domain Types ---
-
-  // Irrigation
-  CreateIrrigationForm,
-  UpdateIrrigationForm,
-  IrrigationSchedule,
-  IrrigationAnalytics,
-
-  // Pest & Disease
-  CreatePestIssueForm,
-  UpdatePestIssueForm,
-  PestIssue,
-  DiseaseOutbreak,
-  PreventionTask,
-
-  // Soil Health
-  CreateSoilTestForm,
-  UpdateSoilTestForm,
-  SoilTestResult,
-  SoilHealthMetrics,
-
-  // Rotation
-  CreateRotationForm,
-  UpdateRotationForm,
-  RotationPlan,
 } from './types';
 
 // ============================================================================
-// DOMAIN API SERVICES
+// CONSTANTS
+// ============================================================================
+
+export { CACHE_CONFIG, QUERY_KEYS, API_ENDPOINTS } from './constants';
+
+// ============================================================================
+// HOOKS - FARMS
 // ============================================================================
 
 export {
-  farmsApi,
-  livestockApi, // Renamed from animalsApi
-  animalsApi, // Legacy alias
-  referenceApi, // New
-  cropsApi,
-  fieldsApi,
-  tasksApi,
-  locationsApi,
-  financeApi,
-  inventoryApi,
-  authApi,
-  healthApi,
-  apiServices,
-} from './endpoints';
-
-// ============================================================================
-// REACT QUERY HOOKS (CORE)
-// ============================================================================
-
-export {
-  // Query keys
-  QUERY_KEYS,
-
-  // Farms
   useFarms,
   useFarm,
   useFarmWithSelection,
   useCreateFarm,
   useUpdateFarm,
   useDeleteFarm,
+} from './hooks/useFarms';
 
-  // Animals / Livestock
-  useLivestock, // New
-  useLivestockDetail,
-  useLivestockStats,
+// ============================================================================
+// HOOKS - ANIMALS/LIVESTOCK
+// ============================================================================
+
+export {
+  useAnimals,
+  useAnimal,
+  useCreateAnimal,
+  useUpdateAnimal,
+  useDeleteAnimal,
+  useLivestock,
   useCreateLivestock,
   useUpdateLivestock,
   useDeleteLivestock,
   useBreeds,
-  useGrowthStandards,
-  useFeedItems,
-  useDiseases,
-  useTreatments,
+  useAddBreed,
+} from './hooks/useAnimals';
 
-  // Legacy Animal Hooks (Aliased)
-  useAnimals,
-  useAnimal,
-  useAnimalStats,
-  useCreateAnimal,
-  useUpdateAnimal,
-  useDeleteAnimal,
-  useAnimalMovement,
+// ============================================================================
+// HOOKS - CROPS
+// ============================================================================
 
-  // New Reference Hooks
-  useStrains,
-  useChemicals,
-  usePestIdentifiers,
-  usePlantingGuides,
-
-  // Crops
+export {
   useCrops,
   useCrop,
+  useStrains,
   useCreateCrop,
   useUpdateCrop,
   useDeleteCrop,
+  useCropVarieties,
+  useAddCropVariety,
+} from './hooks/useCrops';
 
-  // Fields
-  useFields,
-  useField,
-  useCreateField,
-  useUpdateField,
-  useDeleteField,
+export { useRotations, useCreateRotation, useDeleteRotation } from './hooks/useRotations';
 
-  // Tasks
+export { usePestDisease, useCreatePestDisease, useDeletePestDisease } from './hooks/usePestDisease';
+
+// ============================================================================
+// HOOKS - TASKS
+// ============================================================================
+
+export {
   useTasks,
   useTask,
   useCreateTask,
   useUpdateTask,
-  useCompleteTask,
   useDeleteTask,
+  useStartTimeLog,
+  useStopTimeLog,
+} from './hooks/useTasks';
 
-  // Locations
+// ============================================================================
+// HOOKS - INVENTORY
+// ============================================================================
+
+export {
+  useInventory,
+  useInventoryItem,
+  useInventoryLowStock,
+  useCreateInventoryItem,
+  useUpdateInventoryItem,
+  useDeleteInventoryItem,
+} from './hooks/useInventory';
+
+// ============================================================================
+// HOOKS - LOCATIONS
+// ============================================================================
+
+export {
   useLocations,
   useLocation,
   useCreateLocation,
   useUpdateLocation,
   useDeleteLocation,
+} from './hooks/useLocations';
 
-  // Finance
-  useFinanceRecords,
+// ============================================================================
+// HOOKS - FINANCE
+// ============================================================================
+
+export {
+  useFinance,
   useFinanceSummary,
+  useBudgets,
+  useFinanceRecord,
   useCreateFinanceRecord,
   useUpdateFinanceRecord,
   useDeleteFinanceRecord,
-
-  // Inventory
-  useInventory,
-  useInventoryAlerts,
-  useInventoryLowStock,
-  useCreateInventoryItem,
-  useUpdateInventoryItem,
-  useDeleteInventoryItem,
-} from './hooks';
-
-// ============================================================================
-// REACT QUERY HOOKS (SPECIALIZED)
-// ============================================================================
-
-export * from './specializedHooks';
-export * from './offlineQueue';
+} from './hooks/useFinance';

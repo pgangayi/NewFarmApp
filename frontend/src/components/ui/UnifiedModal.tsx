@@ -2,7 +2,7 @@
 // Eliminates 8+ identical modal implementations
 
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 export interface ModalField {
   name: string;
@@ -14,6 +14,8 @@ export interface ModalField {
   step?: string;
   min?: string;
   rows?: number;
+  creatable?: boolean;
+  onAdd?: () => void;
 }
 
 export interface UnifiedModalProps {
@@ -37,6 +39,8 @@ const sizeClasses = {
   xl: 'max-w-6xl',
 };
 
+const DEFAULT_INITIAL_DATA = {};
+
 export function UnifiedModal({
   isOpen,
   onClose,
@@ -44,7 +48,7 @@ export function UnifiedModal({
   title,
   description,
   fields,
-  initialData = {},
+  initialData = DEFAULT_INITIAL_DATA,
   isLoading = false,
   submitLabel = 'Save',
   cancelLabel = 'Cancel',
@@ -173,18 +177,30 @@ export function UnifiedModal({
 
       case 'select':
         return (
-          <select
-            value={(value as string) || ''}
-            onChange={e => handleFieldChange(field.name, e.target.value)}
-            className={baseInputClasses}
-          >
-            <option value="">Select {field.label}</option>
-            {field.options?.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={(value as string) || ''}
+              onChange={e => handleFieldChange(field.name, e.target.value)}
+              className={baseInputClasses}
+            >
+              <option value="">Select {field.label}</option>
+              {field.options?.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {field.creatable && (
+              <button
+                type="button"
+                onClick={field.onAdd}
+                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                title={`Add new ${field.label}`}
+              >
+                <Plus className="h-4 w-4 text-gray-600" />
+              </button>
+            )}
+          </div>
         );
 
       case 'textarea':
