@@ -30040,6 +30040,33 @@ var FarmRepository = class extends BaseRepository {
     return results;
   }
   /**
+   * Get farms accessible by a user (owner or member)
+   */
+  async findByUser(userId, options = {}) {
+    const { results } = await this.db.executeQuery(
+      `
+      SELECT
+        f.*,
+        COALESCE((SELECT COUNT(*) FROM animals a WHERE a.farm_id = f.id), 0) as animal_count,
+        COALESCE((SELECT COUNT(*) FROM fields fi WHERE fi.farm_id = f.id), 0) as field_count,
+        COALESCE((SELECT COUNT(*) FROM tasks t WHERE t.farm_id = f.id AND t.status != 'completed'), 0) as pending_tasks,
+        fm.role as user_role
+      FROM farms f
+      JOIN farm_members fm ON f.id = fm.farm_id
+      WHERE fm.user_id = ?
+      ORDER BY f.created_at DESC
+      ${options.limit ? `LIMIT ${options.limit}` : ""}
+    `,
+      [userId],
+      {
+        operation: "query",
+        table: "farms",
+        context: { findByUser: true, userId, ...options.context }
+      }
+    );
+    return results;
+  }
+  /**
    * Get farm with statistics
    */
   async findWithStats(farmId, options = {}) {
@@ -30328,7 +30355,7 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
       });
       return createSuccessResponse(farms);
     } else {
-      const farms = await farmRepo.findByOwner(user.id, {
+      const farms = await farmRepo.findByUser(user.id, {
         orderBy: "created_at",
         orderDirection: "DESC",
         limit,
@@ -30359,7 +30386,6 @@ async function handleCreateFarm(request, user, auth, farmRepo) {
       },
       { userId: user.id }
     );
-    await auth.grantFarmAccess(newFarm.id, user.id, "owner");
     await farmRepo.db.create(
       "farm_statistics",
       {

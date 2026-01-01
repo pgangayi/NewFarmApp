@@ -406,7 +406,8 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
       return createSuccessResponse(farms);
     } else {
       // Standard farms list using repository
-      const farms = await farmRepo.findByOwner(user.id, {
+      // Use findByUser to get all farms the user has access to (owned + member)
+      const farms = await farmRepo.findByUser(user.id, {
         orderBy: "created_at",
         orderDirection: "DESC",
         limit,
@@ -444,8 +445,7 @@ async function handleCreateFarm(request, user, auth, farmRepo) {
       { userId: user.id }
     );
 
-    // Grant owner access to the creator
-    await auth.grantFarmAccess(newFarm.id, user.id, "owner");
+    // Note: Owner access is already granted within farmRepo.create via farm_members table
 
     // Create initial farm statistics record
     await farmRepo.db.create(
