@@ -3,6 +3,7 @@ import { useBreeds, useAddBreed, useInventory } from '../../api';
 import { Plus, Search, AlertCircle, Package } from 'lucide-react';
 import { UnifiedModal } from '../ui/UnifiedModal';
 import { useFarmWithSelection } from '../../api';
+import { useToast } from '../ui/use-toast';
 
 export function HealthReference() {
   return (
@@ -55,6 +56,7 @@ export function HealthReference() {
 export function BreedsRepository() {
   const { data: breeds = [], isLoading } = useBreeds();
   const addBreedMutation = useAddBreed();
+  const { toast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -145,10 +147,17 @@ export function BreedsRepository() {
           { name: 'name', label: 'Breed Name', type: 'text', required: true },
           { name: 'description', label: 'Characteristics / Description', type: 'textarea' },
         ]}
-        onSubmit={data => {
-          addBreedMutation.mutate(data as any);
-          setShowAddModal(false);
+        onSubmit={async data => {
+          try {
+            await addBreedMutation.mutateAsync(data as any);
+            toast('Breed added successfully', 'success');
+            setShowAddModal(false);
+          } catch (error) {
+            console.error('Failed to add breed', error);
+            toast('Failed to add breed', 'error');
+          }
         }}
+        isLoading={addBreedMutation.isPending}
         size="sm"
       />
     </div>

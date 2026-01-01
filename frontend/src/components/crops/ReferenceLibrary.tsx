@@ -5,10 +5,11 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { useCropVarieties, useAddCropVariety } from '../../api';
 import { UnifiedModal } from '../ui/UnifiedModal';
+import { useToast } from '../ui/use-toast';
 
 export function ReferenceLibrary() {
   const [activeTab, setActiveTab] = useState<'guides' | 'varieties'>('varieties');
-  
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -17,14 +18,18 @@ export function ReferenceLibrary() {
             <BookOpen className="h-5 w-5 text-green-600" />
             Agricultural Knowledge Base
           </h2>
-          <p className="text-sm text-gray-500">Access crop varieties, guides, and best practices.</p>
+          <p className="text-sm text-gray-500">
+            Access crop varieties, guides, and best practices.
+          </p>
         </div>
-        
+
         <div className="flex bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('varieties')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === 'varieties' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+              activeTab === 'varieties'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             Crop Varieties
@@ -32,7 +37,9 @@ export function ReferenceLibrary() {
           <button
             onClick={() => setActiveTab('guides')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === 'guides' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+              activeTab === 'guides'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             Guides & Articles
@@ -48,12 +55,13 @@ export function ReferenceLibrary() {
 function VarietiesList() {
   const { data: varieties = [], isLoading } = useCropVarieties();
   const addVarietyMutation = useAddCropVariety();
+  const { toast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredVarieties = varieties.filter(
-    v => 
-      v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    v =>
+      v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.crop_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -62,14 +70,17 @@ function VarietiesList() {
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Search varieties..." 
+          <Input
+            placeholder="Search varieties..."
             className="pl-10"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="ml-4 bg-green-600 hover:bg-green-700">
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="ml-4 bg-green-600 hover:bg-green-700"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Variety
         </Button>
@@ -80,7 +91,10 @@ function VarietiesList() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
           {filteredVarieties.map(variety => (
-            <div key={variety.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50">
+            <div
+              key={variety.id}
+              className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50"
+            >
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-medium text-gray-900">{variety.name}</h3>
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -98,7 +112,7 @@ function VarietiesList() {
               )}
             </div>
           ))}
-          
+
           {filteredVarieties.length === 0 && (
             <div className="col-span-full text-center py-8 text-gray-500">
               No varieties found. Add one to get started.
@@ -130,10 +144,17 @@ function VarietiesList() {
           { name: 'days_to_maturity', label: 'Days to Maturity', type: 'number' },
           { name: 'description', label: 'Description', type: 'textarea' },
         ]}
-        onSubmit={data => {
-          addVarietyMutation.mutate(data as any);
-          setShowAddModal(false);
+        onSubmit={async data => {
+          try {
+            await addVarietyMutation.mutateAsync(data as any);
+            toast('Crop variety added successfully', 'success');
+            setShowAddModal(false);
+          } catch (error) {
+            console.error('Failed to add variety', error);
+            toast('Failed to add crop variety', 'error');
+          }
         }}
+        isLoading={addVarietyMutation.isPending}
         size="sm"
       />
     </div>
@@ -186,7 +207,7 @@ function GuidesList() {
       </div>
 
       <div className="divide-y divide-gray-200">
-        {articles.map((article) => (
+        {articles.map(article => (
           <div key={article.id} className="p-6 hover:bg-gray-50 transition-colors">
             <div className="flex justify-between items-start">
               <div>
@@ -200,7 +221,7 @@ function GuidesList() {
                   {article.title}
                 </h3>
                 <div className="flex gap-2">
-                  {article.tags.map((tag) => (
+                  {article.tags.map(tag => (
                     <span key={tag} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       #{tag}
                     </span>

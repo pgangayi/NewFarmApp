@@ -35,7 +35,7 @@ export class TokenManager {
         // Check if token has already expired (no need to track expired revoked tokens)
         if (new Date(revocation.expires_at) < new Date()) {
           // Clean up expired revocation record
-          await this.cleanupExpiredRevocation(tokenHash, tokenType);
+          await this.cleanupExpiredRevocations();
           return false;
         }
 

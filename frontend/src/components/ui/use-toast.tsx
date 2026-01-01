@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { X } from 'lucide-react';
 
@@ -37,7 +38,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`flex items-center justify-between p-4 rounded-md shadow-lg min-w-[300px] text-white ${
+            className={`flex items-center justify-between p-4 rounded-md shadow-lg min-w-75 text-white ${
               t.type === 'success'
                 ? 'bg-green-600'
                 : t.type === 'error'

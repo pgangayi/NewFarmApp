@@ -6,6 +6,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs';
 import { LoadingErrorContent } from '../components/ui/LoadingStates';
 import { useConfirmation, ConfirmDialogs } from '../components/ui/ConfirmationDialog';
 import { UnifiedModal } from '../components/ui/UnifiedModal';
+import { useToast } from '../components/ui/use-toast';
 import { OverviewTab } from '../components/livestock/OverviewTab';
 import { LivestockList } from '../components/livestock/LivestockList';
 import {
@@ -71,6 +72,7 @@ export default function LivestockPage() {
   const [editingItem, setEditingItem] = useState<Livestock | null>(null);
 
   const { confirm, ConfirmationDialog } = useConfirmation();
+  const { toast } = useToast();
 
   // API Hooks
   const { data: livestock = [], isLoading, error, refetch } = useLivestock(currentFarm?.id);
@@ -81,18 +83,44 @@ export default function LivestockPage() {
   const addBreedMutation = useAddBreed();
 
   // Actions
-  const handleCreate = (data: any) => {
-    createMutation.mutate({
-      ...data,
-      farm_id: currentFarm.id,
-    });
+  const handleCreate = async (data: any) => {
+    try {
+      await createMutation.mutateAsync({
+        ...data,
+        farm_id: currentFarm.id,
+      });
+      toast('Livestock added successfully', 'success');
+      setShowModal(false);
+    } catch (error) {
+      console.error('Failed to create livestock', error);
+      toast('Failed to add livestock', 'error');
+    }
   };
-  const handleUpdate = (data: any) => updateMutation.mutate({ id: data.id, data });
+
+  const handleUpdate = async (data: any) => {
+    try {
+      await updateMutation.mutateAsync({ id: data.id, data });
+      toast('Livestock updated successfully', 'success');
+      setShowModal(false);
+    } catch (error) {
+      console.error('Failed to update livestock', error);
+      toast('Failed to update livestock', 'error');
+    }
+  };
+
   const handleDelete = async (item: Livestock) => {
     const confirmed = await confirm(
       ConfirmDialogs.delete(item.name || item.identification_tag || 'Item')
     );
-    if (confirmed) deleteMutation.mutate(item.id);
+    if (confirmed) {
+      try {
+        await deleteMutation.mutateAsync(item.id);
+        toast('Livestock deleted successfully', 'success');
+      } catch (error) {
+        console.error('Failed to delete livestock', error);
+        toast('Failed to delete livestock', 'error');
+      }
+    }
   };
 
   const handleEdit = (item: Livestock) => {
@@ -197,9 +225,9 @@ export default function LivestockPage() {
         onSubmit={data => {
           if (editingItem) handleUpdate({ ...data, id: editingItem.id });
           else handleCreate(data);
-          setShowModal(false);
         }}
         size="xl"
+        isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
       {/* Add Breed Modal */}
@@ -224,11 +252,18 @@ export default function LivestockPage() {
           { name: 'name', label: 'Breed Name', type: 'text', required: true },
           { name: 'description', label: 'Description', type: 'textarea' },
         ]}
-        onSubmit={data => {
-          addBreedMutation.mutate(data as any);
-          setShowBreedModal(false);
+        onSubmit={async data => {
+          try {
+            await addBreedMutation.mutateAsync(data as any);
+            toast('Breed added successfully', 'success');
+            setShowBreedModal(false);
+          } catch (error) {
+            console.error('Failed to add breed', error);
+            toast('Failed to add breed', 'error');
+          }
         }}
         size="sm"
+        isLoading={addBreedMutation.isPending}
       />
 
       {ConfirmationDialog}

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCreateFarm } from '../../hooks';
 import { useAuth } from '../../hooks/AuthContext';
 import { UnifiedModal } from '../ui/UnifiedModal';
+import { useToast } from '../ui/use-toast';
 
 interface WizardProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
 }
-
-import { useNavigate } from 'react-router-dom';
 
 const wizardFields = [
   {
@@ -52,15 +52,19 @@ export const FirstTimeWizard: React.FC<WizardProps> = ({ isOpen, onClose, onComp
   const createFarmMutation = useCreateFarm();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [_step, _setStep] = useState(1);
 
   const handleFarmSubmit = async (data: any) => {
+    console.log('FirstTimeWizard: Submitting farm data', data);
     if (!user) {
-      console.error('No user found');
+      console.error('FirstTimeWizard: No user found in context');
+      toast('User session not found. Please log in again.', 'error');
       return;
     }
 
     try {
+      console.log('FirstTimeWizard: Calling createFarmMutation');
       await createFarmMutation.mutateAsync({
         name: data.name,
         location: data.location,
@@ -69,10 +73,13 @@ export const FirstTimeWizard: React.FC<WizardProps> = ({ isOpen, onClose, onComp
         farm_type: data.farm_type,
         timezone: 'UTC',
       } as any);
+      console.log('FirstTimeWizard: Farm created successfully');
+      toast('Farm created successfully!', 'success');
       onComplete();
       navigate('/dashboard');
     } catch (error) {
-      console.error('Failed to create farm', error);
+      console.error('FirstTimeWizard: Failed to create farm', error);
+      toast('Failed to create farm. Please try again.', 'error');
     }
   };
 
@@ -86,6 +93,7 @@ export const FirstTimeWizard: React.FC<WizardProps> = ({ isOpen, onClose, onComp
         fields={wizardFields as any}
         onSubmit={handleFarmSubmit}
         submitLabel="Get Started"
+        isLoading={createFarmMutation.isPending}
       />
     );
   }

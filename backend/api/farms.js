@@ -394,6 +394,7 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
       return createSuccessResponse(farm);
     } else if (analytics === "true") {
       // Get farms with analytics data using repository
+      // findByOwner already includes animal_count, field_count, and pending_tasks
       const farms = await farmRepo.findByOwner(user.id, {
         orderBy: "created_at",
         orderDirection: "DESC",
@@ -402,40 +403,7 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
         userId: user.id,
       });
 
-      // Add analytics data for each farm
-      const farmsWithAnalytics = await Promise.all(
-        farms.map(async (farm) => {
-          const [animalCount, fieldCount, taskCount] = await Promise.all([
-            farmRepo.db.count(
-              "animals",
-              { farm_id: farm.id },
-              { userId: user.id }
-            ),
-            farmRepo.db.count(
-              "fields",
-              { farm_id: farm.id },
-              { userId: user.id }
-            ),
-            farmRepo.db.count(
-              "tasks",
-              {
-                farm_id: farm.id,
-                status: { operator: "!=", value: "completed" },
-              },
-              { userId: user.id }
-            ),
-          ]);
-
-          return {
-            ...farm,
-            animal_count: animalCount,
-            field_count: fieldCount,
-            pending_tasks: taskCount,
-          };
-        })
-      );
-
-      return createSuccessResponse(farmsWithAnalytics);
+      return createSuccessResponse(farms);
     } else {
       // Standard farms list using repository
       const farms = await farmRepo.findByOwner(user.id, {
