@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { AuthServiceAdapter } from '../services/adapters/authServiceAdapter';
+import {
+  signIn as apiSignIn,
+  signUp as apiSignUp,
+  getCurrentUser as apiGetCurrentUser,
+} from '../lib/cloudflare';
 import type { User } from '../api/types';
 import { authStorage } from '../lib/authStorage';
 
@@ -28,12 +32,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Verify token purely client-side
-      const validUser = await AuthServiceAdapter.verifyToken(token);
-      if (validUser) {
-        setUser(validUser as User);
-        authStorage.setUser(validUser);
-      } else {
+      try {
+        // Verify token with backend
+        const validUser = await apiGetCurrentUser();
+        if (validUser) {
+          setUser(validUser as User);
+          authStorage.setUser(validUser);
+        } else {
+          authStorage.clear();
+          setUser(null);
+        }
+      } catch (e) {
         authStorage.clear();
         setUser(null);
       }
@@ -44,19 +53,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      // Local Auth Call - No Network API
-      const response = await AuthServiceAdapter.login(email, password);
+      const { data, error } = await apiSignIn(email, password);
 
-      if (response.requiresMFA) {
-        // Handle MFA flow (not implemented in UI yet, avoiding complexity)
-        return { error: 'MFA required (not implemented yet)' };
+      if (error) {
+        return { error: error.message || 'Login failed' };
       }
 
-      const { user, session } = response as any;
+      const response = data as any;
+      const user = response.user;
+      const token = response.token || response.accessToken;
 
-      authStorage.setToken(session.access_token);
-      authStorage.setUser(user);
-      setUser(user);
+      if (token) {
+        authStorage.setToken(token);
+      }
+
+      if (user) {
+        authStorage.setUser(user);
+        setUser(user);
+      }
+
       return {};
     } catch (e: any) {
       console.error(e);
@@ -66,12 +81,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
     try {
-      // Local Auth Call
-      const { user, session } = await AuthServiceAdapter.signup(email, password, name);
+      const { data, error } = await apiSignUp(email, password, name);
 
-      authStorage.setToken(session.access_token);
-      authStorage.setUser(user);
-      setUser(user);
+      if (error) {
+        return { error: error.message || 'Signup failed' };
+      }
+
+      const response = data as any;
+      const user = response.user;
+      const token = response.token || response.accessToken;
+
+      if (token) {
+        authStorage.setToken(token);
+      }
+
+      if (user) {
+        authStorage.setUser(user);
+        setUser(user);
+      }
+
       return {};
     } catch (e: any) {
       console.error(e);

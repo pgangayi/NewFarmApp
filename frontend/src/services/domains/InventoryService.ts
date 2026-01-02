@@ -1,5 +1,4 @@
-import { DatabaseAdapter } from '../../core/DatabaseAdapter';
-import { v4 as uuidv4 } from 'uuid';
+import { apiClient } from '../../lib/cloudflare';
 import { InventoryItem } from '../../api/types';
 
 /**
@@ -10,52 +9,33 @@ import { InventoryItem } from '../../api/types';
 
 export class InventoryService {
   static async getInventoryByFarm(farmId?: string): Promise<InventoryItem[]> {
-    await new Promise(r => setTimeout(r, 50));
+    const items = await apiClient.get<InventoryItem[]>('/api/inventory');
     if (farmId) {
-      return (DatabaseAdapter as any).findMany('inventory', (i: any) => i.farm_id === farmId);
+      return items.filter(i => i.farm_id === farmId);
     }
-    return (DatabaseAdapter as any).findMany('inventory', () => true);
+    return items;
   }
 
   static async getInventoryItemById(id: string): Promise<InventoryItem | null> {
-    await new Promise(r => setTimeout(r, 50));
-    return (DatabaseAdapter as any).findOne('inventory', (i: any) => i.id === id);
+    return apiClient.get<InventoryItem>(`/api/inventory?id=${id}`);
   }
 
   static async getLowStockItems(): Promise<InventoryItem[]> {
-    // Mock logic for low stock
-    return (DatabaseAdapter as any).findMany(
-      'inventory',
-      (i: any) => (i.quantity || 0) <= (i.reorder_level || 5)
-    );
+    return apiClient.get<InventoryItem[]>('/api/inventory?low_stock=true');
   }
 
   static async createInventoryItem(
     payload: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>
   ): Promise<InventoryItem> {
-    const newItem: InventoryItem = {
-      id: uuidv4(),
-      ...payload,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    DatabaseAdapter.insert('inventory', newItem);
-    return newItem;
+    return apiClient.post<InventoryItem>('/api/inventory', payload);
   }
 
   static async updateInventoryItem(id: string, updates: Partial<InventoryItem>) {
-    return DatabaseAdapter.update('inventory', i => i.id === id, {
-      ...updates,
-      updated_at: new Date().toISOString(),
-    });
+    return apiClient.put<InventoryItem>('/api/inventory', { id, ...updates });
   }
 
   static async deleteInventoryItem(id: string) {
-    await new Promise(r => setTimeout(r, 50));
-    const success = DatabaseAdapter.delete('inventory', i => i.id === id);
-    if (!success) {
-      throw new Error('Inventory Item not found');
-    }
+    await apiClient.delete(`/api/inventory?id=${id}`);
     return true;
   }
 }

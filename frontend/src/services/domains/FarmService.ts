@@ -1,5 +1,4 @@
-import { DatabaseAdapter } from '../../core/DatabaseAdapter';
-import { v4 as uuidv4 } from 'uuid';
+import { apiClient } from '../../lib/cloudflare';
 
 /**
  * DOMAIN SERVICE: Farm
@@ -21,36 +20,21 @@ export interface Farm {
 }
 
 export class FarmService {
-  static async getFarmsByOwner(ownerId: string): Promise<Farm[]> {
-    // Simulate async
-    await new Promise(r => setTimeout(r, 50));
-    return (DatabaseAdapter as any).findMany('farms', (f: any) => f.owner_id === ownerId);
+  static async getFarmsByOwner(_ownerId: string): Promise<Farm[]> {
+    // The backend uses the token to identify the user
+    return apiClient.get<Farm[]>('/api/farms');
   }
 
   static async createFarm(payload: Omit<Farm, 'id' | 'created_at' | 'updated_at'>): Promise<Farm> {
-    const newFarm: Farm = {
-      id: uuidv4(),
-      ...payload,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    DatabaseAdapter.insert('farms', newFarm);
-    return newFarm;
+    return apiClient.post<Farm>('/api/farms', payload);
   }
 
   static async updateFarm(id: string, updates: Partial<Farm>) {
-    return DatabaseAdapter.update('farms', f => f.id === id, {
-      ...updates,
-      updated_at: new Date().toISOString(),
-    });
+    return apiClient.put<Farm>('/api/farms', { id, ...updates });
   }
 
   static async deleteFarm(id: string) {
-    await new Promise(r => setTimeout(r, 50)); // Simulate async
-    const success = DatabaseAdapter.delete('farms', f => f.id === id);
-    if (!success) {
-      throw new Error('Farm not found');
-    }
+    await apiClient.delete(`/api/farms?id=${id}`);
     return true;
   }
 }

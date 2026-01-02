@@ -1,5 +1,4 @@
-import { DatabaseAdapter } from '../../core/DatabaseAdapter';
-import { v4 as uuidv4 } from 'uuid';
+import { apiClient } from '../../lib/cloudflare';
 import { Animal } from '../../api/types';
 
 /**
@@ -10,45 +9,30 @@ import { Animal } from '../../api/types';
 
 export class AnimalService {
   static async getAnimalsByFarm(farmId?: string): Promise<Animal[]> {
-    // Simulate async
-    await new Promise(r => setTimeout(r, 50));
-    if (farmId) {
-      return (DatabaseAdapter as any).findMany('animals', (a: any) => a.farm_id === farmId);
-    }
-    return (DatabaseAdapter as any).findMany('animals', () => true);
+    const query = farmId ? `?farm_id=${farmId}` : '';
+    const response = await apiClient.get<{ data: Animal[] }>(`/api/livestock${query}`);
+    return response.data || [];
   }
 
   static async getAnimalById(id: string): Promise<Animal | null> {
-    await new Promise(r => setTimeout(r, 50));
-    return (DatabaseAdapter as any).findOne('animals', (a: any) => a.id === id);
+    const response = await apiClient.get<{ data: Animal }>(`/api/livestock/${id}`);
+    return response.data || null;
   }
 
   static async createAnimal(
     payload: Omit<Animal, 'id' | 'created_at' | 'updated_at'>
   ): Promise<Animal> {
-    const newAnimal: Animal = {
-      id: uuidv4(),
-      ...payload,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    DatabaseAdapter.insert('animals', newAnimal);
-    return newAnimal;
+    const response = await apiClient.post<{ data: Animal }>('/api/livestock', payload);
+    return response.data;
   }
 
   static async updateAnimal(id: string, updates: Partial<Animal>) {
-    return DatabaseAdapter.update('animals', a => a.id === id, {
-      ...updates,
-      updated_at: new Date().toISOString(),
-    });
+    const response = await apiClient.put<{ data: Animal }>(`/api/livestock/${id}`, updates);
+    return response.data;
   }
 
   static async deleteAnimal(id: string) {
-    await new Promise(r => setTimeout(r, 50));
-    const success = DatabaseAdapter.delete('animals', a => a.id === id);
-    if (!success) {
-      throw new Error('Animal not found');
-    }
+    await apiClient.delete(`/api/livestock/${id}`);
     return true;
   }
 }
