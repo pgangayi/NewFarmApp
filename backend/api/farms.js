@@ -1,5 +1,6 @@
 // Farms API - Migrated to DatabaseOperations
 // Date: November 13, 2025
+// Updated: January 1, 2026 - Fixed farms loading issue
 
 import {
   AuthUtils,

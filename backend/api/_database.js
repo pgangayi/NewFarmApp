@@ -1,6 +1,7 @@
 // Centralized Database Operations for Farm Management System
 // Enhanced with comprehensive security, performance monitoring, and error handling
 // Date: November 13, 2025 (Security Hardened Version - Revised)
+// Updated: January 1, 2026 - Added findByUser
 
 import { createAuditLogger } from "./_logger.js";
 import {
