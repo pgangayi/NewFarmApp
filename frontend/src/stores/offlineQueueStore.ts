@@ -47,6 +47,12 @@ export const useOfflineQueue = () => {
     // Handle the resolution logic here
     console.log(`Resolving conflict ${opId} with resolution: ${resolution}`);
     // TODO: Implement actual conflict resolution logic
+    // This should:
+    // 1. Apply the chosen resolution strategy (overwrite/discard/merge)
+    // 2. Sync with the backend API
+    // 3. Update local state accordingly
+    // 4. Handle any errors during resolution
+    // See tracking issue for implementation plan
   };
 
   return {

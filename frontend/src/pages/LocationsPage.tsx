@@ -120,10 +120,15 @@ export function LocationsPage() {
     );
   }
 
+  // Helper function to get location type (handles backwards compatibility)
+  const getLocationType = (location: Location): string => {
+    return location.type || location.location_type || 'other';
+  };
+
   const filteredLocations = locations.filter(
     (location: Location) =>
       location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (location.type || location.location_type).toLowerCase().includes(searchTerm.toLowerCase())
+      getLocationType(location).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = async (location: Location) => {
@@ -244,7 +249,7 @@ export function LocationsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Barns</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {locations.filter((l: Location) => (l.type || l.location_type) === 'barn').length}
+                  {locations.filter((l: Location) => getLocationType(l) === 'barn').length}
                 </p>
               </div>
             </div>
@@ -261,7 +266,7 @@ export function LocationsPage() {
                   {
                     locations.filter(
                       (l: Location) => {
-                        const type = l.type || l.location_type;
+                        const type = getLocationType(l);
                         return type === 'paddock' || type === 'field' || type === 'corral';
                       }
                     ).length
@@ -282,7 +287,7 @@ export function LocationsPage() {
                   {
                     locations.filter(
                       (l: Location) => {
-                        const type = l.type || l.location_type;
+                        const type = getLocationType(l);
                         return (
                           type === 'structure' || type === 'building' || type === 'storage'
                         );
@@ -329,7 +334,7 @@ export function LocationsPage() {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLocations.map((location: Location) => {
-              const locationType = location.type || location.location_type || 'other';
+              const locationType = getLocationType(location);
               const IconComponent = locationTypeIcons[locationType] || locationTypeIcons.other;
               return (
                 <div
