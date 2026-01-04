@@ -43,7 +43,7 @@ export const useOfflineQueue = () => {
     // Filter out the resolved conflict
     const updatedConflicts = conflicts.filter(c => c.id !== opId);
     setConflicts(updatedConflicts);
-    
+
     // Handle the resolution logic here
     console.log(`Resolving conflict ${opId} with resolution: ${resolution}`);
     // TODO: Implement actual conflict resolution logic
@@ -56,4 +56,3 @@ export const useOfflineQueue = () => {
     resolveConflict,
   };
 };
-

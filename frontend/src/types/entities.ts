@@ -12,22 +12,22 @@ export type {
   QueryFilters,
   CreateRequest,
   UpdateRequest,
-  
+
   // User & Auth
   User,
   AuthSession,
   AuthResponse,
   LoginCredentials,
   SignupData,
-  
+
   // Farm
   Farm,
   FarmFormData,
-  
+
   // Location & Field
   Location,
   Field,
-  
+
   // Animal/Livestock
   Animal,
   Livestock,
@@ -40,25 +40,25 @@ export type {
   IntakeType,
   PedigreeNode,
   LivestockStats,
-  
+
   // Crop
   Crop,
   CropTreatment,
   CropActivity,
   CropStatus,
   CropHealthStatus,
-  
+
   // Task
   Task,
   TaskPriority,
   TaskStatus,
-  
+
   // Finance
   FinanceRecord,
   FinanceSummary,
   BudgetCategory,
   TransactionType,
-  
+
   // Inventory
   InventoryItem,
   InventoryCategory,

@@ -123,7 +123,7 @@ export function LocationsPage() {
   const filteredLocations = locations.filter(
     (location: Location) =>
       location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.type.toLowerCase().includes(searchTerm.toLowerCase())
+      (location.type || location.location_type).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = async (location: Location) => {
@@ -133,12 +133,13 @@ export function LocationsPage() {
     }
   };
 
-  const handleCreate = (data: Record<string, any>) => {
+  const handleCreate = (data: Record<string, unknown>) => {
     // Transform simple form data to typed request
     const request: CreateRequest<Location> = {
-      name: data.name,
-      type: data.type,
-      description: data.description,
+      name: data.name as string,
+      location_type: (data.type as string) || 'general',
+      type: data.type as string,
+      description: data.description as string,
       capacity: data.capacity ? Number(data.capacity) : undefined,
       farm_id: currentFarm.id,
     };
@@ -147,14 +148,15 @@ export function LocationsPage() {
     });
   };
 
-  const handleUpdate = (data: Record<string, any>) => {
+  const handleUpdate = (data: Record<string, unknown>) => {
     if (!editingLocation || !editingLocation.id) return;
 
     // Transform simple form data to typed request
     const request: UpdateRequest<Location> = {
-      name: data.name,
-      type: data.type,
-      description: data.description,
+      name: data.name as string,
+      location_type: (data.type as string) || undefined,
+      type: data.type as string,
+      description: data.description as string,
       capacity: data.capacity ? Number(data.capacity) : undefined,
     };
 
@@ -242,7 +244,7 @@ export function LocationsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Barns</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {locations.filter((l: Location) => l.type === 'barn').length}
+                  {locations.filter((l: Location) => (l.type || l.location_type) === 'barn').length}
                 </p>
               </div>
             </div>
@@ -258,8 +260,10 @@ export function LocationsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {
                     locations.filter(
-                      (l: Location) =>
-                        l.type === 'paddock' || l.type === 'field' || l.type === 'corral'
+                      (l: Location) => {
+                        const type = l.type || l.location_type;
+                        return type === 'paddock' || type === 'field' || type === 'corral';
+                      }
                     ).length
                   }
                 </p>
@@ -277,8 +281,12 @@ export function LocationsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {
                     locations.filter(
-                      (l: Location) =>
-                        l.type === 'structure' || l.type === 'building' || l.type === 'storage'
+                      (l: Location) => {
+                        const type = l.type || l.location_type;
+                        return (
+                          type === 'structure' || type === 'building' || type === 'storage'
+                        );
+                      }
                     ).length
                   }
                 </p>
@@ -321,7 +329,8 @@ export function LocationsPage() {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLocations.map((location: Location) => {
-              const IconComponent = locationTypeIcons[location.type] || locationTypeIcons.other;
+              const locationType = location.type || location.location_type || 'other';
+              const IconComponent = locationTypeIcons[locationType] || locationTypeIcons.other;
               return (
                 <div
                   key={location.id}
@@ -335,7 +344,7 @@ export function LocationsPage() {
                       <div>
                         <h3 className="font-semibold text-gray-900">{location.name}</h3>
                         <p className="text-sm text-gray-600 capitalize">
-                          {locationTypeLabels[location.type] || location.type}
+                          {locationTypeLabels[locationType] || locationType}
                         </p>
                       </div>
                     </div>
@@ -393,7 +402,7 @@ export function LocationsPage() {
         onSubmit={editingLocation ? handleUpdate : handleCreate}
         title={editingLocation ? 'Edit Location' : 'Add New Location'}
         fields={locationFormFields}
-        initialData={(editingLocation as Record<string, unknown>) || undefined}
+        initialData={(editingLocation ? editingLocation as unknown as Record<string, unknown> : undefined)}
         isLoading={createMutation.isPending || updateMutation.isPending}
         submitLabel={editingLocation ? 'Update Location' : 'Create Location'}
         size="lg"
