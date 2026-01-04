@@ -1,5 +1,4 @@
-// Note: useOfflineQueue hook needs to be implemented or removed
-// import { useOfflineQueue } from '../hooks';
+import { useOfflineQueue, type OfflineOperation } from '../stores/offlineQueueStore';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 
 export function QueuePage() {
@@ -40,7 +39,7 @@ export function QueuePage() {
           <div className="conflicts-section">
             <h2 className="text-xl font-semibold mb-4">Conflicts Requiring Resolution</h2>
             <div className="space-y-4">
-              {conflicts.map(conflict => (
+              {conflicts.map((conflict: OfflineOperation) => (
                 <div key={conflict.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
                   <div className="flex justify-between items-start mb-2">
                     <div>

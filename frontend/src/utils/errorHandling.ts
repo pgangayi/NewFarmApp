@@ -5,8 +5,7 @@
 
 import React from 'react';
 import * as Sentry from '@sentry/react';
-// ApiErrorResponse type will be defined if needed, commenting out for now
-// import type { ApiErrorResponse } from '../api/types';
+import type { ApiErrorResponse } from '../types/entities';
 
 // ============================================================================
 // ERROR TYPES

@@ -72,8 +72,8 @@ export function TasksPage() {
         taskId: task.id,
         startTime: now,
       });
-      // expect res.id or res.data.id
-      const id = (res && (res.id || (res.data && res.data.id))) as number | undefined;
+      // expect res.id
+      const id = res && 'id' in res ? (res.id as number) : undefined;
       setActiveLogMap(prev => ({ ...prev, [task.id]: id || null }));
       setTimerActive(prev => ({ ...prev, [task.id]: true }));
       setCurrentTimer({ taskId: task.id, startTime: new Date() });

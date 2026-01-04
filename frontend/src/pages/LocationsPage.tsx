@@ -393,7 +393,7 @@ export function LocationsPage() {
         onSubmit={editingLocation ? handleUpdate : handleCreate}
         title={editingLocation ? 'Edit Location' : 'Add New Location'}
         fields={locationFormFields}
-        initialData={editingLocation || undefined}
+        initialData={(editingLocation as Record<string, unknown>) || undefined}
         isLoading={createMutation.isPending || updateMutation.isPending}
         submitLabel={editingLocation ? 'Update Location' : 'Create Location'}
         size="lg"

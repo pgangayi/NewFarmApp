@@ -41,7 +41,7 @@ export function SignupPage() {
     const { error: signupError } = await signUp(email, password, name);
 
     if (signupError) {
-      setError(signupError.message);
+      setError(signupError);
       setLoading(false);
     } else {
       // User is already logged in, redirect to farms

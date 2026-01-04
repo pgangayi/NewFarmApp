@@ -18,6 +18,8 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   success: boolean;
+  timestamp?: string;
+  error?: string;
 }
 
 export interface PaginationParams {
@@ -99,6 +101,9 @@ export interface Location extends BaseEntity {
   location_type: string;
   coordinates?: string;
   size_sqft?: number;
+  description?: string;
+  capacity?: number;
+  current_occupancy?: number;
 }
 
 export interface Field extends Location {

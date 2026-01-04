@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface OfflineOperation {
+export interface OfflineOperation {
   id?: number;
   type:
     | 'create_inventory_item'
@@ -34,3 +34,26 @@ export const useOfflineQueueStore = create<OfflineQueueState>(set => ({
   setConflicts: conflicts => set({ conflicts }),
   updateQueueStats: (length, conflicts) => set({ queueLength: length, conflicts }),
 }));
+
+// Hook to use the offline queue with additional functionality
+export const useOfflineQueue = () => {
+  const { isOnline, queueLength, conflicts, setConflicts } = useOfflineQueueStore();
+
+  const resolveConflict = (opId: number, resolution: 'overwrite' | 'discard' | 'merge') => {
+    // Filter out the resolved conflict
+    const updatedConflicts = conflicts.filter(c => c.id !== opId);
+    setConflicts(updatedConflicts);
+    
+    // Handle the resolution logic here
+    console.log(`Resolving conflict ${opId} with resolution: ${resolution}`);
+    // TODO: Implement actual conflict resolution logic
+  };
+
+  return {
+    isOnline,
+    queueLength,
+    conflicts,
+    resolveConflict,
+  };
+};
+

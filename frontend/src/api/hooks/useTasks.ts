@@ -20,7 +20,7 @@ export function useTasks(filters?: Record<string, unknown>) {
   return useQuery({
     queryKey: QUERY_KEYS.tasks.list(filters),
     queryFn: async () => {
-      let endpoint = API_ENDPOINTS.tasks.list;
+      let endpoint: string = API_ENDPOINTS.tasks.list;
 
       // Add farm_id filter if provided
       if (filters?.farm_id) {
@@ -98,7 +98,7 @@ export function useUpdateTask() {
       const response = await apiClient.put<Task>(API_ENDPOINTS.tasks.update(id), data);
       return response;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_data: Task, variables: { id: string; data: UpdateRequest<Task> }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks.detail(variables.id) });
     },

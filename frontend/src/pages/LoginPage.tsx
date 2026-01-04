@@ -26,7 +26,7 @@ export function LoginPage() {
     const { error: authError } = await signIn(email, password);
 
     if (authError) {
-      setError(authError.message);
+      setError(authError);
       setLoading(false);
     } else {
       navigate('/dashboard');
