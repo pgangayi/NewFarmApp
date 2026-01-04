@@ -18,6 +18,8 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   success: boolean;
+  timestamp?: string;
+  error?: string;
 }
 
 export interface PaginationParams {
@@ -83,8 +85,11 @@ export interface Farm extends BaseEntity {
   name: string;
   location?: string;
   size_acres?: number;
+  area_hectares?: number;
   farm_type?: string;
   owner_id?: string;
+  timezone?: string;
+  established_date?: string;
 }
 
 export type FarmFormData = CreateRequest<Farm>;
@@ -97,13 +102,20 @@ export interface Location extends BaseEntity {
   farm_id: string;
   name: string;
   location_type: string;
+  type?: string;
   coordinates?: string;
   size_sqft?: number;
+  description?: string;
+  capacity?: number;
+  current_occupancy?: number;
 }
 
 export interface Field extends Location {
   soil_type?: string;
   irrigation_type?: string;
+  farm_name?: string;
+  area_hectares?: number;
+  crop_type?: string;
 }
 
 // ============================================================================
@@ -235,6 +247,7 @@ export interface Task extends BaseEntity {
   due_date: string;
   assigned_to?: string;
   category?: string;
+  task_type?: string;
   related_entity_type?: string;
   related_entity_id?: string;
   completed_at?: string;
@@ -297,6 +310,7 @@ export interface InventoryItem extends BaseEntity {
   quantity: number;
   unit: string;
   reorder_level?: number;
+  minimum_quantity?: number;
   cost_per_unit?: number;
   supplier_id?: string;
   location_id?: string;

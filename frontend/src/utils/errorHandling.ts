@@ -5,8 +5,7 @@
 
 import React from 'react';
 import * as Sentry from '@sentry/react';
-// ApiErrorResponse type will be defined if needed, commenting out for now
-// import type { ApiErrorResponse } from '../api/types';
+import type { ApiErrorResponse } from '../types/entities';
 
 // ============================================================================
 // ERROR TYPES
@@ -33,7 +32,12 @@ export class AppError extends Error {
   }
 
   static fromApiError(apiError: ApiErrorResponse): AppError {
-    return new AppError(apiError.message, apiError.error, apiError.statusCode, apiError.details);
+    return new AppError(
+      apiError.message || apiError.error,
+      apiError.error,
+      apiError.statusCode,
+      apiError.details
+    );
   }
 
   static fromUnknownError(

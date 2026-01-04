@@ -72,7 +72,7 @@ export const apiClient = {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await apiClient.get('/api/auth/validate');
+    const response = await apiClient.get<{ user?: unknown }>('/api/auth/validate');
     return response.user || null;
   } catch (err) {
     return null;
@@ -80,19 +80,36 @@ export const getCurrentUser = async () => {
 };
 
 export const signIn = async (email: string, password: string) => {
-  const response = await apiClient.post('/api/auth/login', { email, password });
-  if (response.token) {
-    localStorage.setItem('auth_token', response.token);
+  try {
+    const response = await apiClient.post<{ token?: string }>('/api/auth/login', {
+      email,
+      password,
+    });
+    if (response.token) {
+      localStorage.setItem('auth_token', response.token);
+    }
+    return { data: response, error: null };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Login failed';
+    return { data: null, error: errorMessage };
   }
-  return { data: response, error: null };
 };
 
 export const signUp = async (email: string, password: string, name: string) => {
-  const response = await apiClient.post('/api/auth/signup', { email, password, name });
-  if (response.token) {
-    localStorage.setItem('auth_token', response.token);
+  try {
+    const response = await apiClient.post<{ token?: string }>('/api/auth/signup', {
+      email,
+      password,
+      name,
+    });
+    if (response.token) {
+      localStorage.setItem('auth_token', response.token);
+    }
+    return { data: response, error: null };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Signup failed';
+    return { data: null, error: errorMessage };
   }
-  return { data: response, error: null };
 };
 
 export const signOut = async () => {
