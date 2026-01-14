@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { WeatherService } from '../services/domains/WeatherService';
 import {
   Bell,
   CheckCircle,
-  X,
+  // X,
   AlertTriangle,
   Info,
   Settings,
@@ -61,15 +62,10 @@ export function WeatherNotifications({
   } = useQuery({
     queryKey: ['weather-notifications', farmId],
     queryFn: async () => {
-      const response = await fetch('/api/weather/recommendations', {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-
-      const recommendations = await response.json();
+      const recommendations = await WeatherService.getWeatherRecommendations();
 
       // Convert recommendations to notifications
-      const notifications: WeatherNotification[] = recommendations.map((rec: unknown) => ({
+      const notifications: WeatherNotification[] = recommendations.map((rec: any) => ({
         id: rec.id,
         type: rec.priority === 'urgent' || rec.priority === 'high' ? 'alert' : 'recommendation',
         title: rec.title,
@@ -88,17 +84,7 @@ export function WeatherNotifications({
 
   const acknowledgeMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const response = await fetch('/api/weather', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          action: 'acknowledge_alert',
-          alert_id: notificationId,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to acknowledge notification');
-      return response.json();
+      return WeatherService.acknowledgeAlert(notificationId);
     },
     onSuccess: () => {
       refetch();
@@ -142,7 +128,7 @@ export function WeatherNotifications({
     ? notifications || []
     : unacknowledgedNotifications.slice(0, 5);
 
-  const getNotificationIcon = (type: string, severity?: string) => {
+  const getNotificationIcon = (type: string, _severity?: string) => {
     switch (type) {
       case 'alert':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
@@ -338,22 +324,41 @@ export function WeatherNotifications({
               Notification Settings
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <label className="flex items-center p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100">
-                <input type="checkbox" defaultChecked className="mr-3 text-red-500" />
+              <label
+                htmlFor="weather-alerts"
+                className="flex items-center p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100"
+              >
+                <input
+                  id="weather-alerts"
+                  type="checkbox"
+                  defaultChecked
+                  className="mr-3 text-red-500"
+                />
                 <div>
                   <span className="text-sm font-medium text-gray-900">Weather alerts</span>
                   <p className="text-xs text-gray-600">Critical & high priority alerts</p>
                 </div>
               </label>
-              <label className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                <input type="checkbox" defaultChecked className="mr-3 text-blue-500" />
+              <label
+                htmlFor="farming-recommendations"
+                className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100"
+              >
+                <input
+                  id="farming-recommendations"
+                  type="checkbox"
+                  defaultChecked
+                  className="mr-3 text-blue-500"
+                />
                 <div>
                   <span className="text-sm font-medium text-gray-900">Farming recommendations</span>
                   <p className="text-xs text-gray-600">Weather-based farming tips</p>
                 </div>
               </label>
-              <label className="flex items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
-                <input type="checkbox" className="mr-3 text-green-500" />
+              <label
+                htmlFor="daily-summary"
+                className="flex items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100"
+              >
+                <input id="daily-summary" type="checkbox" className="mr-3 text-green-500" />
                 <div>
                   <span className="text-sm font-medium text-gray-900">Daily summary</span>
                   <p className="text-xs text-gray-600">Daily weather summary</p>

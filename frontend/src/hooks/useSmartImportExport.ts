@@ -180,16 +180,16 @@ export function useSmartImportExport() {
         let startIndex = 0;
 
         if (hasHeader) {
-          headers = parseCSVLine(lines[0], delimiter);
+          headers = parseCSVLine(lines[0]!, delimiter);
           startIndex = 1;
         } else {
           // Generate default headers
-          const firstLine = parseCSVLine(lines[0], delimiter);
+          const firstLine = parseCSVLine(lines[0]!, delimiter);
           headers = firstLine.map((_, index) => `Column_${index + 1}`);
         }
 
         for (let i = startIndex; i < lines.length; i++) {
-          const values = parseCSVLine(lines[i], delimiter);
+          const values = parseCSVLine(lines[i]!, delimiter);
           const row: Record<string, unknown> = {};
 
           headers.forEach((header, index) => {
@@ -316,7 +316,10 @@ export function useSmartImportExport() {
 
         mappings.forEach(mapping => {
           const sourceValue = (row as Record<string, unknown>)[mapping.sourceField];
-          const transformedValue = transformValue(sourceValue, mapping.transformation);
+          const transformedValue = transformValue(
+            String(sourceValue || ''),
+            mapping.transformation
+          );
           mappedRow[mapping.targetField] =
             transformedValue !== undefined ? transformedValue : mapping.defaultValue;
         });
@@ -367,7 +370,7 @@ export function useSmartImportExport() {
       let bestMatch = null;
       let bestScore = 0;
 
-      targetFields.forEach(targetField => {
+      for (const targetField of targetFields) {
         const targetLower = targetField.toLowerCase().replace(/[\s_-]/g, '');
 
         // Exact match
@@ -385,7 +388,7 @@ export function useSmartImportExport() {
             bestMatch = targetField;
           }
         }
-      });
+      }
 
       return bestScore > 0.6 ? bestMatch : null;
     },

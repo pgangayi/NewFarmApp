@@ -26,8 +26,8 @@ export function BudgetProgress({ budgets, onCreateBudget }: BudgetProgressProps)
           </div>
         ) : (
           budgets.map(budget => {
-            const percentage = Math.min((budget.spent_amount / budget.budget_limit) * 100, 100);
-            const isOverBudget = budget.spent_amount > budget.budget_limit;
+            const percentage = Math.min((budget.spent / budget.budget_limit) * 100, 100);
+            const isOverBudget = budget.spent > budget.budget_limit;
 
             return (
               <Card key={budget.id}>
@@ -45,7 +45,7 @@ export function BudgetProgress({ budgets, onCreateBudget }: BudgetProgressProps)
                     className={`h-2 ${isOverBudget ? 'bg-red-200' : ''}`}
                   />
                   <div className="flex justify-between mt-2 text-sm text-gray-500">
-                    <span>Spent: ${budget.spent_amount.toLocaleString()}</span>
+                    <span>Spent: ${budget.spent.toLocaleString()}</span>
                     <span>Limit: ${budget.budget_limit.toLocaleString()}</span>
                   </div>
                 </CardContent>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DollarSign, Receipt, Target, FileText, BarChart3, Plus } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -37,10 +37,19 @@ export function FinancePage() {
 
   // Use unified hooks
   const {
-    data: entries = [],
+    data: rawEntries = [],
     isLoading,
     error,
   } = useFinance(currentFarm?.id ? { farm_id: currentFarm.id } : undefined);
+
+  const entries = useMemo(() => {
+    return rawEntries.map((entry: any) => ({
+      ...entry,
+      date: entry.transaction_date,
+      status: entry.status || 'completed',
+    }));
+  }, [rawEntries]);
+
   const createMutation = useCreateFinanceRecord();
   const updateMutation = useUpdateFinanceRecord();
   const deleteMutation = useDeleteFinanceRecord();
@@ -53,10 +62,9 @@ export function FinancePage() {
     queryKey: ['finance', 'analytics', currentFarm?.id],
     queryFn: async () => {
       if (!currentFarm?.id) return null;
-      const response = await apiClient.get<any>(
+      return await apiClient.get<any>(
         `/api/finance/analytics?farm_id=${currentFarm.id}&period=12months`
       );
-      return response;
     },
     enabled: !!currentFarm?.id && isAuthenticated(),
   });

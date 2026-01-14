@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFarm, useRotations, useCreateRotation } from '../api';
+import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   RotateCcw,
@@ -9,7 +10,7 @@ import {
   CheckCircle,
   AlertTriangle,
   TrendingUp,
-  Minus,
+  // Minus,
   Edit,
   Loader2,
 } from 'lucide-react';
@@ -49,9 +50,7 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
   const { data: fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      const response = await fetch(`/api/fields?farm_id=${farmId}`);
-      if (!response.ok) throw new Error('Failed to fetch fields');
-      return await response.json();
+      return FieldService.getFieldsByFarm(farmId);
     },
     enabled: !!farmId,
   });
@@ -127,13 +126,13 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
       ['potato', 'peas', 'corn'],
     ];
 
-    const randomRotation = commonRotations[Math.floor(Math.random() * commonRotations.length)];
+    const randomRotation = commonRotations[Math.floor(Math.random() * commonRotations.length)]!;
 
     const currentYear = new Date().getFullYear();
     for (let i = 0; i < years; i++) {
       suggestions.push({
         year: currentYear + i,
-        crop_type: randomRotation[i % randomRotation.length],
+        crop_type: randomRotation[i % randomRotation.length] || 'Unknown',
         planting_date: `${currentYear + i}-03-01`,
         harvest_date: `${currentYear + i}-09-01`,
         status: 'planned' as const,
@@ -213,8 +212,11 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Select Field</label>
+              <label htmlFor="select-field" className="block text-sm font-medium mb-2">
+                Select Field
+              </label>
               <select
+                id="select-field"
                 value={selectedField}
                 onChange={e => setSelectedField(e.target.value)}
                 className="w-full p-2 border rounded"
@@ -230,8 +232,11 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Rotation Period (Years)</label>
+              <label htmlFor="rotation-period" className="block text-sm font-medium mb-2">
+                Rotation Period (Years)
+              </label>
               <select
+                id="rotation-period"
                 value={rotationYears}
                 onChange={e => setRotationYears(parseInt(e.target.value))}
                 className="w-full p-2 border rounded"

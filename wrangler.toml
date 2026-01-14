@@ -1,34 +1,26 @@
-# Cloudflare Pages + Functions Configuration
-# This file configures both local development and production deployment
-
+# Cloudflare Pages Configuration
 name = "farmers-boot"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# D1 Database Configuration
+# Pages configuration
+pages_build_output_dir = "frontend/dist"
+
+# D1 Database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "farmers_boot"
-database_id = "96ba79d2-c66e-4421-9116-3d231666266c"
+database_id = "d6cd5f39-e69f-463e-8953-04c785015e71"
 
-# Environment Variables
-# Note: JWT_SECRET should be set as a secret in Cloudflare Pages using 'wrangler secret put JWT_SECRET'
-# Do not commit secrets to the repository
-[env.local.vars]
-ENVIRONMENT = "local"
-CF_PAGES_URL = "http://localhost:8788"
+# Environment variables for local development
+[vars]
+ENVIRONMENT = "development"
 
-# Production Environment
-[env.production.vars]
-ENVIRONMENT = "production"
-CF_PAGES_URL = "https://farmers-boot.pages.dev"
-# Note: JWT_SECRET should be set as a secret in Cloudflare Pages
+# Production environment
+[env.production]
+vars = { ENVIRONMENT = "production" }
 
-# Function bindings for Pages Functions
-pages_build_output_dir = "frontend/dist"
+# Note: Set JWT_SECRET as a secret using:
+# npx wrangler secret put JWT_SECRET --env production
 
-# Pages Functions configuration
-functions = "functions"
 
-[functions]
-compatibility_flags = ["nodejs_compat"]

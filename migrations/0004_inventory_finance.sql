@@ -103,13 +103,15 @@ CREATE TABLE IF NOT EXISTS inventory_suppliers (
 CREATE TABLE IF NOT EXISTS purchase_orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     farm_id INTEGER NOT NULL,
-    order_number TEXT UNIQUE NOT NULL,
     supplier_id INTEGER NOT NULL,
-    order_date DATE NOT NULL,
+    order_number TEXT UNIQUE NOT NULL,
+    order_date DATE NOT NULL DEFAULT (date('now')),
     expected_delivery_date DATE,
     total_amount REAL NOT NULL,
     currency TEXT NOT NULL DEFAULT 'USD',
-    status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'ordered', 'delivered', 'cancelled'
+    status TEXT DEFAULT 'pending', 
+    order_status TEXT DEFAULT 'pending', -- 0019 alias
+    payment_status TEXT DEFAULT 'pending',
     created_by TEXT,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

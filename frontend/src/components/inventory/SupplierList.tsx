@@ -12,7 +12,7 @@ export function SupplierList({ suppliers, onAddSupplier, onEditSupplier }: Suppl
   return (
     <UnifiedList
       title="Suppliers"
-      items={suppliers}
+      items={suppliers as any[]}
       columns={[
         { key: 'name', label: 'Company', className: 'font-medium' },
         { key: 'contact_name', label: 'Contact Person' },

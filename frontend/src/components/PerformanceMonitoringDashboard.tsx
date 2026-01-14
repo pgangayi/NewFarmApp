@@ -8,14 +8,14 @@ import {
   TrendingDown,
   AlertTriangle,
   CheckCircle,
-  Clock,
+  // Clock,
   DollarSign,
   Users,
   Sprout,
   Package,
   BarChart3,
-  PieChart,
-  LineChart,
+  // PieChart,
+  // LineChart,
   Target,
   Zap,
   Database,
@@ -23,15 +23,15 @@ import {
   HardDrive,
   User,
   RefreshCw,
-  Download,
-  Filter,
-  Calendar,
-  AlertCircle,
+  // Download,
+  // Filter,
+  // Calendar,
+  // AlertCircle,
   CheckCircle2,
   XCircle,
   Minus,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
@@ -164,7 +164,7 @@ export function PerformanceMonitoringDashboard({
   const { isConnected: isWebSocketConnected, lastMessage: wsMessage } = useWebSocket();
 
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedMetric, setSelectedMetric] = useState<string>('all');
+  // const [selectedMetric, setSelectedMetric] = useState<string>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Fetch performance overview

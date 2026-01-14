@@ -20,7 +20,7 @@ export function useTasks(filters?: Record<string, unknown>) {
   return useQuery({
     queryKey: QUERY_KEYS.tasks.list(filters),
     queryFn: async () => {
-      let endpoint = API_ENDPOINTS.tasks.list;
+      let endpoint: string = API_ENDPOINTS.tasks.list;
 
       // Add farm_id filter if provided
       if (filters?.farm_id) {
@@ -57,8 +57,7 @@ export function useTask(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.tasks.detail(id),
     queryFn: async () => {
-      const response = await apiClient.get<Task>(API_ENDPOINTS.tasks.detail(id));
-      return response;
+      return await apiClient.get<Task>(API_ENDPOINTS.tasks.detail(id));
     },
     enabled: !!id,
     staleTime: CACHE_CONFIG.staleTime.tasks,
@@ -78,8 +77,7 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (data: CreateRequest<Task>) => {
-      const response = await apiClient.post<Task>(API_ENDPOINTS.tasks.create, data);
-      return response;
+      return await apiClient.post<Task>(API_ENDPOINTS.tasks.create, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks.all });
@@ -95,8 +93,7 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRequest<Task> }) => {
-      const response = await apiClient.put<Task>(API_ENDPOINTS.tasks.update(id), data);
-      return response;
+      return await apiClient.put<Task>(API_ENDPOINTS.tasks.update(id), data);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks.all });
@@ -125,11 +122,10 @@ export function useStartTimeLog() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ taskId, startTime }: { taskId: string; startTime: string }) => {
-      const response = await apiClient.post<{ id: number }>('/api/tasks/time-logs', {
+      return await apiClient.post<{ id: number }>('/api/tasks/time-logs', {
         task_id: taskId,
         start_time: startTime,
       });
-      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks.all });
@@ -141,10 +137,9 @@ export function useStopTimeLog() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ logId, endTime }: { logId: number; endTime: string }) => {
-      const response = await apiClient.put(`/api/tasks/time-logs/${logId}`, {
+      return await apiClient.put(`/api/tasks/time-logs/${logId}`, {
         end_time: endTime,
       });
-      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tasks.all });

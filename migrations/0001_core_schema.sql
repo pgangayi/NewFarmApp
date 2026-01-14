@@ -67,3 +67,23 @@ CREATE INDEX IF NOT EXISTS idx_farm_members_farm ON farm_members(farm_id);
 CREATE INDEX IF NOT EXISTS idx_farm_members_user ON farm_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_fields_farm ON fields(farm_id);
 CREATE INDEX IF NOT EXISTS idx_operations_idempotency ON operations(idempotency_key);
+
+-- Animals table (moved from 0003 to resolve dependency for 0002)
+CREATE TABLE IF NOT EXISTS animals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    farm_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    species TEXT NOT NULL, -- 'cow', 'chicken', 'pig', etc.
+    breed TEXT,
+    birth_date DATE,
+    sex TEXT, -- 'male', 'female'
+    identification_tag TEXT,
+    health_status TEXT DEFAULT 'healthy',
+    weight REAL,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_animals_farm ON animals(farm_id);

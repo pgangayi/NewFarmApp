@@ -136,7 +136,7 @@ test.describe('Farm Management', () => {
 
     // Look for form validation
     const requiredInputs = page.locator('input[required], .required');
-    const errorMessages = page.locator('.error, .validation-error, [data-error]');
+    // const errorMessages = page.locator('.error, .validation-error, [data-error]');
 
     if ((await requiredInputs.count()) > 0) {
       await expect(requiredInputs.first()).toHaveAttribute('required');

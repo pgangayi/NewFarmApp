@@ -163,7 +163,7 @@ export function useRealtimeInventory() {
   const [inventoryUpdates, setInventoryUpdates] = useState<unknown[]>([]);
 
   const { connectionStatus, lastUpdate } = useRealtimeData('global', {
-    onMessage: data => {
+    onMessage: (data: any) => {
       if (data.type === 'inventory_update') {
         setInventoryUpdates(prev => [...prev, data].slice(-10)); // Keep last 10 updates
       }
@@ -181,7 +181,7 @@ export function useRealtimeTasks() {
   const [taskUpdates, setTaskUpdates] = useState<unknown[]>([]);
 
   const { connectionStatus, lastUpdate } = useRealtimeData('global', {
-    onMessage: data => {
+    onMessage: (data: any) => {
       if (data.type === 'task_update') {
         setTaskUpdates(prev => [...prev, data].slice(-10));
       }

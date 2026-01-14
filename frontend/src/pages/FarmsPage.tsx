@@ -320,7 +320,8 @@ export function FarmsPage() {
                         </div>
                       )}
                       <div className="text-xs text-gray-400">
-                        Created: {new Date(farm.created_at).toLocaleDateString()}
+                        Created:{' '}
+                        {farm.created_at ? new Date(farm.created_at).toLocaleDateString() : 'N/A'}
                       </div>
 
                       {/* Actions */}

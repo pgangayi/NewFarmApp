@@ -207,7 +207,7 @@ export function FloatingActionButton({
   const handleActionKeyDown = (event: React.KeyboardEvent, index: number) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      actions[index].onClick();
+      actions[index]?.onClick();
       setIsOpen(false);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();

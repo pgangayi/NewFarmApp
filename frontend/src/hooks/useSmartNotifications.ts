@@ -83,18 +83,6 @@ interface NotificationPreferences {
   quietPeriodStart?: Date;
 }
 
-interface NotificationRule {
-  id: string;
-  name: string;
-  type: string;
-  condition: (data: unknown) => boolean;
-  action: (context: unknown) => Omit<Notification, 'id' | 'timestamp' | 'read' | 'dismissed'>;
-  enabled: boolean;
-  priority: 'low' | 'medium' | 'high';
-  cooldown?: number;
-  lastTriggered?: Date;
-}
-
 const DEFAULT_PREFERENCES: NotificationPreferences = {
   weather: true,
   inventory: true,

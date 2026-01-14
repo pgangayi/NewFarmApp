@@ -9,8 +9,7 @@ export function useCrops(farmId?: string) {
     queryKey: farmId ? QUERY_KEYS.crops.byFarm(farmId) : QUERY_KEYS.crops.all,
     queryFn: async () => {
       const endpoint = farmId ? `/api/crops?farm_id=${farmId}` : '/api/crops';
-      const response = await apiClient.get<Crop[]>(endpoint);
-      return response;
+      return await apiClient.get<Crop[]>(endpoint);
     },
     staleTime: CACHE_CONFIG.staleTime.crops,
   });
@@ -20,8 +19,7 @@ export function useCrop(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.crops.detail(id),
     queryFn: async () => {
-      const response = await apiClient.get<Crop>(`/api/crops?id=${id}`);
-      return response;
+      return await apiClient.get<Crop>(`/api/crops?id=${id}`);
     },
     enabled: !!id,
     staleTime: CACHE_CONFIG.staleTime.crops,
@@ -54,8 +52,7 @@ export function useCreateCrop() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateRequest<Crop>) => {
-      const response = await apiClient.post<Crop>('/api/crops', data as any);
-      return response;
+      return await apiClient.post<Crop>('/api/crops', data as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.crops.all });
@@ -67,8 +64,7 @@ export function useUpdateCrop() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRequest<Crop> }) => {
-      const response = await apiClient.put<Crop>(`/api/crops/${id}`, data as any);
-      return response;
+      return await apiClient.put<Crop>(`/api/crops/${id}`, data as any);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.crops.all });

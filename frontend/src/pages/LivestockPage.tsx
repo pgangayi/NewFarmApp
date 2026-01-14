@@ -87,7 +87,7 @@ export default function LivestockPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
-        farm_id: currentFarm.id,
+        farm_id: currentFarm?.id || '',
       });
       toast('Livestock added successfully', 'success');
       setShowModal(false);

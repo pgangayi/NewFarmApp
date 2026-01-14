@@ -28,7 +28,7 @@ export async function onRequest(context) {
 
     // Enhanced inventory listing with comprehensive data
     if (method === "GET") {
-      const itemId = url.searchParams.get("id");
+      const itemId = request.params?.id || url.searchParams.get("id");
       const analytics = url.searchParams.get("analytics");
       const alerts = url.searchParams.get("alerts");
       const suppliers = url.searchParams.get("suppliers");
@@ -326,7 +326,8 @@ export async function onRequest(context) {
     } else if (method === "PUT") {
       // Update inventory item with enhanced data
       const body = await request.json();
-      const { id, ...updateData } = body;
+      const id = request.params?.id || body.id;
+      const { id: _bodyId, ...updateData } = body;
 
       if (!id) {
         return createErrorResponse("Item ID required", 400);
@@ -468,7 +469,7 @@ export async function onRequest(context) {
       return createSuccessResponse(itemResults[0]);
     } else if (method === "DELETE") {
       // Enhanced delete with dependency checks
-      const itemId = url.searchParams.get("id");
+      const itemId = request.params?.id || url.searchParams.get("id");
 
       if (!itemId) {
         return createErrorResponse("Item ID required", 400);

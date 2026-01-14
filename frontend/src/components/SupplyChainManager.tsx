@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Package,
   Truck,
@@ -11,17 +11,17 @@ import {
   DollarSign,
   Users,
   BarChart3,
-  Calendar,
+  // Calendar,
   Download,
-  Upload,
+  // Upload,
   Plus,
   Search,
-  Filter,
+  // Filter,
   Eye,
   Edit,
-  Trash2,
-  TruckIcon,
-  MapPin,
+  // Trash2,
+  // TruckIcon,
+  // MapPin,
   Phone,
   Mail,
   Star,
@@ -30,10 +30,10 @@ import {
   Lightbulb,
   Zap,
   RefreshCw,
-  Save,
-  X,
+  // Save,
+  // X,
   Check,
-  Info,
+  // Info,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -50,6 +50,9 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import { Label } from './ui/label';
+
+const STATUS_COLOR_GRAY = 'text-gray-600 bg-gray-100';
+const STATUS_COLOR_RED = 'text-red-600 bg-red-100';
 
 interface Vendor {
   id: string;
@@ -123,134 +126,27 @@ export default function SupplyChainManager() {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
 
-  // Mock data for demonstration
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
 
-      // Simulate API calls
-      const mockVendors: Vendor[] = [
-        {
-          id: 'v1',
-          name: 'AgriSupply Co.',
-          contact_person: 'John Smith',
-          email: 'john@agrisupply.com',
-          phone: '+1-555-0101',
-          address: '123 Farm Road, Valley City, ST 12345',
-          category: 'Seeds & Supplies',
-          rating: 4.8,
-          status: 'active',
-          performance_score: 92,
-          lead_time_days: 5,
-          payment_terms: 'Net 30',
-          contract_expiry: '2024-12-31',
-          total_orders: 156,
-          total_spent: 45670.5,
-          last_order_date: '2024-11-01',
-        },
-        {
-          id: 'v2',
-          name: 'FarmTech Solutions',
-          contact_person: 'Sarah Johnson',
-          email: 'sarah@farmtech.com',
-          phone: '+1-555-0102',
-          address: '456 Equipment Ave, Tech City, ST 12346',
-          category: 'Equipment',
-          rating: 4.6,
-          status: 'active',
-          performance_score: 88,
-          lead_time_days: 14,
-          payment_terms: 'Net 15',
-          total_orders: 89,
-          total_spent: 125340.0,
-          last_order_date: '2024-10-28',
-        },
-        {
-          id: 'v3',
-          name: 'Organic Solutions Ltd.',
-          contact_person: 'Mike Davis',
-          email: 'mike@organicsolutions.com',
-          phone: '+1-555-0103',
-          address: '789 Green Street, Eco City, ST 12347',
-          category: 'Organic Supplies',
-          rating: 4.9,
-          status: 'active',
-          performance_score: 95,
-          lead_time_days: 7,
-          payment_terms: 'Net 45',
-          total_orders: 203,
-          total_spent: 78920.25,
-          last_order_date: '2024-11-03',
-        },
-      ];
+      // TODO: Implement API calls to fetch real supply chain data
+      // const vendors = await supplyChainService.getVendors();
+      // const orders = await supplyChainService.getOrders();
+      // const metrics = await supplyChainService.getMetrics();
 
-      const mockOrders: PurchaseOrder[] = [
-        {
-          id: 'po1',
-          vendor_id: 'v1',
-          vendor_name: 'AgriSupply Co.',
-          order_number: 'PO-2024-001',
-          status: 'pending',
-          total_amount: 2500.0,
-          order_date: '2024-11-05',
-          expected_delivery: '2024-11-10',
-          items: [
-            {
-              id: 'item1',
-              item_name: 'Premium Corn Seeds',
-              category: 'Seeds',
-              quantity: 50,
-              unit: 'bags',
-              unit_price: 45.0,
-              total_price: 2250.0,
-              specifications: 'High-yield variety, treated',
-            },
-          ],
-          priority: 'normal',
-          approval_status: 'approved',
-          approved_by: 'Farm Manager',
-          approved_date: '2024-11-05',
-        },
-        {
-          id: 'po2',
-          vendor_id: 'v2',
-          vendor_name: 'FarmTech Solutions',
-          order_number: 'PO-2024-002',
-          status: 'shipped',
-          total_amount: 15000.0,
-          order_date: '2024-10-30',
-          expected_delivery: '2024-11-08',
-          items: [
-            {
-              id: 'item2',
-              item_name: 'Irrigation System Controller',
-              category: 'Equipment',
-              quantity: 1,
-              unit: 'unit',
-              unit_price: 15000.0,
-              total_price: 15000.0,
-              specifications: 'Smart irrigation controller with mobile app',
-            },
-          ],
-          priority: 'high',
-          approval_status: 'approved',
-        },
-      ];
-
-      const mockMetrics: SupplyChainMetrics = {
-        total_vendors: 3,
-        active_orders: 5,
-        pending_deliveries: 2,
-        monthly_spend: 67890.0,
-        average_lead_time: 8.5,
-        vendor_performance: 91.7,
-        cost_savings: 12500.0,
-        delivery_success_rate: 94.2,
-      };
-
-      setVendors(mockVendors);
-      setPurchaseOrders(mockOrders);
-      setMetrics(mockMetrics);
+      setVendors([]);
+      setPurchaseOrders([]);
+      setMetrics({
+        total_vendors: 0,
+        active_orders: 0,
+        pending_deliveries: 0,
+        monthly_spend: 0,
+        average_lead_time: 0,
+        vendor_performance: 0,
+        cost_savings: 0,
+        delivery_success_rate: 0,
+      });
       setLoading(false);
     };
 
@@ -269,26 +165,26 @@ export default function SupplyChainManager() {
       case 'inactive':
       case 'cancelled':
       case 'rejected':
-        return 'text-red-600 bg-red-100';
+        return STATUS_COLOR_RED;
       case 'draft':
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
       default:
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return 'text-red-600 bg-red-100';
+        return STATUS_COLOR_RED;
       case 'high':
         return 'text-orange-600 bg-orange-100';
       case 'normal':
         return 'text-blue-600 bg-blue-100';
       case 'low':
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
       default:
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
     }
   };
 
@@ -364,7 +260,7 @@ export default function SupplyChainManager() {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key as unknown)}
+                onClick={() => setActiveTab(key as any)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   activeTab === key
                     ? 'border-blue-500 text-blue-600'

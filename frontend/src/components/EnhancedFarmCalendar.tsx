@@ -1,43 +1,44 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Plus,
-  Filter,
+  // Filter,
   Bell,
-  Clock,
-  MapPin,
-  Users,
+  // Clock,
+  // MapPin,
+  // Users,
   Sprout,
   Activity,
   AlertTriangle,
   Sun,
   Cloud,
   CloudRain,
-  Zap,
+  // Zap,
   Target,
   Brain,
-  Lightbulb,
-  Download,
-  Share,
+  // Lightbulb,
+  // Download,
+  // Share,
   Edit,
   Trash2,
-  CheckCircle,
-  X,
-  Settings,
+  // CheckCircle,
+  // X,
+  // Settings,
   TrendingUp,
   CalendarDays,
-  Timer,
+  // Timer,
   Bot,
-  TrendingDown,
-  User,
-  Briefcase,
-  Home,
-  Plane,
+  // TrendingDown,
+  // User,
+  // Briefcase,
+  // Home,
+  // Plane,
   BookOpen,
   Wrench,
-  ChevronDown,
+  Users,
+  CheckCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -115,8 +116,8 @@ interface WeatherAlert {
 }
 
 export default function EnhancedFarmCalendar({
-  farmId = '',
-  onEventClick,
+  farmId: _farmId = '',
+  onEventClick: _onEventClick,
   onCreateEvent,
 }: {
   farmId?: string;
@@ -128,8 +129,8 @@ export default function EnhancedFarmCalendar({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventFilter, setEventFilter] = useState<string>('all');
   const [showAIInsights, setShowAIInsights] = useState(false);
-  const [smartSuggestions, setSmartSuggestions] = useState(true);
-  const [conflictDetection, setConflictDetection] = useState(true);
+  // const [smartSuggestions, setSmartSuggestions] = useState(true);
+  // const [conflictDetection, setConflictDetection] = useState(true);
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -281,9 +282,11 @@ export default function EnhancedFarmCalendar({
     // Weather-based suggestions
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowDate = tomorrow.toISOString().split('T')[0];
+    const tomorrowDate = tomorrow.toISOString().split('T')[0] as string;
 
-    const weatherEvents = weatherAlerts.filter(alert => alert.startTime?.startsWith(tomorrowDate));
+    const weatherEvents = weatherAlerts.filter(
+      alert => alert.startTime && alert.startTime.startsWith(tomorrowDate)
+    );
 
     if (weatherEvents.length > 0) {
       suggestions.push({
@@ -859,7 +862,7 @@ export default function EnhancedFarmCalendar({
   }
 
   function getEventsForDate(date: Date) {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0] as string;
     return filteredEvents.filter(event => event.date.startsWith(dateStr));
   }
 

@@ -7,13 +7,14 @@ export type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 export type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'wide';
 export type Orientation = 'portrait' | 'landscape';
 
-export interface BreakpointConfig {
-  [key: string]: {
+export type BreakpointConfig = Record<
+  Breakpoint,
+  {
     min: number;
     max?: number;
     label: string;
-  };
-}
+  }
+>;
 
 export interface ViewportInfo {
   width: number;
@@ -168,7 +169,7 @@ export function useResponsiveDesign(customBreakpoints?: BreakpointConfig) {
   const detectVirtualKeyboard = useCallback(() => {
     if (!viewport.isMobile) return;
 
-    const visualViewport = (window as unknown).visualViewport;
+    const visualViewport = (window as any).visualViewport;
     if (!visualViewport) return;
 
     const isKeyboardOpen = visualViewport.height < window.innerHeight * 0.75;
@@ -206,7 +207,7 @@ export function useResponsiveDesign(customBreakpoints?: BreakpointConfig) {
     colorSchemeQuery.addEventListener('change', handleColorSchemeChange);
 
     // Monitor virtual keyboard
-    const visualViewport = (window as unknown).visualViewport;
+    const visualViewport = (window as any).visualViewport;
     if (visualViewport) {
       visualViewport.addEventListener('resize', detectVirtualKeyboard);
     }

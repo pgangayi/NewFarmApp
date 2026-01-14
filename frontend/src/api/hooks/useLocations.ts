@@ -20,11 +20,10 @@ export function useLocations(farmId?: string) {
   return useQuery({
     queryKey: farmId ? QUERY_KEYS.locations.byFarm(farmId) : QUERY_KEYS.locations.all,
     queryFn: async () => {
-      const endpoint = farmId
+      const endpoint: string = farmId
         ? `${API_ENDPOINTS.locations.list}?farm_id=${farmId}`
         : API_ENDPOINTS.locations.list;
-      const response = await apiClient.get<Location[]>(endpoint);
-      return Array.isArray(response) ? response : response.data || [];
+      return await apiClient.get<Location[]>(endpoint);
     },
     staleTime: CACHE_CONFIG.staleTime.locations,
     gcTime: CACHE_CONFIG.gcTime.default,
@@ -38,8 +37,7 @@ export function useLocation(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.locations.detail(id),
     queryFn: async () => {
-      const response = await apiClient.get<Location>(API_ENDPOINTS.locations.detail(id));
-      return response;
+      return await apiClient.get<Location>(API_ENDPOINTS.locations.detail(id));
     },
     enabled: !!id,
     staleTime: CACHE_CONFIG.staleTime.locations,
@@ -59,8 +57,7 @@ export function useCreateLocation() {
 
   return useMutation({
     mutationFn: async (data: CreateRequest<Location>) => {
-      const response = await apiClient.post<Location>(API_ENDPOINTS.locations.create, data);
-      return response;
+      return await apiClient.post<Location>(API_ENDPOINTS.locations.create, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.locations.all });
@@ -76,8 +73,7 @@ export function useUpdateLocation() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRequest<Location> }) => {
-      const response = await apiClient.put<Location>(API_ENDPOINTS.locations.update(id), data);
-      return response;
+      return await apiClient.put<Location>(API_ENDPOINTS.locations.update(id), data);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.locations.all });

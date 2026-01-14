@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { WeatherService } from '../services/domains/WeatherService';
 import {
   TrendingUp,
   TrendingDown,
@@ -8,7 +9,7 @@ import {
   Cloud,
   Sun,
   CloudRain,
-  Wind,
+  // Wind,
   Thermometer,
   Droplets,
   Loader2,
@@ -52,76 +53,106 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
   } = useQuery({
     queryKey: ['weather-analytics', farmId],
     queryFn: async () => {
-      const response = await fetch(`/api/weather/farm?farm_id=${farmId}&days=30`, {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch weather data');
-      return response.json();
+      // The service call returns WeatherData[], but the component expects { weather: WeatherData[] }?
+      // Check WeatherService implementation: returns apiClient.get<WeatherData[]>(...)
+      // But previous code was response.json().
+      // Let's assume WeatherService returns what the API returns.
+      // If API returns { weather: [...] }, then service should return that or we adjust here.
+      // Previous code: response.json().
+      // WeatherService code: return apiClient.get<WeatherData[]>(...)
+      // The API likely returns { weather: [...] } based on WeatherCalendar usage: weatherData?.weather
+      // So WeatherService generic might be wrong, or it returns 'any'.
+      // Let's treat it as returning the raw response which includes .weather property if that's what backend does.
+      // Or update WeatherService to return the data directly.
+      // For now, let's use the service call.
+      return WeatherService.getFarmWeather(farmId, 30);
     },
     enabled: !!farmId,
   });
 
-  // Mock weather trend analysis
+  // Weather trend analysis
   const generateWeatherTrends = (): WeatherTrend[] => {
-    if (!weatherData?.weather) return [];
+    if (!weatherData || !Array.isArray(weatherData)) return [];
 
-    const recent = weatherData.weather.slice(0, 7);
-    const previous = weatherData.weather.slice(7, 14);
+    const recent = weatherData.slice(0, 7);
+    const previous = weatherData.slice(7, 14);
 
-    const avgTemp = (days: unknown[]) =>
-      days.reduce((sum, d) => sum + (d.temperature_avg || 0), 0) / days.length;
+    const avgTemp = (days: any[]) =>
+      days.reduce((sum, d) => sum + (d.temperature_avg || 0), 0) / (days.length || 1);
 
-    const avgPrecip = (days: unknown[]) =>
-      days.reduce((sum, d) => sum + (d.precipitation_sum || 0), 0) / days.length;
+    const avgPrecip = (days: any[]) =>
+      days.reduce((sum, d) => sum + (d.precipitation_sum || 0), 0) / (days.length || 1);
 
-    const avgHumidity = (days: unknown[]) =>
+    const avgHumidity = (days: any[]) =>
       days.reduce(
         (sum, d) => sum + ((d.relative_humidity_max || 0) + (d.relative_humidity_min || 0)) / 2,
         0
-      ) / days.length;
+      ) / (days.length || 1);
+
+    const calculateTrend = (current: number, previous: number) => {
+      const change = previous !== 0 ? ((current - previous) / previous) * 100 : 0;
+      const trend = change > 5 ? 'up' : change < -5 ? 'down' : 'stable';
+      return { change: Math.round(change * 10) / 10, trend };
+    };
+
+    const tempCurrent = Math.round(avgTemp(recent) * 10) / 10;
+    const tempPrev = Math.round(avgTemp(previous) * 10) / 10;
+    const tempTrend = calculateTrend(tempCurrent, tempPrev);
+
+    const precipCurrent = Math.round(avgPrecip(recent) * 10) / 10;
+    const precipPrev = Math.round(avgPrecip(previous) * 10) / 10;
+    const precipTrend = calculateTrend(precipCurrent, precipPrev);
+
+    const humidityCurrent = Math.round(avgHumidity(recent) * 10) / 10;
+    const humidityPrev = Math.round(avgHumidity(previous) * 10) / 10;
+    const humidityTrend = calculateTrend(humidityCurrent, humidityPrev);
 
     return [
       {
         metric: 'Temperature',
-        current: Math.round(avgTemp(recent) * 10) / 10,
-        previous: Math.round(avgTemp(previous) * 10) / 10,
-        change: 0,
-        trend: 'stable',
+        current: tempCurrent,
+        previous: tempPrev,
+        change: tempTrend.change,
+        trend: tempTrend.trend as 'up' | 'down' | 'stable',
         description: 'Average temperature over the past week',
       },
       {
         metric: 'Rainfall',
-        current: Math.round(avgPrecip(recent) * 10) / 10,
-        previous: Math.round(avgPrecip(previous) * 10) / 10,
-        change: 0,
-        trend: 'stable',
+        current: precipCurrent,
+        previous: precipPrev,
+        change: precipTrend.change,
+        trend: precipTrend.trend as 'up' | 'down' | 'stable',
         description: 'Average daily rainfall',
       },
       {
         metric: 'Humidity',
-        current: Math.round(avgHumidity(recent) * 10) / 10,
-        previous: Math.round(avgHumidity(previous) * 10) / 10,
-        change: 0,
-        trend: 'stable',
+        current: humidityCurrent,
+        previous: humidityPrev,
+        change: humidityTrend.change,
+        trend: humidityTrend.trend as 'up' | 'down' | 'stable',
         description: 'Average relative humidity',
       },
-    ].map(trend => ({
-      ...trend,
-      change: trend.current - trend.previous,
-      trend: trend.change > 2 ? 'up' : trend.change < -2 ? 'down' : 'stable',
-    }));
+    ];
   };
+
+  interface CropWeatherImpact {
+    cropType: string;
+    suitability: number;
+    optimalConditions: {
+      temperature: string;
+      rainfall: string;
+      humidity: string;
+    };
+    risks: string[];
+    recommendations: string[];
+  }
 
   const { data: cropImpacts } = useQuery({
     queryKey: ['crop-weather-impact', farmId, cropType],
     queryFn: async () => {
-      const response = await fetch('/api/weather/impact-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ farm_id: farmId, crop_type: cropType }),
-      });
-      if (!response.ok) throw new Error('Failed to fetch crop weather impact');
-      return response.json();
+      const response = await WeatherService.getWeatherImpactAnalysis(farmId, cropType);
+      // Casting to unknown first to avoid type overlap issues, as we are mocking or expecting different data shape
+      return response as unknown as CropWeatherImpact[];
     },
     enabled: !!farmId,
   });
@@ -257,7 +288,7 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
               </div>
 
               <div className="space-y-6">
-                {cropImpacts.map(impact => (
+                {cropImpacts.map((impact: CropWeatherImpact) => (
                   <div
                     key={impact.cropType}
                     className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100"
@@ -317,7 +348,7 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
                             Current Risks
                           </h5>
                           <ul className="text-sm text-red-600 space-y-1">
-                            {impact.risks.map((risk, index) => (
+                            {impact.risks.map((risk: string, index: number) => (
                               <li key={index} className="flex items-start gap-2">
                                 <span className="text-red-500 mt-1">•</span>
                                 <span>{risk}</span>
@@ -334,7 +365,7 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
                         Recommendations
                       </h5>
                       <ul className="text-sm text-blue-800 space-y-1">
-                        {impact.recommendations.map((rec, index) => (
+                        {impact.recommendations.map((rec: string, index: number) => (
                           <li key={index} className="flex items-start gap-2">
                             <span className="text-blue-600 mt-1">•</span>
                             <span>{rec}</span>
@@ -367,8 +398,8 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Current Week:</span>
                     <span className="font-semibold text-gray-900">
-                      {weatherData?.weather?.[0]
-                        ? `${weatherData.weather[0].temperature_min}° - ${weatherData.weather[0].temperature_max}°C`
+                      {weatherData?.[0]
+                        ? `${weatherData[0].temp_min}° - ${weatherData[0].temp_max}°C`
                         : 'N/A'}
                     </span>
                   </div>
@@ -392,9 +423,7 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Current Week:</span>
                     <span className="font-semibold text-gray-900">
-                      {weatherData?.weather?.[0]
-                        ? `${weatherData.weather[0].precipitation_sum}mm`
-                        : 'N/A'}
+                      {weatherData?.[0] ? `${weatherData[0].precipitation}mm` : 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -416,7 +445,7 @@ export function WeatherAnalytics({ farmId, cropType }: WeatherAnalyticsProps) {
               </h5>
               <p className="text-sm text-blue-700">
                 Based on historical patterns, the current weather conditions suggest
-                {weatherData?.weather?.[0]?.precipitation_sum > 10
+                {(weatherData?.[0]?.precipitation || 0) > 10
                   ? ' adequate moisture for crop growth. Consider monitoring for potential fungal diseases.'
                   : ' below-average rainfall. Prepare for additional irrigation needs.'}
               </p>

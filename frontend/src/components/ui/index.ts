@@ -33,7 +33,7 @@ export {
   LoadingErrorContent,
 } from './LoadingStates';
 
-export { ConfirmationDialog, useConfirmation, ConfirmDialogs } from './ConfirmationDialog';
+export { useConfirmation, ConfirmDialogs } from './ConfirmationDialog';
 
 // Enhanced Form Components
 export {

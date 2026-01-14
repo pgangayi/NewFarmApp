@@ -2,7 +2,11 @@ import type { InventoryItem } from '../../api/types';
 import { Card, CardContent } from '../ui/card';
 import { BarChart3 } from 'lucide-react';
 
-export function InventoryAnalytics({ inventoryItems }: { inventoryItems: InventoryItem[] }) {
+export function InventoryAnalytics({
+  inventoryItems: _inventoryItems,
+}: {
+  inventoryItems: InventoryItem[];
+}) {
   return (
     <div className="space-y-6">
       <Card>

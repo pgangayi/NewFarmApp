@@ -4,6 +4,9 @@ import { Label } from './label';
 import { Textarea } from './textarea';
 import { ChevronDown, Search, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
+const ERROR_INPUT_CLASSES = 'border-red-500 focus:ring-red-500';
+const DEFAULT_BORDER_CLASS = 'border-gray-300';
+
 interface BaseFieldProps {
   label: string;
   name: string;
@@ -45,7 +48,7 @@ export function TextField({
   };
 
   const baseInputClasses = `w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-blue-500 transition-colors ${
-    error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+    error ? ERROR_INPUT_CLASSES : DEFAULT_BORDER_CLASS
   } ${icon ? 'pl-10' : ''} ${className}`;
 
   return (
@@ -133,7 +136,7 @@ export function SelectField({
   };
 
   const baseSelectClasses = `w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-blue-500 transition-colors cursor-pointer ${
-    error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+    error ? ERROR_INPUT_CLASSES : DEFAULT_BORDER_CLASS
   } ${className}`;
 
   return (
@@ -266,7 +269,7 @@ export function NumberField({
   };
 
   const baseInputClasses = `w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-blue-500 transition-colors ${
-    error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+    error ? ERROR_INPUT_CLASSES : DEFAULT_BORDER_CLASS
   } ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-12' : ''} ${className}`;
 
   return (
@@ -355,7 +358,7 @@ export function DateField({
         min={minDate}
         max={maxDate}
         className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-blue-500 transition-colors ${
-          error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+          error ? ERROR_INPUT_CLASSES : DEFAULT_BORDER_CLASS
         } ${className}`}
       />
 
@@ -420,7 +423,7 @@ export function TextAreaField({
         rows={rows}
         maxLength={maxLength}
         className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:border-blue-500 transition-colors resize-none ${
-          error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+          error ? ERROR_INPUT_CLASSES : DEFAULT_BORDER_CLASS
         } ${resizeClasses[resize]} ${className}`}
       />
 

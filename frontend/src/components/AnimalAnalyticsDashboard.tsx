@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
 import { apiEndpoints } from '../config/env';
+import { AnimalService } from '../services/domains/AnimalService';
 import { BarChart, TrendingUp, DollarSign, Heart, Baby, Activity } from 'lucide-react';
 
 interface TopPerformingAnimal {
@@ -17,6 +18,13 @@ interface Species {
   percentage?: number;
 }
 
+interface AnalyticsEvent {
+  type: string;
+  title: string;
+  animalName: string;
+  dueDate: string;
+}
+
 interface AnalyticsData {
   totalAnimals: number;
   healthyAnimals: number;
@@ -30,7 +38,7 @@ interface AnalyticsData {
   productionTrends: unknown[];
   healthOverview: unknown;
   speciesBreakdown: Species[];
-  upcomingEvents: unknown[];
+  upcomingEvents: AnalyticsEvent[];
 }
 
 interface AnimalAnalyticsDashboardProps {
@@ -55,15 +63,8 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
   } = useQuery<AnalyticsData>({
     queryKey: ['animal-analytics', queryParams.toString()],
     queryFn: async () => {
-      const response = await fetch(`${apiEndpoints.animals.analytics}?${queryParams.toString()}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics data');
-      }
-
-      return await response.json();
+      const params = Object.fromEntries(queryParams);
+      return AnimalService.getAnalytics(params);
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -82,7 +83,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
     );
   }
 
-  const data: AnalyticsData = analyticsData || {};
+  const data: AnalyticsData = analyticsData || ({} as AnalyticsData);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -289,13 +290,13 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <div className="flex items-center justify-between">
               <span className="text-gray-700">Upcoming Vet Visits</span>
               <span className="font-medium text-blue-600">
-                {data.upcomingEvents?.filter((e: unknown) => e.type === 'vet_visit').length || 0}
+                {data.upcomingEvents?.filter(e => e.type === 'vet_visit').length || 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-700">Vaccinations Due</span>
               <span className="font-medium text-orange-600">
-                {data.upcomingEvents?.filter((e: unknown) => e.type === 'vaccination').length || 0}
+                {data.upcomingEvents?.filter(e => e.type === 'vaccination').length || 0}
               </span>
             </div>
           </div>
@@ -350,7 +351,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
           <div className="space-y-3">
-            {data.upcomingEvents.slice(0, 5).map((event: unknown, index: number) => (
+            {data.upcomingEvents.slice(0, 5).map((event, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border border-yellow-200"

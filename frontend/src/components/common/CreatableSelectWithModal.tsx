@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -82,8 +82,11 @@ export function CreatableSelectWithModal({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Name</label>
+              <label htmlFor="new-item-name" className="text-sm font-medium">
+                Name
+              </label>
               <Input
+                id="new-item-name"
                 value={newItemValue}
                 onChange={e => setNewItemValue(e.target.value)}
                 placeholder="Enter name..."

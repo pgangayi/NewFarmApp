@@ -6,7 +6,11 @@ interface CropsOverviewProps {
   setSearchQuery: (query: string) => void;
 }
 
-export function CropsOverview({ crops, searchQuery, setSearchQuery }: CropsOverviewProps) {
+export function CropsOverview({
+  crops,
+  searchQuery: _searchQuery,
+  setSearchQuery: _setSearchQuery,
+}: CropsOverviewProps) {
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm border">

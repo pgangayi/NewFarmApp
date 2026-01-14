@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { AlertTriangle, CheckCircle, Package, Truck } from 'lucide-react';
+// import { Badge } from '../ui/badge';
+import { AlertTriangle, CheckCircle, Package } from 'lucide-react';
 import type { InventoryItem } from '../../api/types';
 import type { InventoryAlert } from './types';
 
@@ -21,7 +21,7 @@ export function InventoryOverview({
 }: InventoryOverviewProps) {
   const totalItems = inventoryItems.length;
   const totalValue = inventoryItems.reduce(
-    (acc, item) => acc + item.quantity * (item.unit_price || 0),
+    (acc, item) => acc + item.quantity * (item.cost_per_unit || 0),
     0
   );
   const lowStockCount = lowStockItems.length;

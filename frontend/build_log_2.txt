@@ -1,0 +1,32 @@
+src/components/AdvancedManagementDashboard.tsx(480,59): error TS2304: Cannot find name 'Lightbulb'.
+src/components/AnimalBreedingManager.tsx(4,18): error TS2300: Duplicate identifier 'BreedingRecord'.
+src/components/AnimalBreedingManager.tsx(9,10): error TS2300: Duplicate identifier 'BreedingRecord'.
+src/components/AnimalBreedingManager.tsx(89,62): error TS2339: Property 'toString' does not exist on type 'never'.
+src/components/AnimalBreedingManager.tsx(278,40): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/AnimalBreedingManager.tsx(281,24): error TS18048: 'record.breeding_type' is possibly 'undefined'.
+src/components/AnimalBreedingManager.tsx(403,29): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number | Date'.
+      Type 'undefined' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number'.
+      Type 'undefined' is not assignable to type 'string | number'.
+src/components/AnimalHealthManager.tsx(254,27): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number | Date'.
+      Type 'undefined' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number'.
+      Type 'undefined' is not assignable to type 'string | number'.
+src/components/AnimalProductionTracker.tsx(110,64): error TS2339: Property 'toString' does not exist on type 'never'.
+src/components/AnimalProductionTracker.tsx(356,27): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number | Date'.
+      Type 'undefined' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number'.
+      Type 'undefined' is not assignable to type 'string | number'.
+src/components/dashboard/DashboardRouter.tsx(126,10): error TS2304: Cannot find name 'isLoading'.
+src/components/dashboard/DashboardRouter.tsx(136,57): error TS2304: Cannot find name 'isLoading'.
+src/components/WeatherAnalytics.tsx(448,18): error TS2532: Object is possibly 'undefined'.

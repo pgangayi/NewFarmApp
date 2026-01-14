@@ -19,5 +19,5 @@ export default {
   },
 
   // Plugins - v4 has built-in support for many features
-  plugins: [],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 };

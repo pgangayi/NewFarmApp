@@ -1,27 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../hooks/AuthContext';
-import { apiEndpoints } from '../config/env';
+import { AnimalService } from '../services/domains/AnimalService';
+import { AnimalHealth } from '../api/types';
 import { Plus, Calendar, FileText, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-
-interface HealthRecord {
-  id: number;
-  animal_id: string;
-  record_date: string;
-  record_type: string;
-  vet_name?: string;
-  diagnosis?: string;
-  treatment?: string;
-  medication?: string;
-  dosage?: string;
-  cost?: number;
-  next_due_date?: string;
-  vet_contact?: string;
-  notes?: string;
-  animal_name: string;
-  recorded_by_name?: string;
-  created_at: string;
-}
 
 interface AnimalHealthManagerProps {
   animalId: string;
@@ -37,11 +18,11 @@ const recordTypeOptions = [
 ];
 
 export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManagerProps) {
-  const { getAuthHeaders } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<AnimalHealth | null>(null);
 
   const queryClient = useQueryClient();
+  const HEALTH_RECORDS_KEY = 'animal-health-records';
 
   // Fetch health records
   const {
@@ -49,94 +30,45 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['animal-health-records', animalId],
-    queryFn: async () => {
-      const response = await fetch(apiEndpoints.animals.healthRecords(animalId), {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch health records');
-      }
-
-      return await response.json();
-    },
+    queryKey: [HEALTH_RECORDS_KEY, animalId],
+    queryFn: () => AnimalService.getHealthRecords(animalId),
     enabled: !!animalId,
   });
 
   // Create health record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: unknown) => {
-      const response = await fetch(apiEndpoints.animals.healthRecords(animalId), {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(recordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create health record');
-      }
-
-      return await response.json();
-    },
+    mutationFn: (
+      recordData: Omit<AnimalHealth, 'id' | 'created_at' | 'updated_at' | 'animal_id'>
+    ) => AnimalService.addHealthRecord(animalId, recordData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-health-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [HEALTH_RECORDS_KEY, animalId] });
       setShowAddModal(false);
     },
   });
 
   // Update health record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: unknown) => {
-      const response = await fetch(apiEndpoints.animals.healthRecords(animalId, id), {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(recordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update health record');
-      }
-
-      return await response.json();
-    },
+    mutationFn: ({ id, ...recordData }: Partial<AnimalHealth> & { id: string }) =>
+      AnimalService.updateHealthRecord(animalId, id, recordData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-health-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [HEALTH_RECORDS_KEY, animalId] });
       setEditingRecord(null);
     },
   });
 
   // Delete health record mutation
   const deleteMutation = useMutation({
-    mutationFn: async (recordId: string) => {
-      const response = await fetch(apiEndpoints.animals.healthRecords(animalId, recordId), {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete health record');
-      }
-
-      return await response.json();
-    },
+    mutationFn: (recordId: string) => AnimalService.deleteHealthRecord(animalId, recordId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-health-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [HEALTH_RECORDS_KEY, animalId] });
     },
   });
 
-  const handleEdit = (record: HealthRecord) => {
+  const handleEdit = (record: AnimalHealth) => {
     setEditingRecord(record);
   };
 
-  const handleDelete = async (record: HealthRecord) => {
+  const handleDelete = async (record: AnimalHealth) => {
     if (window.confirm('Are you sure you want to delete this health record?')) {
       try {
         await deleteMutation.mutateAsync(record.id.toString());
@@ -214,7 +146,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
 
       {/* Health Records List */}
       <div className="space-y-4">
-        {(healthRecords || []).map((record: HealthRecord) => (
+        {(healthRecords || []).map((record: AnimalHealth) => (
           <div
             key={record.id}
             className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
@@ -319,7 +251,7 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
             {record.recorded_by_name && (
               <div className="mt-2 text-xs text-gray-500">
                 Recorded by {record.recorded_by_name} on{' '}
-                {new Date(record.created_at).toLocaleDateString()}
+                {new Date(record.created_at || new Date().toISOString()).toLocaleDateString()}
               </div>
             )}
           </div>
@@ -382,9 +314,9 @@ export function AnimalHealthManager({ animalId, animalName }: AnimalHealthManage
 
 // Health Record Modal Component
 interface HealthRecordModalProps {
-  record?: HealthRecord | null;
+  record?: AnimalHealth | null;
   onClose: () => void;
-  onSubmit: (data: unknown) => void;
+  onSubmit: (data: any) => void;
   isLoading: boolean;
 }
 
@@ -425,11 +357,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="health-record-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Record Date *
                 </label>
                 <input
                   type="date"
+                  id="health-record-date"
                   required
                   value={formData.record_date}
                   onChange={e => setFormData(prev => ({ ...prev, record_date: e.target.value }))}
@@ -438,10 +374,14 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="health-record-type"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Record Type *
                 </label>
                 <select
+                  id="health-record-type"
                   required
                   value={formData.record_type}
                   onChange={e => setFormData(prev => ({ ...prev, record_type: e.target.value }))}
@@ -457,9 +397,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Veterinarian</label>
+                <label
+                  htmlFor="health-vet-name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Veterinarian
+                </label>
                 <input
                   type="text"
+                  id="health-vet-name"
                   value={formData.vet_name}
                   onChange={e => setFormData(prev => ({ ...prev, vet_name: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -467,9 +413,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vet Contact</label>
+                <label
+                  htmlFor="health-vet-contact"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Vet Contact
+                </label>
                 <input
                   type="text"
+                  id="health-vet-contact"
                   value={formData.vet_contact}
                   onChange={e => setFormData(prev => ({ ...prev, vet_contact: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -477,9 +429,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis</label>
+                <label
+                  htmlFor="health-diagnosis"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Diagnosis
+                </label>
                 <input
                   type="text"
+                  id="health-diagnosis"
                   value={formData.diagnosis}
                   onChange={e => setFormData(prev => ({ ...prev, diagnosis: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -487,9 +445,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Treatment</label>
+                <label
+                  htmlFor="health-treatment"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Treatment
+                </label>
                 <input
                   type="text"
+                  id="health-treatment"
                   value={formData.treatment}
                   onChange={e => setFormData(prev => ({ ...prev, treatment: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -497,9 +461,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Medication</label>
+                <label
+                  htmlFor="health-medication"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Medication
+                </label>
                 <input
                   type="text"
+                  id="health-medication"
                   value={formData.medication}
                   onChange={e => setFormData(prev => ({ ...prev, medication: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -507,9 +477,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                <label
+                  htmlFor="health-dosage"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Dosage
+                </label>
                 <input
                   type="text"
+                  id="health-dosage"
                   value={formData.dosage}
                   onChange={e => setFormData(prev => ({ ...prev, dosage: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -517,9 +493,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cost ($)</label>
+                <label
+                  htmlFor="health-cost"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Cost ($)
+                </label>
                 <input
                   type="number"
+                  id="health-cost"
                   step="0.01"
                   value={formData.cost}
                   onChange={e => setFormData(prev => ({ ...prev, cost: e.target.value }))}
@@ -528,11 +510,15 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="health-next-due"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Next Due Date
                 </label>
                 <input
                   type="date"
+                  id="health-next-due"
                   value={formData.next_due_date}
                   onChange={e => setFormData(prev => ({ ...prev, next_due_date: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -541,8 +527,14 @@ function HealthRecordModal({ record, onClose, onSubmit, isLoading }: HealthRecor
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <label
+                htmlFor="health-notes"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Notes
+              </label>
               <textarea
+                id="health-notes"
                 rows={3}
                 value={formData.notes}
                 onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}

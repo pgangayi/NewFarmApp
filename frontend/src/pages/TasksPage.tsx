@@ -73,7 +73,7 @@ export function TasksPage() {
         startTime: now,
       });
       // expect res.id or res.data.id
-      const id = (res && (res.id || (res.data && res.data.id))) as number | undefined;
+      const id = res.id;
       setActiveLogMap(prev => ({ ...prev, [task.id]: id || null }));
       setTimerActive(prev => ({ ...prev, [task.id]: true }));
       setCurrentTimer({ taskId: task.id, startTime: new Date() });
@@ -169,8 +169,7 @@ export function TasksPage() {
 
   const overdueTasks =
     tasks?.filter(
-      (task: Task) =>
-        task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed'
+      task => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed'
     ).length || 0;
 
   return (

@@ -1,0 +1,55 @@
+src/components/AdvancedManagementDashboard.tsx(480,59): error TS2304: Cannot find name 'Lightbulb'.
+src/components/AnimalBreedingManager.tsx(252,23): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(predicate: (value: BreedingRecord, index: number, array: BreedingRecord[]) => value is BreedingRecord, thisArg?: any): BreedingRecord[]', gave the following error.
+    Argument of type '(r: BreedingRecord) => boolean' is not assignable to parameter of type '(value: BreedingRecord, index: number, array: BreedingRecord[]) => value is BreedingRecord'.
+      Types of parameters 'r' and 'value' are incompatible.
+        Type 'BreedingRecord' is missing the following properties from type 'BreedingRecord': breeding_type, vet_supervision, animal_name
+  Overload 2 of 2, '(predicate: (value: BreedingRecord, index: number, array: BreedingRecord[]) => unknown, thisArg?: any): BreedingRecord[]', gave the following error.
+    Argument of type '(r: BreedingRecord) => boolean' is not assignable to parameter of type '(value: BreedingRecord, index: number, array: BreedingRecord[]) => unknown'.
+      Types of parameters 'r' and 'value' are incompatible.
+        Type 'BreedingRecord' is missing the following properties from type 'BreedingRecord': breeding_type, vet_supervision, animal_name
+src/components/AnimalBreedingManager.tsx(266,19): error TS2322: Type 'BreedingRecord' is not assignable to type 'ReactNode'.
+src/components/AnimalBreedingManager.tsx(267,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(callbackfn: (previousValue: BreedingRecord, currentValue: BreedingRecord, currentIndex: number, array: BreedingRecord[]) => BreedingRecord, initialValue: BreedingRecord): BreedingRecord', gave the following error.
+    Argument of type '(sum: number, r: BreedingRecord) => number' is not assignable to parameter of type '(previousValue: BreedingRecord, currentValue: BreedingRecord, currentIndex: number, array: BreedingRecord[]) => BreedingRecord'.
+      Types of parameters 'sum' and 'previousValue' are incompatible.
+        Type 'BreedingRecord' is not assignable to type 'number'.
+  Overload 2 of 3, '(callbackfn: (previousValue: number, currentValue: BreedingRecord, currentIndex: number, array: BreedingRecord[]) => number, initialValue: number): number', gave the following error.
+    Argument of type '(sum: number, r: BreedingRecord) => number' is not assignable to parameter of type '(previousValue: number, currentValue: BreedingRecord, currentIndex: number, array: BreedingRecord[]) => number'.
+      Types of parameters 'r' and 'currentValue' are incompatible.
+        Type 'BreedingRecord' is missing the following properties from type 'BreedingRecord': breeding_type, vet_supervision, animal_name
+src/components/AnimalBreedingManager.tsx(280,38): error TS2345: Argument of type '(record: BreedingRecord) => JSX.Element' is not assignable to parameter of type '(value: BreedingRecord, index: number, array: BreedingRecord[]) => Element'.
+  Types of parameters 'record' and 'value' are incompatible.
+    Type 'BreedingRecord' is missing the following properties from type 'BreedingRecord': breeding_type, vet_supervision, animal_name
+src/components/AnimalHealthManager.tsx(4,10): error TS2305: Module '"../api/types"' has no exported member 'HealthRecord'.
+src/components/AnimalHealthManager.tsx(22,54): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalHealthManager.tsx(41,24): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalHealthManager.tsx(51,49): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalHealthManager.tsx(67,31): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalHealthManager.tsx(71,39): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalHealthManager.tsx(149,45): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalHealthManager.tsx(317,12): error TS2304: Cannot find name 'AnimalHealth'.
+src/components/AnimalProductionTracker.tsx(269,22): error TS2345: Argument of type '(record: ProductionRecord) => JSX.Element' is not assignable to parameter of type '(value: ProductionRecord, index: number, array: ProductionRecord[]) => Element'.
+  Types of parameters 'record' and 'value' are incompatible.
+    Type 'import("C:/Users/MunyaradziGangayi/Documents/Coder/Retry/frontend/src/api/types").ProductionRecord' is not assignable to type 'ProductionRecord'.
+      Types of property 'id' are incompatible.
+        Type 'string' is not assignable to type 'number'.
+src/components/dashboard/DashboardRouter.tsx(126,10): error TS2304: Cannot find name 'isLoading'.
+src/components/dashboard/DashboardRouter.tsx(136,57): error TS2304: Cannot find name 'isLoading'.
+src/components/EnhancedFarmCalendar.tsx(407,20): error TS2304: Cannot find name 'Wrench'.
+src/components/EnhancedFarmCalendar.tsx(409,16): error TS2304: Cannot find name 'Users'.
+src/components/EnhancedFarmCalendar.tsx(743,29): error TS2304: Cannot find name 'setSelectedEvent'.
+src/components/EnhancedFarmCalendar.tsx(795,34): error TS2304: Cannot find name 'setSelectedEvent'.
+src/components/GlobalSearch.tsx(488,30): error TS2304: Cannot find name 'ArrowRight'.
+src/components/GlobalSearch.tsx(515,22): error TS2304: Cannot find name 'Clock'.
+src/components/GlobalSearch.tsx(526,28): error TS2304: Cannot find name 'Clock'.
+src/components/GlobalSearch.tsx(538,20): error TS2304: Cannot find name 'TrendingUp'.
+src/components/SmartNotificationSystem.tsx(552,32): error TS2304: Cannot find name 'Eye'.
+src/components/SmartNotificationSystem.tsx(663,30): error TS2304: Cannot find name 'Eye'.
+src/components/WeatherAnalytics.tsx(367,33): error TS2339: Property 'recommendations' does not exist on type 'CropWeatherImpact'.
+src/components/WeatherAnalytics.tsx(400,37): error TS2339: Property 'weather' does not exist on type 'WeatherData[]'.
+src/components/WeatherAnalytics.tsx(401,42): error TS2339: Property 'weather' does not exist on type 'WeatherData[]'.
+src/components/WeatherAnalytics.tsx(401,87): error TS2339: Property 'weather' does not exist on type 'WeatherData[]'.
+src/components/WeatherAnalytics.tsx(425,37): error TS2339: Property 'weather' does not exist on type 'WeatherData[]'.
+src/components/WeatherAnalytics.tsx(426,42): error TS2339: Property 'weather' does not exist on type 'WeatherData[]'.
+src/components/WeatherAnalytics.tsx(449,31): error TS2339: Property 'weather' does not exist on type 'WeatherData[]'.

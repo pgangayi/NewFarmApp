@@ -51,8 +51,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                     Error Details (Development only):
                   </p>
                   <code className="text-xs text-red-600 break-all">{this.state.error.message}</code>
-                  {this.state.error.code && (
-                    <p className="text-xs text-gray-500 mt-1">Code: {this.state.error.code}</p>
+                  {(this.state.error as any).code && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Code: {(this.state.error as any).code}
+                    </p>
                   )}
                 </div>
               )}

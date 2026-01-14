@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useFarm, usePestDisease, useCreatePestDisease } from '../api';
+import { useFarm, usePestDisease } from '../api';
 import { Button } from './ui/button';
 import {
   Bug,
@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Calendar,
-  MapPin,
+  // MapPin,
   TrendingUp,
   Loader2,
   Plus,
@@ -16,23 +16,27 @@ import {
   Clock,
 } from 'lucide-react';
 
+const COLOR_GREEN = 'bg-green-100 text-green-800';
+const COLOR_YELLOW = 'bg-yellow-100 text-yellow-800';
+const COLOR_RED = 'bg-red-100 text-red-800';
+
 interface PestDiseaseManagerProps {
   farmId: string;
 }
 
 const SEVERITY_COLORS = {
-  low: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
+  low: COLOR_GREEN,
+  medium: COLOR_YELLOW,
   high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800',
+  critical: COLOR_RED,
 };
 
 const STATUS_COLORS = {
-  active: 'bg-red-100 text-red-800',
+  active: COLOR_RED,
   treating: 'bg-blue-100 text-blue-800',
-  controlled: 'bg-green-100 text-green-800',
+  controlled: COLOR_GREEN,
   resolved: 'bg-gray-100 text-gray-800',
-  monitoring: 'bg-yellow-100 text-yellow-800',
+  monitoring: COLOR_YELLOW,
 };
 
 export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
@@ -46,7 +50,7 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
   const diseaseOutbreaks = records.filter(r => r.type === 'disease');
 
   // Additional queries for specific features
-  const preventionTasks: any[] = []; // Placeholder
+  const preventionTasks: any = { upcoming: [], completed: [] }; // Placeholder
   const riskAssessment: any = { risk_level: 'low', factors: [] }; // Placeholder
 
   const handleCreateIssue = () => {
@@ -189,7 +193,7 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                         </div>
                       </div>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${SEVERITY_COLORS[issue.severity]}`}
+                        className={`px-2 py-1 rounded text-xs font-medium ${(SEVERITY_COLORS as any)[issue.severity]}`}
                       >
                         {issue.severity}
                       </span>
@@ -234,12 +238,12 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[issue.severity]}`}
+                            className={`px-3 py-1 rounded text-sm font-medium ${(SEVERITY_COLORS as any)[issue.severity]}`}
                           >
                             {issue.severity}
                           </span>
                           <span
-                            className={`px-3 py-1 rounded text-sm font-medium ${STATUS_COLORS[issue.status]}`}
+                            className={`px-3 py-1 rounded text-sm font-medium ${(STATUS_COLORS as any)[issue.status]}`}
                           >
                             {issue.status}
                           </span>
@@ -308,12 +312,12 @@ export function PestDiseaseManager({ farmId }: PestDiseaseManagerProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`px-3 py-1 rounded text-sm font-medium ${SEVERITY_COLORS[outbreak.severity]}`}
+                            className={`px-3 py-1 rounded text-sm font-medium ${(SEVERITY_COLORS as any)[outbreak.severity]}`}
                           >
                             {outbreak.severity}
                           </span>
                           <span
-                            className={`px-3 py-1 rounded text-sm font-medium ${STATUS_COLORS[outbreak.status]}`}
+                            className={`px-3 py-1 rounded text-sm font-medium ${(STATUS_COLORS as any)[outbreak.status]}`}
                           >
                             {outbreak.status}
                           </span>

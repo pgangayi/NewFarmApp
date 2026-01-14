@@ -25,7 +25,7 @@ export interface UnifiedModalProps {
   title: string;
   description?: string;
   fields: ModalField[];
-  initialData?: Record<string, unknown>;
+  initialData?: any;
   isLoading?: boolean;
   submitLabel?: string;
   cancelLabel?: string;

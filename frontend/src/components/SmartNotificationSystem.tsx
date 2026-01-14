@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Bell,
-  BellOff,
+  // BellOff,
   AlertTriangle,
   CheckCircle,
   Info,
   Clock,
   TrendingUp,
-  Droplets,
-  Thermometer,
-  Users,
-  Sprout,
-  Activity,
-  DollarSign,
+  // Droplets,
+  // Thermometer,
+  // Users,
+  // Sprout,
+  // Activity,
+  // DollarSign,
   Settings,
   X,
   Eye,
-  EyeOff,
-  Volume2,
+  // EyeOff,
+  // Volume2,
   Smartphone,
-  Mail,
-  MessageSquare,
+  // Mail,
+  // MessageSquare,
   Filter,
   Search,
-  MoreVertical,
+  // MoreVertical,
   Target,
-  Calendar,
+  // Calendar,
   Zap,
   Award,
   Trash2,
@@ -722,21 +722,24 @@ export default function SmartNotificationSystem() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="block text-sm font-medium text-gray-700 mb-2">
                       Do Not Disturb Hours
-                    </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <Input type="time" defaultValue="22:00" />
-                      <Input type="time" defaultValue="07:00" />
+                      <Input type="time" defaultValue="22:00" aria-label="Start Time" />
+                      <Input type="time" defaultValue="07:00" aria-label="End Time" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="notification-frequency"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Notification Frequency
                     </label>
                     <Select value="immediate">
-                      <SelectTrigger>
+                      <SelectTrigger id="notification-frequency">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

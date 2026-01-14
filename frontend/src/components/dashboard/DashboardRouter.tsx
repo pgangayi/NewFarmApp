@@ -19,8 +19,8 @@ type DashboardView = 'overview' | 'advanced' | 'ai' | 'animals';
 interface DashboardConfig {
   key: DashboardView;
   label: string;
-  icon: React.ComponentType<unknown>;
-  component: React.ComponentType<unknown>;
+  icon: React.ComponentType<any>;
+  component: React.ComponentType<any>;
   featureFlag?: keyof typeof featureFlags;
   description: string;
 }
@@ -72,13 +72,7 @@ export function DashboardRouter({ farmId, className = '' }: DashboardRouterProps
   const handleViewChange = (view: DashboardView) => {
     if (view === activeView) return;
 
-    setIsLoading(true);
     setActiveView(view);
-
-    // Simulate loading time for smooth transitions
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
   };
 
   const activeConfig = DASHBOARD_CONFIGS.find(config => config.key === activeView);

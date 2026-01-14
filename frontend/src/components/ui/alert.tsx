@@ -1,4 +1,4 @@
-import _React from 'react';
+import React from 'react';
 import { cn } from '../../lib/utils';
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {

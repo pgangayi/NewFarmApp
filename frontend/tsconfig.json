@@ -32,5 +32,13 @@
     "sourceMap": true
   },
   "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "node_modules._bak_*",
+    "dist",
+    "coverage",
+    "playwright-report",
+    "test-results"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import {
@@ -7,7 +7,7 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Clock,
+  // Clock,
   DollarSign,
   Users,
   Settings,
@@ -16,23 +16,23 @@ import {
   Target,
   Brain,
   ArrowUpRight,
-  ArrowDownRight,
+  // ArrowDownRight,
   RefreshCw,
   Play,
   Pause,
-  Filter,
-  Download,
-  Upload,
+  // Filter,
+  // Download,
+  // Upload,
   Bell,
-  Eye,
+  // Eye,
   AlertTriangle,
   Info,
-  Calendar,
-  Map,
+  // Calendar,
+  // Map,
   Sprout,
   Package,
   Truck,
-  Wrench,
+  // Wrench,
   Lightbulb,
   Wifi,
   WifiOff,
@@ -147,8 +147,8 @@ export function AdvancedManagementDashboard() {
     lastMessage: wsMessage,
     connect: connectWebSocket,
     subscribeToFarm,
-    requestDashboardData,
-    isAuthenticated: isWsAuthenticated,
+    // requestDashboardData,
+    // isAuthenticated: isWsAuthenticated,
   } = useWebSocket();
 
   const [selectedFarm, setSelectedFarm] = useState<number>(1);
@@ -239,6 +239,7 @@ export function AdvancedManagementDashboard() {
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [autoRefresh, queryClient, dashboard, setLastUpdated]);
 
   // WebSocket connection and farm subscription
@@ -254,46 +255,43 @@ export function AdvancedManagementDashboard() {
     }
   }, [isWebSocketConnected, selectedFarm, subscribeToFarm]);
 
+  const handleFarmBroadcast = useCallback(
+    (broadcastData: { type: string }) => {
+      const REFRESH_TYPES = ['new_task', 'task_update', 'inventory_alert', 'animal_health_alert'];
+
+      if (REFRESH_TYPES.includes(broadcastData.type)) {
+        setRealtimeData(prev => (prev ? { ...prev } : null));
+        setLastUpdated(new Date());
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['system', 'dashboard'] });
+      }
+    },
+    [queryClient]
+  );
+
   // Handle WebSocket messages for real-time updates
   useEffect(() => {
-    if (wsMessage) {
-      switch (wsMessage.type) {
-        case 'initial_data':
-          setConnectionIndicator('online');
-          break;
-        case 'dashboard_update':
-          if (wsMessage.farm_id === selectedFarm.toString() && wsMessage.data) {
-            setRealtimeData(wsMessage.data as SystemDashboard);
-            setLastUpdated(new Date());
-          }
-          break;
-        case 'farm_broadcast':
-          if (wsMessage.farm_id === selectedFarm.toString() && wsMessage.data) {
-            const broadcastData = wsMessage.data as { type: string };
-            // Handle various broadcast types
-            switch (broadcastData.type) {
-              case 'new_task':
-              case 'task_update':
-              case 'inventory_alert':
-              case 'animal_health_alert':
-                setRealtimeData(prev => (prev ? { ...prev } : null));
-                setLastUpdated(new Date());
-                break;
-              default:
-                // Refresh dashboard for other updates
-                queryClient.invalidateQueries({ queryKey: ['system', 'dashboard'] });
-            }
-          }
-          break;
-        case 'heartbeat':
-          setConnectionIndicator('online');
-          break;
-        case 'error':
-          setConnectionIndicator('offline');
-          break;
-      }
+    if (!wsMessage) return;
+
+    if (wsMessage.type === 'initial_data' || wsMessage.type === 'heartbeat') {
+      setConnectionIndicator('online');
+      return;
     }
-  }, [wsMessage, selectedFarm, queryClient]);
+
+    if (wsMessage.type === 'error') {
+      setConnectionIndicator('offline');
+      return;
+    }
+
+    if (wsMessage.farm_id !== selectedFarm.toString()) return;
+
+    if (wsMessage.type === 'dashboard_update' && wsMessage.data) {
+      setRealtimeData(wsMessage.data as SystemDashboard);
+      setLastUpdated(new Date());
+    } else if (wsMessage.type === 'farm_broadcast' && wsMessage.data) {
+      handleFarmBroadcast(wsMessage.data as { type: string });
+    }
+  }, [wsMessage, selectedFarm, queryClient, handleFarmBroadcast]);
 
   // Connection status indicator
   useEffect(() => {

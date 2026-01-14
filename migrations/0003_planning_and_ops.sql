@@ -1,24 +1,8 @@
--- Crops, Livestock, and Tasks Migration
+-- Crops (Planning), Livestock (Production), and Tasks Migration
 -- Date: November 15, 2025
--- Adding agricultural and operational functionality
-
--- Animals table (for livestock management)
-CREATE TABLE IF NOT EXISTS animals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    farm_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    species TEXT NOT NULL, -- 'cow', 'chicken', 'pig', etc.
-    breed TEXT,
-    birth_date DATE,
-    sex TEXT, -- 'male', 'female'
-    identification_tag TEXT,
-    health_status TEXT DEFAULT 'healthy',
-    weight REAL,
-    notes TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE
-);
+-- REF: 0003_planning_and_ops.sql
+-- NOTE: Animals table moved to 0001_core_schema.sql to resolve dependency
+-- NOTE: crop_activites renamed to crop_plan_activities to avoid collision with 0002
 
 -- Tasks table (for task management)
 CREATE TABLE IF NOT EXISTS tasks (
@@ -50,8 +34,6 @@ CREATE TABLE IF NOT EXISTS weather_locations (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE
 );
-
--- MISSING TABLES FROM SCHEMA ANALYSIS
 
 -- Farm statistics (for analytics)
 CREATE TABLE IF NOT EXISTS farm_statistics (
@@ -113,48 +95,93 @@ CREATE TABLE IF NOT EXISTS crop_plans (
 );
 
 -- Crop activities
+-- Moved from 0002 to here to resolve FK dependency on crop_plans
 CREATE TABLE IF NOT EXISTS crop_activities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crop_plan_id INTEGER NOT NULL,
-    activity_type TEXT NOT NULL, -- 'planting', 'fertilizing', 'watering', 'pest_control', 'harvesting'
+    crop_id INTEGER,
+    crop_plan_id INTEGER,
+    farm_id INTEGER NOT NULL,
+    field_id INTEGER,
+    activity_type TEXT NOT NULL,
     activity_date DATE NOT NULL,
     description TEXT,
+    cost REAL DEFAULT 0,
     cost_per_unit REAL DEFAULT 0,
     units_used_per_sqm REAL DEFAULT 0,
     total_cost REAL DEFAULT 0,
+    area_covered_sqm REAL DEFAULT 0,
+    effectiveness_rating INTEGER, -- 1-10
+    weather_conditions TEXT,
+    weather_during_activity TEXT,
+    equipment_used TEXT,
     performed_by TEXT,
+    supervisor_id TEXT,
+    worker_id TEXT, -- Legacy support
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE,
     FOREIGN KEY (crop_plan_id) REFERENCES crop_plans(id) ON DELETE CASCADE,
-    FOREIGN KEY (performed_by) REFERENCES users(id)
+    FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE,
+    FOREIGN KEY (field_id) REFERENCES fields(id) ON DELETE CASCADE,
+    FOREIGN KEY (performed_by) REFERENCES users(id),
+    FOREIGN KEY (worker_id) REFERENCES users(id)
 );
 
 -- Crop observations
+-- Moved from 0002 to here to resolve FK dependency on crop_plans
 CREATE TABLE IF NOT EXISTS crop_observations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crop_plan_id INTEGER NOT NULL,
+    crop_id INTEGER NOT NULL,
+    farm_id INTEGER NOT NULL,
+    field_id INTEGER,
     observation_date DATE NOT NULL,
-    health_status TEXT, -- 'excellent', 'good', 'fair', 'poor', 'critical'
-    growth_stage TEXT,
+    health_status TEXT, -- 'excellent', 'good', 'fair', 'poor', 'critical', 'dead'
+    growth_stage TEXT, -- 'germination', 'seedling', 'vegetative', 'flowering', 'fruiting', 'maturity', 'harvest'
     height_cm REAL,
-    pest_presence INTEGER DEFAULT 0, -- boolean
+    plant_height_cm REAL, -- Alias/Duplicate for safety
+    leaf_count INTEGER,
+    leaf_color TEXT,
+    pest_presence BOOLEAN DEFAULT 0,
+    pest_presence_int INTEGER DEFAULT 0, -- integer version
+    pest_type TEXT,
     disease_signs TEXT,
+    disease_severity TEXT,
+    soil_moisture REAL,
     soil_moisture_level TEXT,
+    soil_ph REAL,
+    nutrient_deficiency TEXT,
+    weed_pressure TEXT,
     weather_conditions TEXT,
+    temperature_celsius REAL,
+    humidity_percent REAL,
+    rainfall_mm REAL,
+    photos TEXT,
+    photos_taken INTEGER DEFAULT 0,
+    action_required TEXT,
+    next_observation_date DATE,
     notes TEXT,
-    observer_id TEXT,
+    observer_id TEXT, -- Made nullable to be safe or string
+    verified_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (crop_plan_id) REFERENCES crop_plans(id) ON DELETE CASCADE,
-    FOREIGN KEY (observer_id) REFERENCES users(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE,
+    FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE,
+    FOREIGN KEY (field_id) REFERENCES fields(id) ON DELETE CASCADE,
+    FOREIGN KEY (observer_id) REFERENCES users(id),
+    FOREIGN KEY (verified_by) REFERENCES users(id)
 );
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS idx_animals_farm ON animals(farm_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_farm ON tasks(farm_id);
 CREATE INDEX IF NOT EXISTS idx_weather_locations_farm ON weather_locations(farm_id);
 CREATE INDEX IF NOT EXISTS idx_farm_statistics_farm ON farm_statistics(farm_id);
 CREATE INDEX IF NOT EXISTS idx_farm_operations_farm ON farm_operations(farm_id);
 CREATE INDEX IF NOT EXISTS idx_crop_plans_farm ON crop_plans(farm_id);
 CREATE INDEX IF NOT EXISTS idx_crop_plans_field ON crop_plans(field_id);
+
+-- Updated indexes for standard tables
 CREATE INDEX IF NOT EXISTS idx_crop_activities_plan ON crop_activities(crop_plan_id);
-CREATE INDEX IF NOT EXISTS idx_crop_observations_plan ON crop_observations(crop_plan_id);
+CREATE INDEX IF NOT EXISTS idx_crop_activities_crop ON crop_activities(crop_id);
+CREATE INDEX IF NOT EXISTS idx_crop_observations_plan ON crop_observations(crop_id);
+CREATE INDEX IF NOT EXISTS idx_crop_observations_farm ON crop_observations(farm_id);

@@ -1,22 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Plus,
-  Filter,
-  Bell,
-  Clock,
-  MapPin,
-  Users,
+  // Filter,
+  // Bell,
+  // Clock,
+  // MapPin,
+  // Users,
   Sprout,
   Activity,
   AlertTriangle,
-  Sun,
-  Cloud,
-  CloudRain,
-  Zap,
+  // Sun,
+  // Cloud,
+  // CloudRain,
+  // Zap,
   Calendar as CalendarType,
   Target,
 } from 'lucide-react';
@@ -53,7 +53,7 @@ interface CalendarViewProps {
 }
 
 export default function FarmCalendarView({
-  farmId = '',
+  farmId: _farmId = '',
   onEventClick,
   onCreateEvent,
 }: CalendarViewProps) {
@@ -120,7 +120,7 @@ export default function FarmCalendarView({
         });
       }
 
-      // Add irrigation schedules (mock for now)
+      // Add irrigation schedules
       if (crop.irrigation_schedule) {
         const irrigationDates = generateIrrigationDates(crop.irrigation_schedule);
         irrigationDates.forEach(date => {
@@ -142,12 +142,12 @@ export default function FarmCalendarView({
 
     // Add animal events
     animals.forEach((animal: Animal) => {
-      // Veterinary check-ups (monthly mock)
+      // Veterinary check-ups
       const vetDate = generateVetScheduleDate(animal.acquisition_date);
       if (vetDate) {
         calendarEvents.push({
           id: `vet-${animal.id}`,
-          title: `Vet Check-up: ${animal.identification}`,
+          title: `Vet Check-up: ${animal.identification_tag}`,
           date: vetDate,
           type: 'veterinary',
           priority: 'high',
@@ -160,12 +160,12 @@ export default function FarmCalendarView({
       }
 
       // Vaccination schedules (if available)
-      if (animal.vaccination_status !== 'up-to-date') {
+      if ((animal as any).vaccination_status !== 'up-to-date') {
         const nextVaccination = generateNextVaccinationDate();
         if (nextVaccination) {
           calendarEvents.push({
             id: `vaccination-${animal.id}`,
-            title: `Vaccination: ${animal.identification}`,
+            title: `Vaccination: ${animal.identification_tag}`,
             date: nextVaccination,
             type: 'veterinary',
             priority: 'urgent',
@@ -179,7 +179,7 @@ export default function FarmCalendarView({
       }
     });
 
-    // Add weather alerts (mock weather integration)
+    // Add weather alerts
     const weatherEvents = generateWeatherAlerts();
     calendarEvents.push(...weatherEvents);
 
@@ -191,7 +191,7 @@ export default function FarmCalendarView({
 
   // Get events for specific date
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0] as string;
     return events.filter(event => event.date.startsWith(dateStr));
   };
 
@@ -448,22 +448,15 @@ export default function FarmCalendarView({
 
 // Helper functions
 function generateIrrigationDates(schedule: string): string[] {
-  // Mock irrigation schedule generation
-  const dates: string[] = [];
-  const startDate = new Date();
-  for (let i = 0; i < 10; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i * 7); // Weekly irrigation
-    dates.push(date.toISOString().split('T')[0]);
-  }
-  return dates;
+  // TODO: Implement real irrigation schedule parsing based on 'schedule' string
+  return [];
 }
 
 function generateVetScheduleDate(acquisitionDate: string): string | null {
   try {
     const date = new Date(acquisitionDate);
     date.setMonth(date.getMonth() + 3); // Vet check every 3 months
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0] as string;
   } catch {
     return null;
   }
@@ -472,33 +465,10 @@ function generateVetScheduleDate(acquisitionDate: string): string | null {
 function generateNextVaccinationDate(): string | null {
   const date = new Date();
   date.setDate(date.getDate() + 30); // 30 days from now
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split('T')[0] as string;
 }
 
 function generateWeatherAlerts(): CalendarEvent[] {
-  // Mock weather alerts
-  return [
-    {
-      id: 'weather-rain-1',
-      title: 'Heavy Rain Warning',
-      date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      type: 'weather',
-      priority: 'high',
-      description: 'Heavy rain expected - secure equipment and adjust irrigation',
-      status: 'pending',
-      icon: CloudRain,
-      color: 'blue',
-    },
-    {
-      id: 'weather-frost-1',
-      title: 'Frost Alert',
-      date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      type: 'weather',
-      priority: 'urgent',
-      description: 'Frost warning - protect sensitive crops',
-      status: 'pending',
-      icon: AlertTriangle,
-      color: 'red',
-    },
-  ];
+  // TODO: Integrate with real weather service for alerts
+  return [];
 }

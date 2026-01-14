@@ -335,7 +335,7 @@ export async function onRequest(context) {
 
 // GET handler using FarmRepository
 async function handleGetFarms(request, url, user, auth, farmRepo) {
-  const farmId = url.searchParams.get("id");
+  const farmId = request.params?.id || url.searchParams.get("id");
   const stats = url.searchParams.get("stats");
   const operations = url.searchParams.get("operations");
   const analytics = url.searchParams.get("analytics");
@@ -468,7 +468,8 @@ async function handleCreateFarm(request, user, auth, farmRepo) {
 // PUT handler using FarmRepository
 async function handleUpdateFarm(request, user, auth, farmRepo) {
   const body = await request.json();
-  const { id: farmId, ...updateData } = body;
+  const farmId = request.params?.id || body.id;
+  const { id: _bodyId, ...updateData } = body;
 
   if (!farmId) {
     return createErrorResponse("Farm ID required", 400);
@@ -511,7 +512,7 @@ async function handleUpdateFarm(request, user, auth, farmRepo) {
 
 // DELETE handler using FarmRepository
 async function handleDeleteFarm(request, url, user, auth, farmRepo) {
-  const farmId = url.searchParams.get("id");
+  const farmId = request.params?.id || url.searchParams.get("id");
 
   if (!farmId) {
     return createErrorResponse("Farm ID required", 400);

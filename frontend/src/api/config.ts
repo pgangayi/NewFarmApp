@@ -27,23 +27,30 @@ export const ENDPOINTS = {
     list: '/farms',
     details: (id: string) => `/farms/${id}`,
     create: '/farms',
-    update: '/farms', // PUT /farms/:id usually, but let's stick to base
+    update: (id: string) => `/farms/${id}`,
     delete: (id: string) => `/farms/${id}`,
   },
   fields: {
     list: '/fields',
     details: (id: string) => `/fields/${id}`,
     create: '/fields',
-    update: '/fields',
+    update: (id: string) => `/fields/${id}`,
     delete: (id: string) => `/fields/${id}`,
     soilAnalysis: '/fields/soil-analysis',
   },
+  weather: {
+    farm: '/weather/farm',
+    impact: '/weather/impact-analysis',
+    recommendations: '/weather/recommendations',
+  },
   crops: {
     list: '/crops',
+    details: (id: string) => `/crops/${id}`,
     create: '/crops',
-    update: '/crops',
+    update: (id: string) => `/crops/${id}`,
     delete: (id: string) => `/crops/${id}`,
     history: '/crops/history',
+    planning: '/crops/planning',
   },
   livestock: {
     list: '/livestock',
@@ -61,8 +68,9 @@ export const ENDPOINTS = {
   },
   inventory: {
     list: '/inventory',
+    details: (id: string) => `/inventory/${id}`,
     create: '/inventory',
-    update: '/inventory',
+    update: (id: string) => `/inventory/${id}`,
     delete: (id: string) => `/inventory/${id}`,
     alerts: '/inventory/alerts',
   },
@@ -73,6 +81,24 @@ export const ENDPOINTS = {
     delete: (id: string) => `/finance/${id}`,
     report: '/finance/report',
     stats: '/finance/stats',
+  },
+  animals: {
+    list: '/livestock',
+    details: (id: string) => `/livestock/${id}`,
+    create: '/livestock',
+    update: (id: string) => `/livestock/${id}`,
+    delete: (id: string) => `/livestock/${id}`,
+    analytics: '/livestock/stats',
+    healthRecords: (animalId: string, recordId?: string) =>
+      recordId
+        ? `/livestock/${animalId}/health-records/${recordId}`
+        : `/livestock/${animalId}/health-records`,
+    production: (animalId: string, recordId?: string) =>
+      recordId
+        ? `/livestock/${animalId}/production/${recordId}`
+        : `/livestock/${animalId}/production`,
+    breeding: (animalId: string, recordId?: string) =>
+      recordId ? `/livestock/${animalId}/breeding/${recordId}` : `/livestock/${animalId}/breeding`,
   },
 };
 

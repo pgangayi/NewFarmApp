@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFarm } from '../hooks';
+import { CropService } from '../services/domains/CropService';
+import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   Calculator,
   TrendingUp,
   DollarSign,
-  Calendar,
+  // Calendar,
   Plus,
   BarChart3,
   AlertTriangle,
-  CheckCircle,
+  // CheckCircle,
   Loader2,
 } from 'lucide-react';
 
@@ -19,7 +21,7 @@ interface CropPlanningProps {
 }
 
 export function CropPlanning({ farmId }: CropPlanningProps) {
-  const { currentFarm } = useFarm();
+  const { data: currentFarm } = useFarm(farmId);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
@@ -32,15 +34,7 @@ export function CropPlanning({ farmId }: CropPlanningProps) {
   } = useQuery({
     queryKey: ['crop-plans', farmId],
     queryFn: async () => {
-      const response = await fetch('/api/crops/planning', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add auth header if needed
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch crop plans');
-      return await response.json();
+      return CropService.getCropPlans(farmId);
     },
     enabled: !!farmId,
   });
@@ -49,26 +43,16 @@ export function CropPlanning({ farmId }: CropPlanningProps) {
   const { data: fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      const response = await fetch(`/api/fields?farm_id=${farmId}`);
-      if (!response.ok) throw new Error('Failed to fetch fields');
-      return await response.json();
+      return FieldService.getFieldsByFarm(farmId);
     },
     enabled: !!farmId,
   });
 
   const handleCreatePlan = async (planData: any) => {
     try {
-      const response = await fetch('/api/crops/planning', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(planData),
-      });
-
-      if (!response.ok) throw new Error('Failed to create plan');
-
-      const result = await response.json();
+      // Ensure farm_id is included
+      const planWithFarmId = { ...planData, farm_id: farmId };
+      const result = await CropService.createCropPlan(planWithFarmId);
       setShowCreateForm(false);
       refetch();
       return result;
@@ -285,8 +269,11 @@ function PlanCreationForm({ fields, onSubmit, onCancel }: any) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name *</label>
+          <label htmlFor="plan-name" className="block text-sm font-medium text-gray-700 mb-1">
+            Plan Name *
+          </label>
           <input
+            id="plan-name"
             type="text"
             required
             value={formData.plan_name}
@@ -297,8 +284,11 @@ function PlanCreationForm({ fields, onSubmit, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Field *</label>
+          <label htmlFor="field-id" className="block text-sm font-medium text-gray-700 mb-1">
+            Field *
+          </label>
           <select
+            id="field-id"
             required
             value={formData.field_id}
             onChange={e => setFormData(prev => ({ ...prev, field_id: e.target.value }))}
@@ -314,8 +304,11 @@ function PlanCreationForm({ fields, onSubmit, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Crop Type *</label>
+          <label htmlFor="crop-type" className="block text-sm font-medium text-gray-700 mb-1">
+            Crop Type *
+          </label>
           <input
+            id="crop-type"
             type="text"
             required
             value={formData.crop_type}
@@ -326,8 +319,11 @@ function PlanCreationForm({ fields, onSubmit, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date *</label>
+          <label htmlFor="planting-date" className="block text-sm font-medium text-gray-700 mb-1">
+            Planting Date *
+          </label>
           <input
+            id="planting-date"
             type="date"
             required
             value={formData.planting_date}
@@ -337,10 +333,11 @@ function PlanCreationForm({ fields, onSubmit, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="expected-yield" className="block text-sm font-medium text-gray-700 mb-1">
             Expected Yield (per sqm) *
           </label>
           <input
+            id="expected-yield"
             type="number"
             step="0.01"
             required
@@ -352,10 +349,11 @@ function PlanCreationForm({ fields, onSubmit, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="expected-price" className="block text-sm font-medium text-gray-700 mb-1">
             Expected Price (per unit) *
           </label>
           <input
+            id="expected-price"
             type="number"
             step="0.01"
             required

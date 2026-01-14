@@ -3,6 +3,8 @@
 
 import { featureFlags } from './featureFlags';
 
+const DEFAULT_API_URL = '/';
+
 export interface AppConfig {
   // App Information
   appName: string;
@@ -59,7 +61,7 @@ const createAppConfig = (): AppConfig => {
 
     // API Configuration
     api: {
-      baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787',
+      baseUrl: import.meta.env.VITE_API_BASE_URL || DEFAULT_API_URL,
       timeout: isDevelopment ? 30000 : 45000,
       retryAttempts: isDevelopment ? 3 : 5,
       enableCaching: !isTesting,
@@ -98,7 +100,7 @@ const createAppConfig = (): AppConfig => {
 const environmentOverrides: Record<string, Partial<AppConfig>> = {
   development: {
     api: {
-      baseUrl: 'http://localhost:8787',
+      baseUrl: DEFAULT_API_URL,
       timeout: 30000,
       retryAttempts: 3,
       enableCaching: true,
@@ -128,7 +130,7 @@ const environmentOverrides: Record<string, Partial<AppConfig>> = {
 
   testing: {
     api: {
-      baseUrl: 'http://localhost:8787',
+      baseUrl: DEFAULT_API_URL,
       timeout: 10000,
       retryAttempts: 1,
       enableCaching: false,
@@ -162,7 +164,7 @@ const mergeConfigs = (base: AppConfig, override: Partial<AppConfig>): AppConfig 
     }
   }
 
-  return merged as AppConfig;
+  return merged as unknown as AppConfig;
 };
 
 // Configuration storage with localStorage persistence

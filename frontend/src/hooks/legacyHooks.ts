@@ -69,7 +69,7 @@ export function useFarm() {
   // Auto-select first farm if none selected
   useEffect(() => {
     if (!currentFarm && farms.length > 0) {
-      selectFarm(farms[0]);
+      selectFarm(farms[0] || null);
     }
   }, [currentFarm, farms]);
 
@@ -135,14 +135,14 @@ export function useCropsStats() {
 
   const byStatus = {
     planned: crops.filter((c: Crop) => c.status === 'planned').length,
-    active: crops.filter((c: Crop) => c.status === 'active').length,
+    growing: crops.filter((c: Crop) => c.status === 'growing').length,
     harvested: crops.filter((c: Crop) => c.status === 'harvested').length,
     failed: crops.filter((c: Crop) => c.status === 'failed').length,
   };
 
   return {
     total: crops.length,
-    activeCount: byStatus.active,
+    activeCount: byStatus.growing,
     byStatus,
   };
 }

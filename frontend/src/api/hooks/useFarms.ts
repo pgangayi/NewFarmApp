@@ -7,8 +7,7 @@ export function useFarms(filters?: Record<string, unknown>) {
   return useQuery({
     queryKey: QUERY_KEYS.farms.list(filters),
     queryFn: async () => {
-      const response = await apiClient.get<Farm[]>('/api/farms');
-      return response;
+      return await apiClient.get<Farm[]>('/api/farms');
     },
     staleTime: CACHE_CONFIG.staleTime.farms,
   });
@@ -18,8 +17,7 @@ export function useFarm(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.farms.detail(id),
     queryFn: async () => {
-      const response = await apiClient.get<Farm>(`/api/farms?id=${id}`);
-      return response;
+      return await apiClient.get<Farm>(`/api/farms?id=${id}`);
     },
     enabled: !!id,
     staleTime: CACHE_CONFIG.staleTime.farms,
@@ -45,8 +43,7 @@ export function useCreateFarm() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateRequest<Farm>) => {
-      const response = await apiClient.post<Farm>('/api/farms', data as any);
-      return response;
+      return await apiClient.post<Farm>('/api/farms', data as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.farms.all });
@@ -58,8 +55,7 @@ export function useUpdateFarm() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRequest<Farm> }) => {
-      const response = await apiClient.put<Farm>(`/api/farms/${id}`, data as any);
-      return response;
+      return await apiClient.put<Farm>(`/api/farms/${id}`, data as any);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.farms.all });

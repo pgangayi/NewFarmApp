@@ -1,26 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { Animal, BreedingRecord } from '../api/types';
+import { AnimalService } from '../services/domains/AnimalService';
 import { Plus, Heart, Calendar, AlertCircle, CheckCircle, Baby } from 'lucide-react';
 
-interface BreedingRecord {
-  id: number;
-  animal_id: string;
-  breeding_date: string;
-  sire_id?: number;
-  breeding_type: string;
-  breeding_fee?: number;
-  expected_calving_date?: string;
-  actual_calving_date?: string;
-  breeding_result?: string;
-  offspring_count?: number;
-  breeding_notes?: string;
-  vet_supervision: boolean;
-  animal_name: string;
-  sire_name?: string;
-  created_by_name?: string;
-  created_at: string;
-}
+// BreedingRecord interface removed, using global import
 
 interface AnimalBreedingManagerProps {
   animalId: string;
@@ -28,17 +13,26 @@ interface AnimalBreedingManagerProps {
   animalSex: string;
 }
 
+const BREEDING_TYPE_NATURAL = 'natural';
+const BREEDING_TYPE_ARTIFICIAL = 'artificial';
+const BREEDING_TYPE_EMBRYO = 'embryo_transfer';
+
+const RESULT_PREGNANT = 'pregnant';
+const RESULT_NOT_PREGNANT = 'not_pregnant';
+const RESULT_UNKNOWN = 'unknown';
+const RESULT_PENDING = 'pending';
+
 const breedingTypeOptions = [
-  { value: 'natural', label: 'Natural Breeding' },
-  { value: 'artificial', label: 'Artificial Insemination' },
-  { value: 'embryo_transfer', label: 'Embryo Transfer' },
+  { value: BREEDING_TYPE_NATURAL, label: 'Natural Breeding' },
+  { value: BREEDING_TYPE_ARTIFICIAL, label: 'Artificial Insemination' },
+  { value: BREEDING_TYPE_EMBRYO, label: 'Embryo Transfer' },
 ];
 
 const breedingResultOptions = [
-  { value: 'pregnant', label: 'Pregnant' },
-  { value: 'not_pregnant', label: 'Not Pregnant' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'unknown', label: 'Pending' },
+  { value: RESULT_PREGNANT, label: 'Pregnant' },
+  { value: RESULT_NOT_PREGNANT, label: 'Not Pregnant' },
+  { value: RESULT_UNKNOWN, label: 'Unknown' },
+  { value: RESULT_PENDING, label: 'Pending' },
 ];
 
 export function AnimalBreedingManager({
@@ -53,6 +47,7 @@ export function AnimalBreedingManager({
   const [selectedBreeding, setSelectedBreeding] = useState<BreedingRecord | null>(null);
 
   const queryClient = useQueryClient();
+  const BREEDING_RECORDS_KEY = 'animal-breeding-records';
 
   // Fetch breeding records
   const {
@@ -60,17 +55,9 @@ export function AnimalBreedingManager({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['animal-breeding-records', animalId],
+    queryKey: [BREEDING_RECORDS_KEY, animalId],
     queryFn: async () => {
-      const response = await fetch(`/api/animals/${animalId}/breeding`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch breeding records');
-      }
-
-      return await response.json();
+      return AnimalService.getBreedingRecords(animalId);
     },
     enabled: !!animalId && animalSex === 'female', // Only for females
   });
@@ -79,64 +66,29 @@ export function AnimalBreedingManager({
   const { data: maleAnimals } = useQuery({
     queryKey: ['male-animals-for-breeding'],
     queryFn: async () => {
-      const response = await fetch('/api/animals?species=all&sex=male', {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch male animals');
-      }
-
-      const data = await response.json();
-      return data.animals || [];
+      return AnimalService.getAnimals({ species: 'all', sex: 'male' });
     },
     enabled: !!animalId,
   });
 
   // Create breeding record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: unknown) => {
-      const response = await fetch(`/api/animals/${animalId}/breeding`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(recordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create breeding record');
-      }
-
-      return await response.json();
+    mutationFn: async (recordData: any) => {
+      return AnimalService.addBreedingRecord(animalId, recordData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-breeding-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [BREEDING_RECORDS_KEY, animalId] });
       setShowAddModal(false);
     },
   });
 
   // Update breeding record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: unknown) => {
-      const response = await fetch(`/api/animals/${animalId}/breeding/${id}`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(recordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update breeding record');
-      }
-
-      return await response.json();
+    mutationFn: async ({ id, ...recordData }: Partial<BreedingRecord> & { id: string }) => {
+      return AnimalService.updateBreedingRecord(animalId, id, recordData as any);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-breeding-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [BREEDING_RECORDS_KEY, animalId] });
       setEditingRecord(null);
     },
   });
@@ -144,20 +96,10 @@ export function AnimalBreedingManager({
   // Delete breeding record mutation
   const deleteMutation = useMutation({
     mutationFn: async (recordId: string) => {
-      const response = await fetch(`/api/animals/${animalId}/breeding/${recordId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete breeding record');
-      }
-
-      return await response.json();
+      return AnimalService.deleteBreedingRecord(animalId, recordId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-breeding-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [BREEDING_RECORDS_KEY, animalId] });
     },
   });
 
@@ -182,11 +124,11 @@ export function AnimalBreedingManager({
 
   const getBreedingTypeIcon = (type: string) => {
     switch (type) {
-      case 'natural':
+      case BREEDING_TYPE_NATURAL:
         return <Heart className="h-4 w-4 text-pink-600" />;
-      case 'artificial':
+      case BREEDING_TYPE_ARTIFICIAL:
         return <CheckCircle className="h-4 w-4 text-blue-600" />;
-      case 'embryo_transfer':
+      case BREEDING_TYPE_EMBRYO:
         return <Baby className="h-4 w-4 text-purple-600" />;
       default:
         return <Calendar className="h-4 w-4 text-gray-600" />;
@@ -195,13 +137,13 @@ export function AnimalBreedingManager({
 
   const getBreedingResultColor = (result?: string) => {
     switch (result) {
-      case 'pregnant':
+      case RESULT_PREGNANT:
         return 'bg-green-100 text-green-800';
-      case 'not_pregnant':
+      case RESULT_NOT_PREGNANT:
         return 'bg-red-100 text-red-800';
-      case 'unknown':
+      case RESULT_UNKNOWN:
         return 'bg-yellow-100 text-yellow-800';
-      case 'pending':
+      case RESULT_PENDING:
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -214,9 +156,7 @@ export function AnimalBreedingManager({
     const breeding = new Date(breedingDate);
     const expectedCalving = new Date(expectedCalvingDate);
     const diffTime = expectedCalving.getTime() - breeding.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const getDaysUntilCalving = (expectedCalvingDate?: string) => {
@@ -225,9 +165,7 @@ export function AnimalBreedingManager({
     const today = new Date();
     const expectedCalving = new Date(expectedCalvingDate);
     const diffTime = expectedCalving.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   if (animalSex !== 'female') {
@@ -293,8 +231,9 @@ export function AnimalBreedingManager({
                 <p className="text-sm font-medium text-green-700">Successful</p>
                 <p className="text-2xl font-bold text-green-900">
                   {
-                    breedingRecords.filter((r: BreedingRecord) => r.breeding_result === 'pregnant')
-                      .length
+                    breedingRecords.filter(
+                      (r: BreedingRecord) => r.breeding_result === RESULT_PREGNANT
+                    ).length
                   }
                 </p>
               </div>
@@ -322,11 +261,11 @@ export function AnimalBreedingManager({
       {/* Breeding Records List */}
       <div className="space-y-4">
         {(breedingRecords || []).map((record: BreedingRecord) => {
-          const daysUntilCalving = getDaysUntilCalving(record.expected_calving_date);
-          const gestationDays = calculateGestationDays(
-            record.breeding_date,
-            record.expected_calving_date
-          );
+          const daysUntilCalving = getDaysUntilCalving(record.expected_calving_date || '');
+          // const gestationDays = calculateGestationDays(
+          //   record.breeding_date,
+          //   record.expected_calving_date
+          // );
 
           return (
             <div
@@ -335,10 +274,10 @@ export function AnimalBreedingManager({
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  {getBreedingTypeIcon(record.breeding_type)}
+                  {getBreedingTypeIcon(record.breeding_type || '')}
                   <div>
                     <h4 className="font-medium text-gray-900 capitalize">
-                      {record.breeding_type.replace('_', ' ')}
+                      {(record.breeding_type || 'unknown').replace('_', ' ')}
                     </h4>
                     <p className="text-sm text-gray-500">
                       {new Date(record.breeding_date).toLocaleDateString()}
@@ -416,7 +355,7 @@ export function AnimalBreedingManager({
                   <div>
                     <span className="font-medium text-gray-700">Expected Calving:</span>
                     <span className="text-gray-600 ml-2">
-                      {new Date(record.expected_calving_date).toLocaleDateString()}
+                      {new Date(record.expected_calving_date || '').toLocaleDateString()}
                     </span>
                     {daysUntilCalving !== null && (
                       <span
@@ -460,7 +399,7 @@ export function AnimalBreedingManager({
               {record.created_by_name && (
                 <div className="mt-2 text-xs text-gray-500">
                   Recorded by {record.created_by_name} on{' '}
-                  {new Date(record.created_at).toLocaleDateString()}
+                  {new Date(record.created_at || new Date().toISOString()).toLocaleDateString()}
                 </div>
               )}
             </div>
@@ -535,9 +474,9 @@ export function AnimalBreedingManager({
 // Breeding Record Modal Component
 interface BreedingRecordModalProps {
   record?: BreedingRecord | null;
-  maleAnimals: unknown[];
+  maleAnimals: Animal[];
   onClose: () => void;
-  onSubmit: (data: unknown) => void;
+  onSubmit: (data: any) => void;
   isLoading: boolean;
 }
 
@@ -548,10 +487,21 @@ function BreedingRecordModal({
   onSubmit,
   isLoading,
 }: BreedingRecordModalProps) {
-  const [formData, setFormData] = useState({
-    breeding_date: record?.breeding_date || new Date().toISOString().split('T')[0],
+  const [formData, setFormData] = useState<{
+    breeding_date: string;
+    sire_id: string | number;
+    breeding_type: string;
+    breeding_fee: string | number;
+    expected_calving_date: string;
+    actual_calving_date: string;
+    breeding_result: string;
+    offspring_count: string | number;
+    breeding_notes: string;
+    vet_supervision: boolean;
+  }>({
+    breeding_date: record?.breeding_date || (new Date().toISOString().split('T')[0] as string),
     sire_id: record?.sire_id || '',
-    breeding_type: record?.breeding_type || 'natural',
+    breeding_type: record?.breeding_type || BREEDING_TYPE_NATURAL,
     breeding_fee: record?.breeding_fee || '',
     expected_calving_date: record?.expected_calving_date || '',
     actual_calving_date: record?.actual_calving_date || '',
@@ -567,9 +517,9 @@ function BreedingRecordModal({
       const breedingDate = new Date(formData.breeding_date);
       let gestationDays = 280; // Default for cattle
 
-      if (formData.breeding_type === 'artificial') {
+      if (formData.breeding_type === BREEDING_TYPE_ARTIFICIAL) {
         gestationDays = 280;
-      } else if (formData.breeding_type === 'embryo_transfer') {
+      } else if (formData.breeding_type === BREEDING_TYPE_EMBRYO) {
         gestationDays = 280;
       }
 
@@ -578,7 +528,7 @@ function BreedingRecordModal({
 
       setFormData(prev => ({
         ...prev,
-        expected_calving_date: expectedCalving.toISOString().split('T')[0],
+        expected_calving_date: expectedCalving.toISOString().split('T')[0] as string,
       }));
     }
   }, [formData.breeding_date, formData.breeding_type, record]);
@@ -611,10 +561,14 @@ function BreedingRecordModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="breeding-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Breeding Date *
                 </label>
                 <input
+                  id="breeding-date"
                   type="date"
                   required
                   value={formData.breeding_date}
@@ -624,10 +578,14 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="breeding-type"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Breeding Type *
                 </label>
                 <select
+                  id="breeding-type"
                   required
                   value={formData.breeding_type}
                   onChange={e => setFormData(prev => ({ ...prev, breeding_type: e.target.value }))}
@@ -642,16 +600,17 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="sire-id" className="block text-sm font-medium text-gray-700 mb-1">
                   Sire (Father)
                 </label>
                 <select
+                  id="sire-id"
                   value={formData.sire_id}
                   onChange={e => setFormData(prev => ({ ...prev, sire_id: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                 >
                   <option value="">Select Sire</option>
-                  {maleAnimals.map((animal: unknown) => (
+                  {maleAnimals.map((animal: Animal) => (
                     <option key={animal.id} value={animal.id}>
                       {animal.name} ({animal.species} - {animal.breed || 'Unknown Breed'})
                     </option>
@@ -660,10 +619,14 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="breeding-fee"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Breeding Fee ($)
                 </label>
                 <input
+                  id="breeding-fee"
                   type="number"
                   step="0.01"
                   value={formData.breeding_fee}
@@ -673,10 +636,14 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="expected-calving-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Expected Calving Date
                 </label>
                 <input
+                  id="expected-calving-date"
                   type="date"
                   value={formData.expected_calving_date}
                   onChange={e =>
@@ -687,10 +654,14 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="actual-calving-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Actual Calving Date
                 </label>
                 <input
+                  id="actual-calving-date"
                   type="date"
                   value={formData.actual_calving_date}
                   onChange={e =>
@@ -701,10 +672,14 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="breeding-result"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Breeding Result
                 </label>
                 <select
+                  id="breeding-result"
                   value={formData.breeding_result}
                   onChange={e =>
                     setFormData(prev => ({ ...prev, breeding_result: e.target.value }))
@@ -721,10 +696,14 @@ function BreedingRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="offspring-count"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Offspring Count
                 </label>
                 <input
+                  id="offspring-count"
                   type="number"
                   min="0"
                   value={formData.offspring_count}
@@ -737,8 +716,14 @@ function BreedingRecordModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Breeding Notes</label>
+              <label
+                htmlFor="breeding-notes"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Breeding Notes
+              </label>
               <textarea
+                id="breeding-notes"
                 rows={3}
                 value={formData.breeding_notes}
                 onChange={e => setFormData(prev => ({ ...prev, breeding_notes: e.target.value }))}

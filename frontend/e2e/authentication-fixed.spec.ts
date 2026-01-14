@@ -24,7 +24,7 @@ test.describe('Authentication Flow - Simplified', () => {
 
     // Try to find any button or link that might be a login link
     const buttons = await page.locator('button').count();
-    const links = await page.locator('a').count();
+    // const links = await page.locator('a').count();
 
     // Try to click any login-related button or navigate directly
     if (buttons > 0) {

@@ -1,5 +1,5 @@
 import { UnifiedModal, ModalField } from '../ui/UnifiedModal';
-import type { FinanceEntry, Farm } from '../../api/types'; // Using main api types or local types?
+import type { Farm } from '../../api/types'; // Using main api types or local types?
 // Using local props for entry but Farms from API.
 import type { FinanceEntry as FinanceEntryType } from './types';
 

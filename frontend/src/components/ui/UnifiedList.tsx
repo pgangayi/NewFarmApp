@@ -1,7 +1,7 @@
 // Unified List Component
 // Eliminates 6+ identical list implementations
 
-import _React from 'react';
+import React from 'react';
 import {
   Plus,
   Edit,
@@ -211,7 +211,13 @@ export function UnifiedList({
                         <span className="text-sm font-medium text-gray-700 block">
                           {column.label}:
                         </span>
-                        <span className="text-sm text-gray-900 mt-1 block">{value || '—'}</span>
+                        <span className="text-sm text-gray-900 mt-1 block">
+                          {React.isValidElement(value)
+                            ? value
+                            : typeof value === 'object' && value !== null
+                              ? JSON.stringify(value)
+                              : String(value ?? '—')}
+                        </span>
                       </div>
                     );
                   })}

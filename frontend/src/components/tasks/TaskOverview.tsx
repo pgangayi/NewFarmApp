@@ -11,7 +11,14 @@ interface TaskOverviewProps {
   isTimerLoading: boolean;
 }
 
-export function TaskOverview({ tasks }: TaskOverviewProps) {
+export function TaskOverview({
+  tasks,
+  onEditTask: _onEditTask,
+  onStartTimer: _onStartTimer,
+  onStopTimer: _onStopTimer,
+  timerActive: _timerActive,
+  isTimerLoading: _isTimerLoading,
+}: TaskOverviewProps) {
   const pending = tasks.filter(t => t.status === 'pending').length;
   const inProgress = tasks.filter(t => t.status === 'in_progress').length;
   const completed = tasks.filter(t => t.status === 'completed').length;

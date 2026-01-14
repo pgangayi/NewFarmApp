@@ -1,25 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { AnimalService } from '../services/domains/AnimalService';
+import { ProductionRecord } from '../api/types';
 import { Plus, TrendingUp, DollarSign, Calendar, Award } from 'lucide-react';
 
-interface ProductionRecord {
-  id: number;
-  animal_id: string;
-  production_date: string;
-  production_type: string;
-  quantity: number;
-  unit: string;
-  quality_grade?: string;
-  price_per_unit?: number;
-  total_value?: number;
-  market_destination?: string;
-  storage_location?: string;
-  notes?: string;
-  animal_name: string;
-  recorded_by_name?: string;
-  created_at: string;
-}
+// ProductionRecord interface removed, using global import
 
 interface AnimalProductionTrackerProps {
   animalId: string;
@@ -55,6 +41,7 @@ export function AnimalProductionTracker({
   const [dateFilter, setDateFilter] = useState('');
 
   const queryClient = useQueryClient();
+  const PRODUCTION_RECORDS_KEY = 'animal-production-records';
 
   // Fetch production records
   const {
@@ -62,20 +49,12 @@ export function AnimalProductionTracker({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['animal-production-records', animalId, dateFilter],
+    queryKey: [PRODUCTION_RECORDS_KEY, animalId, dateFilter],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (dateFilter) params.append('date', dateFilter);
-
-      const response = await fetch(`/api/animals/${animalId}/production?${params.toString()}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch production records');
-      }
-
-      return await response.json();
+      return AnimalService.getProductionRecords(
+        animalId,
+        dateFilter ? { date: dateFilter } : undefined
+      );
     },
     enabled: !!animalId,
   });
@@ -115,48 +94,23 @@ export function AnimalProductionTracker({
 
   // Create production record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: unknown) => {
-      const response = await fetch(`/api/animals/${animalId}/production`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(recordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create production record');
-      }
-
-      return await response.json();
+    mutationFn: async (recordData: any) => {
+      return AnimalService.addProductionRecord(animalId, recordData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-production-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [PRODUCTION_RECORDS_KEY, animalId] });
       setShowAddModal(false);
     },
   });
 
   // Update production record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: unknown) => {
-      const response = await fetch(`/api/animals/${animalId}/production/${id}`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(recordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update production record');
-      }
-
-      return await response.json();
+    mutationFn: async ({ id, ...recordData }: Partial<ProductionRecord> & { id: string }) => {
+      // Service expects string IDs
+      return AnimalService.updateProductionRecord(animalId, id, recordData as any);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-production-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [PRODUCTION_RECORDS_KEY, animalId] });
       setEditingRecord(null);
     },
   });
@@ -164,20 +118,10 @@ export function AnimalProductionTracker({
   // Delete production record mutation
   const deleteMutation = useMutation({
     mutationFn: async (recordId: string) => {
-      const response = await fetch(`/api/animals/${animalId}/production/${recordId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete production record');
-      }
-
-      return await response.json();
+      return AnimalService.deleteProductionRecord(animalId, recordId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['animal-production-records', animalId] });
+      queryClient.invalidateQueries({ queryKey: [PRODUCTION_RECORDS_KEY, animalId] });
     },
   });
 
@@ -409,7 +353,7 @@ export function AnimalProductionTracker({
             {record.recorded_by_name && (
               <div className="mt-2 text-xs text-gray-500">
                 Recorded by {record.recorded_by_name} on{' '}
-                {new Date(record.created_at).toLocaleDateString()}
+                {new Date(record.created_at || new Date().toISOString()).toLocaleDateString()}
               </div>
             )}
           </div>
@@ -476,7 +420,7 @@ interface ProductionRecordModalProps {
   record?: ProductionRecord | null;
   productionType?: string;
   onClose: () => void;
-  onSubmit: (data: unknown) => void;
+  onSubmit: (data: any) => void;
   isLoading: boolean;
 }
 
@@ -534,10 +478,14 @@ function ProductionRecordModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="production-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Production Date *
                 </label>
                 <input
+                  id="production-date"
                   type="date"
                   required
                   value={formData.production_date}
@@ -549,10 +497,14 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="production-type"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Production Type *
                 </label>
                 <select
+                  id="production-type"
                   required
                   value={formData.production_type}
                   onChange={e =>
@@ -570,8 +522,11 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity *
+                </label>
                 <input
+                  id="quantity"
                   type="number"
                   step="0.01"
                   required
@@ -582,8 +537,11 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+                <label htmlFor="unit" className="block text-sm font-medium text-gray-700 mb-1">
+                  Unit *
+                </label>
                 <input
+                  id="unit"
                   type="text"
                   required
                   value={formData.unit}
@@ -593,10 +551,14 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="quality-grade"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Quality Grade
                 </label>
                 <select
+                  id="quality-grade"
                   value={formData.quality_grade}
                   onChange={e => setFormData(prev => ({ ...prev, quality_grade: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -610,10 +572,14 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="price-per-unit"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Price per Unit ($)
                 </label>
                 <input
+                  id="price-per-unit"
                   type="number"
                   step="0.01"
                   value={formData.price_per_unit}
@@ -623,10 +589,14 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="market-destination"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Market Destination
                 </label>
                 <input
+                  id="market-destination"
                   type="text"
                   value={formData.market_destination}
                   onChange={e =>
@@ -637,10 +607,14 @@ function ProductionRecordModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="storage-location"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Storage Location
                 </label>
                 <input
+                  id="storage-location"
                   type="text"
                   value={formData.storage_location}
                   onChange={e =>
@@ -652,8 +626,11 @@ function ProductionRecordModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+              </label>
               <textarea
+                id="notes"
                 rows={3}
                 value={formData.notes}
                 onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}

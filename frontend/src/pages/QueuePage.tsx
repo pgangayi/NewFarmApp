@@ -1,5 +1,4 @@
-// Note: useOfflineQueue hook needs to be implemented or removed
-// import { useOfflineQueue } from '../hooks';
+import { useOfflineQueue } from '../hooks';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 
 export function QueuePage() {

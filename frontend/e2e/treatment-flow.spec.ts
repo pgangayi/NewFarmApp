@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 test.describe('Treatment Application Flow', () => {
-  test('should load the application successfully', async ({ page }) => {
+  test('should load the application successfully', async () => {
     // For production deployment testing, we'll test the built files
     // In CI/CD, this would serve the dist folder
     // For now, this is a smoke test structure
@@ -24,7 +24,7 @@ test.describe('Treatment Application Flow', () => {
     console.log('✅ Build artifacts verified - application structure is correct');
   });
 
-  test('should handle offline treatment sync', async ({ page }) => {
+  test('should handle offline treatment sync', async () => {
     // Test offline queue functionality
     // 1. Go offline
     // 2. Attempt treatment application
@@ -37,7 +37,7 @@ test.describe('Treatment Application Flow', () => {
     // This would require a full test environment with database
   });
 
-  test('should show conflict resolution UI', async ({ page }) => {
+  test('should show conflict resolution UI', async () => {
     // Test conflict resolution
     // 1. Simulate concurrent edits
     // 2. Trigger conflict

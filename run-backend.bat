@@ -1,2 +1,2 @@
 cd backend
-npx wrangler dev --local --port 8787
+npx wrangler dev --remote --port 8787

@@ -18,7 +18,7 @@ interface FarmLocationManagerProps {
 }
 
 export function FarmLocationManager({ farm, onLocationUpdated }: FarmLocationManagerProps) {
-  const { session } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,12 +29,9 @@ export function FarmLocationManager({ farm, onLocationUpdated }: FarmLocationMan
 
   const updateLocationMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const token = session?.access_token;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
       const response = await fetch('/api/weather', {
         method: 'POST',
-        headers: { ...headers, 'Content-Type': 'application/json' },
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update_farm_location',
           farm_id: farm.id,

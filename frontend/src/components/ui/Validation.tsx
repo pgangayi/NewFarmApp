@@ -129,8 +129,7 @@ export const Validators = {
   custom:
     (validator: (value: any, values?: any) => string | null, message = 'Invalid value') =>
     (value: any, values?: any) => {
-      const result = validator(value, values);
-      return result;
+      return validator(value, values);
     },
 };
 

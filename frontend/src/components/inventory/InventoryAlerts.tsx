@@ -1,6 +1,6 @@
 import { UnifiedList } from '../ui/UnifiedList';
 import type { InventoryAlert } from './types';
-import { Check, XCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Badge } from '../ui/badge';
 
 interface InventoryAlertsProps {
@@ -12,7 +12,7 @@ export function InventoryAlerts({ alerts, onResolveAlert }: InventoryAlertsProps
   return (
     <UnifiedList
       title="Inventory Alerts"
-      items={alerts}
+      items={alerts as any[]}
       columns={[
         { key: 'message', label: 'Message', className: 'font-medium' },
         {

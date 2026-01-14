@@ -1,44 +1,54 @@
+// Color constants to avoid duplication
+const TEXT_GREEN = 'text-green-600';
+const TEXT_BLUE = 'text-blue-600';
+const TEXT_ORANGE = 'text-orange-600';
+const TEXT_PURPLE = 'text-purple-600';
+const TEXT_EMERALD = 'text-emerald-600';
+const TEXT_YELLOW = 'text-yellow-600';
+const TEXT_RED = 'text-red-600';
+const TEXT_AMBER = 'text-amber-600';
+
 // Color classes for components
 export const colorClasses = {
   green: {
     bg: 'bg-green-50',
-    text: 'text-green-600',
-    icon: 'text-green-600',
+    text: TEXT_GREEN,
+    icon: TEXT_GREEN,
   },
   blue: {
     bg: 'bg-blue-50',
-    text: 'text-blue-600',
-    icon: 'text-blue-600',
+    text: TEXT_BLUE,
+    icon: TEXT_BLUE,
   },
   orange: {
     bg: 'bg-orange-50',
-    text: 'text-orange-600',
-    icon: 'text-orange-600',
+    text: TEXT_ORANGE,
+    icon: TEXT_ORANGE,
   },
   purple: {
     bg: 'bg-purple-50',
-    text: 'text-purple-600',
-    icon: 'text-purple-600',
+    text: TEXT_PURPLE,
+    icon: TEXT_PURPLE,
   },
   emerald: {
     bg: 'bg-emerald-50',
-    text: 'text-emerald-600',
-    icon: 'text-emerald-600',
+    text: TEXT_EMERALD,
+    icon: TEXT_EMERALD,
   },
   yellow: {
     bg: 'bg-yellow-50',
-    text: 'text-yellow-600',
-    icon: 'text-yellow-600',
+    text: TEXT_YELLOW,
+    icon: TEXT_YELLOW,
   },
   red: {
     bg: 'bg-red-50',
-    text: 'text-red-600',
-    icon: 'text-red-600',
+    text: TEXT_RED,
+    icon: TEXT_RED,
   },
   amber: {
     bg: 'bg-amber-50',
-    text: 'text-amber-600',
-    icon: 'text-amber-600',
+    text: TEXT_AMBER,
+    icon: TEXT_AMBER,
   },
 };
 
@@ -119,25 +129,27 @@ export const trapFocus = (element: HTMLElement, event: KeyboardEvent): void => {
 };
 
 // Status badge classes
+const STATUS_GREEN = 'bg-green-100 text-green-700';
+
 export const getStatusBadgeClasses = (
   status: string | undefined,
   type: 'crop' | 'animal' | 'task'
 ): string => {
   const statusMap: Record<string, Record<string, string>> = {
     crop: {
-      healthy: 'bg-green-100 text-green-700',
+      healthy: STATUS_GREEN,
       'needs attention': 'bg-amber-100 text-amber-700',
       critical: 'bg-red-100 text-red-700',
     },
     animal: {
-      active: 'bg-green-100 text-green-700',
+      active: STATUS_GREEN,
       sold: 'bg-orange-100 text-orange-700',
       deceased: 'bg-red-100 text-red-700',
     },
     task: {
       pending: 'bg-yellow-100 text-yellow-700',
       in_progress: 'bg-blue-100 text-blue-700',
-      completed: 'bg-green-100 text-green-700',
+      completed: STATUS_GREEN,
     },
   };
 

@@ -5,9 +5,27 @@ const getAuthToken = () => {
   return localStorage.getItem('auth_token');
 };
 
+interface ApiRequestOptions extends RequestInit {
+  params?: Record<string, string | number | boolean | undefined>;
+}
+
 export const apiClient = {
-  async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+  async request<T = unknown>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+    let url = `${API_BASE_URL}${endpoint}`;
+
+    if (options.params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += (url.includes('?') ? '&' : '?') + queryString;
+      }
+    }
+
     const token = getAuthToken();
 
     const response = await fetch(url, {
@@ -27,26 +45,36 @@ export const apiClient = {
     return response.json();
   },
 
-  get<T = unknown>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' });
+  get<T = unknown>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
   },
 
-  post<T = unknown>(endpoint: string, data: Record<string, unknown>): Promise<T> {
+  post<T = unknown>(
+    endpoint: string,
+    data: Record<string, unknown>,
+    options: ApiRequestOptions = {}
+  ): Promise<T> {
     return this.request<T>(endpoint, {
+      ...options,
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  put<T = unknown>(endpoint: string, data: Record<string, unknown>): Promise<T> {
+  put<T = unknown>(
+    endpoint: string,
+    data: Record<string, unknown>,
+    options: ApiRequestOptions = {}
+  ): Promise<T> {
     return this.request<T>(endpoint, {
+      ...options,
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
-  delete<T = unknown>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+  delete<T = unknown>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   },
 
   // File upload method (doesn't set Content-Type to allow FormData boundary)
@@ -72,7 +100,7 @@ export const apiClient = {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await apiClient.get('/api/auth/validate');
+    const response = await apiClient.get<{ user: any }>('/api/auth/validate');
     return response.user || null;
   } catch (err) {
     return null;
@@ -80,19 +108,34 @@ export const getCurrentUser = async () => {
 };
 
 export const signIn = async (email: string, password: string) => {
-  const response = await apiClient.post('/api/auth/login', { email, password });
-  if (response.token) {
-    localStorage.setItem('auth_token', response.token);
+  try {
+    const response = await apiClient.post<{ token: string; user: any }>('/api/auth/login', {
+      email,
+      password,
+    });
+    if (response.token) {
+      localStorage.setItem('auth_token', response.token);
+    }
+    return { data: response, error: null };
+  } catch (error: any) {
+    return { data: null, error: { message: error.message || 'Login failed' } };
   }
-  return { data: response, error: null };
 };
 
 export const signUp = async (email: string, password: string, name: string) => {
-  const response = await apiClient.post('/api/auth/signup', { email, password, name });
-  if (response.token) {
-    localStorage.setItem('auth_token', response.token);
+  try {
+    const response = await apiClient.post<{ token: string; user: any }>('/api/auth/signup', {
+      email,
+      password,
+      name,
+    });
+    if (response.token) {
+      localStorage.setItem('auth_token', response.token);
+    }
+    return { data: response, error: null };
+  } catch (error: any) {
+    return { data: null, error: { message: error.message || 'Signup failed' } };
   }
-  return { data: response, error: null };
 };
 
 export const signOut = async () => {

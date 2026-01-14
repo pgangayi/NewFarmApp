@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { authStorage } from '../lib/authStorage';
 
 interface WebSocketMessage {
   type: string;
@@ -31,8 +32,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     heartbeatInterval = 30000,
   } = options;
 
-  const { isAuthenticated, session } = useAuth();
-  const accessToken = session?.access_token ?? null;
+  const { isAuthenticated } = useAuth();
+  const accessToken = authStorage.getToken();
   const [state, setState] = useState<WebSocketState>({
     isConnected: false,
     connectionStatus: 'disconnected',

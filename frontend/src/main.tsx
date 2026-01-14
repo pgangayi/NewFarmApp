@@ -49,7 +49,7 @@ if (isSentryEnabled()) {
     dsn: import.meta.env['VITE_SENTRY_DSN'],
     integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
     tracesSampleRate: 1.0,
-    tracePropagationTargets: ['localhost', import.meta.env['VITE_API_URL'] || ''].filter(Boolean),
+    tracePropagationTargets: [import.meta.env['VITE_API_URL'] || ''].filter(Boolean),
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
     environment: import.meta.env.MODE,

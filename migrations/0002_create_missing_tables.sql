@@ -45,38 +45,8 @@ CREATE TABLE IF NOT EXISTS breeds (
     UNIQUE(species, name)
 );
 
--- Create crop_activities table (referenced in crops API)
-CREATE TABLE IF NOT EXISTS crop_activities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crop_id INTEGER NOT NULL,
-    activity_type TEXT NOT NULL,
-    activity_date DATE NOT NULL,
-    description TEXT,
-    cost REAL DEFAULT 0,
-    worker_id TEXT,
-    weather_conditions TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE,
-    FOREIGN KEY (worker_id) REFERENCES users(id)
-);
-
--- Create crop_observations table (referenced in crops API)
-CREATE TABLE IF NOT EXISTS crop_observations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    crop_id INTEGER NOT NULL,
-    observation_date DATE NOT NULL,
-    growth_stage TEXT,
-    health_status TEXT,
-    height_cm REAL,
-    leaf_count INTEGER,
-    pest_presence BOOLEAN DEFAULT 0,
-    disease_signs TEXT,
-    soil_moisture REAL,
-    photos TEXT,
-    notes TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE
-);
+-- crop_activities moved to 0003 to resolve FK dependency on crop_plans
+-- crop_observations moved to 0003 to resolve FK dependency on crop_plans
 
 -- Create crop_yield_records table (referenced in crops API)
 CREATE TABLE IF NOT EXISTS crop_yield_records (

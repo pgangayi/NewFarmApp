@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAnimals } from '../hooks';
+import { useState } from 'react';
+// import { useAnimals } from '../hooks';
 
 export interface CreateAnimalForm {
   id?: string;
@@ -74,7 +74,7 @@ export function AnimalForm({ animal, onSubmit, onCancel, isLoading = false }: An
     sex: animal?.sex,
     health_status: animal?.health_status,
     intake_type: animal?.intake_type || 'Birth',
-    intake_date: animal?.intake_date || new Date().toISOString().split('T')[0],
+    intake_date: animal?.intake_date || (new Date().toISOString().split('T')[0] as string),
     purchase_price: animal?.purchase_price,
     seller_details: animal?.seller_details || '',
     father_id: animal?.father_id,

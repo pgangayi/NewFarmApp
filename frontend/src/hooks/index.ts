@@ -79,3 +79,4 @@ export { useDebounce } from './useDebounce';
 // ============================================================================
 
 export { useAuth, AuthProvider } from './AuthContext';
+export * from './useOfflineQueue';

@@ -93,7 +93,7 @@ export async function onRequest(context) {
 
     // --- GET Logic ---
     if (method === "GET") {
-      const cropId = url.searchParams.get("id");
+      const cropId = request.params?.id || url.searchParams.get("id");
       const activities = url.searchParams.get("activities");
       const observations = url.searchParams.get("observations");
       const yields = url.searchParams.get("yields");
@@ -216,7 +216,8 @@ export async function onRequest(context) {
     // --- PUT Logic (Update Crop) ---
     else if (method === "PUT") {
       const body = await request.json();
-      const { id, ...updateData } = body;
+      const id = request.params?.id || body.id;
+      const { id: _bodyId, ...updateData } = body;
 
       if (!id) {
         return createErrorResponse("Crop ID required", 400);
@@ -238,7 +239,7 @@ export async function onRequest(context) {
 
     // --- DELETE Logic ---
     else if (method === "DELETE") {
-      const cropId = url.searchParams.get("id");
+      const cropId = request.params?.id || url.searchParams.get("id");
 
       if (!cropId) {
         return createErrorResponse("Crop ID required", 400);

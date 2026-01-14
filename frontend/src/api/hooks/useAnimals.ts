@@ -20,8 +20,7 @@ export function useAnimal(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.animals.detail(id),
     queryFn: async () => {
-      const response = await apiClient.get<Animal>(`/api/livestock/${id}`);
-      return response;
+      return await apiClient.get<Animal>(`/api/livestock/${id}`);
     },
     enabled: !!id,
     staleTime: CACHE_CONFIG.staleTime.animals,
@@ -50,8 +49,7 @@ export function useCreateAnimal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateRequest<Animal>) => {
-      const response = await apiClient.post<Animal>('/api/livestock', data as any);
-      return response;
+      return await apiClient.post<Animal>('/api/livestock', data as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.animals.all });
@@ -63,8 +61,7 @@ export function useUpdateAnimal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRequest<Animal> }) => {
-      const response = await apiClient.put<Animal>(`/api/livestock/${id}`, data as any);
-      return response;
+      return await apiClient.put<Animal>(`/api/livestock/${id}`, data as any);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.animals.all });

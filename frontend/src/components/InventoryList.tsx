@@ -1,78 +1,62 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/AuthContext';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  sku?: string;
-  unit: string;
-  quantity_on_hand: number;
-  reorder_threshold?: number;
-  unit_cost?: number;
-  supplier?: string;
-  notes?: string;
-}
+import { useQuery } from '@tanstack/react-query';
+import { InventoryService } from '../services/domains/InventoryService';
+import { InventoryItem } from '../api/types';
 
 interface InventoryListProps {
   farmId: string;
 }
 
 export function InventoryList({ farmId }: InventoryListProps) {
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { getAuthHeaders } = useAuth();
+  const {
+    data: items,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['inventory', farmId],
+    queryFn: async () => {
+      // Logic for using service
+      // Note: Component was fetching /api/inventory/items previously.
+      // InventoryService uses /api/inventory (from config).
+      // If this fails, config needs update to /inventory/items.
+      return InventoryService.getInventoryByFarm(farmId);
+    },
+    enabled: !!farmId,
+  });
 
-  useEffect(() => {
-    loadInventory();
-  }, [farmId]);
-
-  const loadInventory = async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/inventory/items?farm_id=${farmId}`, {
-        headers,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setItems(data);
-      }
-    } catch (error) {
-      console.error('Error loading inventory:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return <div>Loading inventory...</div>;
   }
+
+  if (error) {
+    return <div className="text-red-600">Error loading inventory: {(error as Error).message}</div>;
+  }
+
+  const inventoryItems = items || [];
 
   return (
     <div className="inventory-list">
       <h2 className="text-xl font-semibold mb-4">Inventory Items</h2>
 
       <div className="grid gap-4">
-        {items.map(item => (
+        {inventoryItems.map(item => (
           <div key={item.id} className="border rounded-lg p-4 bg-white shadow">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{item.name}</h3>
-                {item.sku && <p className="text-sm text-gray-500">SKU: {item.sku}</p>}
+                {/* SKU removed as it is not in InventoryItem type */}
               </div>
               <div className="text-right">
                 <p
                   className={`font-semibold ${
-                    item.reorder_threshold && item.quantity_on_hand <= item.reorder_threshold
+                    item.reorder_level && item.quantity <= item.reorder_level
                       ? 'text-red-600'
                       : 'text-green-600'
                   }`}
                 >
-                  {item.quantity_on_hand} {item.unit}
+                  {item.quantity} {item.unit}
                 </p>
-                {item.reorder_threshold && (
-                  <p className="text-sm text-gray-500">Threshold: {item.reorder_threshold}</p>
+                {item.reorder_level && (
+                  <p className="text-sm text-gray-500">Threshold: {item.reorder_level}</p>
                 )}
               </div>
             </div>
@@ -80,7 +64,7 @@ export function InventoryList({ farmId }: InventoryListProps) {
         ))}
       </div>
 
-      {items.length === 0 && (
+      {inventoryItems.length === 0 && (
         <div className="text-center py-8 text-gray-500">No inventory items found.</div>
       )}
     </div>

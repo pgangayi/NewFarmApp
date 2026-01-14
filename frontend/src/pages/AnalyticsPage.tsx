@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { useAuth } from '../hooks/AuthContext';
 import { useFarmWithSelection, useFinanceSummary, useInventory } from '../api';
 
+const ACTIVE_TAB_CLASS = 'bg-gray-100 text-gray-900';
+const INACTIVE_TAB_CLASS = 'text-gray-500 hover:text-gray-900';
+
 export function AnalyticsPage() {
   const { isAuthenticated } = useAuth();
   const { currentFarm } = useFarmWithSelection();
@@ -15,8 +18,8 @@ export function AnalyticsPage() {
   const { data: inventory } = useInventory(currentFarm?.id?.toString());
 
   // Calculate Aggregates
-  const totalRevenue = financeSummary?.totalIncome || 0;
-  const totalExpenses = financeSummary?.totalExpenses || 0;
+  const totalRevenue = financeSummary?.total_income || 0;
+  const totalExpenses = financeSummary?.total_expenses || 0;
   const netProfit = totalRevenue - totalExpenses;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
@@ -67,9 +70,7 @@ export function AnalyticsPage() {
             <button
               onClick={() => setTimeRange('week')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
-                timeRange === 'week'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-500 hover:text-gray-900'
+                timeRange === 'week' ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS
               }`}
             >
               Week
@@ -77,9 +78,7 @@ export function AnalyticsPage() {
             <button
               onClick={() => setTimeRange('month')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
-                timeRange === 'month'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-500 hover:text-gray-900'
+                timeRange === 'month' ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS
               }`}
             >
               Month
@@ -87,9 +86,7 @@ export function AnalyticsPage() {
             <button
               onClick={() => setTimeRange('year')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
-                timeRange === 'year'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-500 hover:text-gray-900'
+                timeRange === 'year' ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS
               }`}
             >
               Year

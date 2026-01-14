@@ -685,12 +685,12 @@ function evaluateFilter(
     case 'is_false':
       return itemValue === false || itemValue === 'false' || itemValue === 0;
     case 'after':
-      return new Date(itemValue) > new Date(filterValue);
+      return new Date(itemValue as any) > new Date(filterValue as any);
     case 'before':
-      return new Date(itemValue) < new Date(filterValue);
+      return new Date(itemValue as any) < new Date(filterValue as any);
     case 'on':
-      const itemDate = new Date(itemValue).toDateString();
-      const filterDate = new Date(filterValue).toDateString();
+      const itemDate = new Date(itemValue as any).toDateString();
+      const filterDate = new Date(filterValue as any).toDateString();
       return itemDate === filterDate;
     case 'is_null':
       return itemValue === null;

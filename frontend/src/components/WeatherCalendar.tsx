@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
+import { WeatherService } from '../services/domains/WeatherService';
 import { Calendar, MapPin, Cloud, CloudRain, Sun, Wind, Loader2, AlertCircle } from 'lucide-react';
 
 interface WeatherDay {
@@ -37,11 +38,7 @@ export function WeatherCalendar({
   } = useQuery({
     queryKey: ['weather-calendar', farmId],
     queryFn: async () => {
-      const response = await fetch(`/api/weather/farm?farm_id=${farmId}&days=30`, {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error('Failed to fetch weather data');
-      return response.json();
+      return WeatherService.getFarmWeather(farmId, 30);
     },
     enabled: !!farmId,
   });
@@ -103,10 +100,19 @@ export function WeatherCalendar({
     );
   }
 
-  const weatherDays: WeatherDay[] = weatherData?.weather || [];
+  const weatherDays: WeatherDay[] = Array.isArray(weatherData)
+    ? weatherData.map(d => ({
+        data_date: d.date,
+        temperature_max: d.temp_max,
+        temperature_min: d.temp_min,
+        precipitation_sum: d.precipitation,
+        weather_description: d.condition,
+        wind_speed_max: d.wind_speed,
+      }))
+    : [];
   const operationsByDate = operations.reduce(
     (acc, op) => {
-      const date = op.scheduled_date.split('T')[0];
+      const date = op.scheduled_date.split('T')[0] || 'unknown';
       if (!acc[date]) acc[date] = [];
       acc[date].push(op);
       return acc;
@@ -148,18 +154,21 @@ export function WeatherCalendar({
             <div className="space-y-8">
               {weeklyData.map((week, weekIndex) => (
                 <div key={weekIndex} className="space-y-4">
-                  <h4 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                    </div>
-                    Week of {new Date(week[0].data_date).toLocaleDateString()}
-                  </h4>
+                  {week[0] && (
+                    <h4 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                      </div>
+                      Week of {new Date(week[0].data_date).toLocaleDateString()}
+                    </h4>
+                  )}
 
                   <div className="grid grid-cols-7 gap-3">
                     {Array.from({ length: 7 }, (_, dayIndex) => {
+                      if (!week[0]) return null;
                       const date = new Date(week[0].data_date);
                       date.setDate(date.getDate() + dayIndex);
-                      const dateStr = date.toISOString().split('T')[0];
+                      const dateStr = date.toISOString().split('T')[0]!;
 
                       const weatherDay = week[dayIndex];
                       const dayOperations = operationsByDate[dateStr] || [];
@@ -200,7 +209,7 @@ export function WeatherCalendar({
 
                           {dayOperations.length > 0 && (
                             <div className="mt-3 space-y-2">
-                              {dayOperations.map(op => (
+                              {dayOperations.map((op: any) => (
                                 <div
                                   key={op.id}
                                   className={`${getOperationTypeColor(op.type)} text-white text-xs p-2 rounded-lg cursor-pointer hover:opacity-80 transition-opacity`}

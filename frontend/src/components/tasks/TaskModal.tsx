@@ -64,7 +64,7 @@ export function TaskModal({ task, farms, users, onSave, onClose, isLoading }: Ta
         status: 'pending',
         priority: 'medium',
         due_date: '',
-        farm_id: farms.length > 0 ? farms[0].id.toString() : '',
+        farm_id: farms.length > 0 ? farms[0]?.id?.toString() || '' : '',
         assigned_to_id: '',
       });
       setCosts([]);
@@ -85,7 +85,7 @@ export function TaskModal({ task, farms, users, onSave, onClose, isLoading }: Ta
 
   const handleCostChange = (index: number, field: keyof CostItem, value: any) => {
     const newCosts = [...costs];
-    newCosts[index] = { ...newCosts[index], [field]: value };
+    newCosts[index] = { ...newCosts[index], [field]: value } as CostItem;
     setCosts(newCosts);
   };
 

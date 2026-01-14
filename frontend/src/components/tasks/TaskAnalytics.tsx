@@ -1,7 +1,7 @@
 import type { ExtendedTask } from './types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
-export function TaskAnalytics({ tasks }: { tasks: ExtendedTask[] }) {
+export function TaskAnalytics({ tasks: _tasks }: { tasks: ExtendedTask[] }) {
   // Placeholder analytics
   return (
     <div className="space-y-6">

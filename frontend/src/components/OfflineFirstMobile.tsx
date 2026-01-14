@@ -14,7 +14,6 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  Sync,
   Database,
   FileText,
   Image,
@@ -24,6 +23,7 @@ import {
   Signal,
   HardDrive,
   RefreshCw,
+  RefreshCw as Sync,
   Bell,
   Zap,
   MessageSquare,
@@ -34,6 +34,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
+
+const STATUS_COLOR_GREEN = 'text-green-600 bg-green-100';
+const STATUS_COLOR_BLUE = 'text-blue-600 bg-blue-100';
+const STATUS_COLOR_YELLOW = 'text-yellow-600 bg-yellow-100';
+const STATUS_COLOR_RED = 'text-red-600 bg-red-100';
+const STATUS_COLOR_GRAY = 'text-gray-600 bg-gray-100';
 
 interface OfflineFeature {
   id: string;
@@ -53,7 +59,7 @@ interface MobileCapability {
   feature: string;
   support_level: 'full' | 'partial' | 'none';
   description: string;
-  icon: React.ComponentType<unknown>;
+  icon: any;
 }
 
 export default function OfflineFirstMobile() {
@@ -61,86 +67,7 @@ export default function OfflineFirstMobile() {
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [storageUsed, setStorageUsed] = useState(0);
   const [storageLimit] = useState(500); // MB
-  const [offlineFeatures, setOfflineFeatures] = useState<OfflineFeature[]>([
-    {
-      id: 'farm-maps',
-      name: 'Farm Maps & GPS',
-      description: 'Offline farm field maps, boundary data, and GPS navigation',
-      category: 'navigation',
-      status: 'available',
-      download_progress: 100,
-      sync_status: 'synced',
-      last_updated: '2024-11-05',
-      size_mb: 45,
-      priority: 'high',
-      auto_sync: true,
-    },
-    {
-      id: 'photo-documentation',
-      name: 'Photo Documentation',
-      description: 'Capture and store photos offline with GPS metadata',
-      category: 'media',
-      status: 'available',
-      download_progress: 100,
-      sync_status: 'synced',
-      last_updated: '2024-11-05',
-      size_mb: 120,
-      priority: 'high',
-      auto_sync: true,
-    },
-    {
-      id: 'task-management',
-      name: 'Task Management',
-      description: 'Complete tasks offline with automatic sync when online',
-      category: 'productivity',
-      status: 'downloading',
-      download_progress: 75,
-      sync_status: 'pending',
-      last_updated: '2024-11-04',
-      size_mb: 8,
-      priority: 'high',
-      auto_sync: true,
-    },
-    {
-      id: 'crop-data',
-      name: 'Crop Database',
-      description: 'Complete crop information, varieties, and growing guides',
-      category: 'data',
-      status: 'available',
-      download_progress: 100,
-      sync_status: 'synced',
-      last_updated: '2024-11-03',
-      size_mb: 32,
-      priority: 'medium',
-      auto_sync: false,
-    },
-    {
-      id: 'weather-data',
-      name: 'Weather Forecasts',
-      description: 'Offline weather data and historical patterns',
-      category: 'data',
-      status: 'syncing',
-      download_progress: 45,
-      sync_status: 'pending',
-      last_updated: '2024-11-05',
-      size_mb: 15,
-      priority: 'medium',
-      auto_sync: true,
-    },
-    {
-      id: 'communication',
-      name: 'Team Communication',
-      description: 'Message center with offline queue and sync',
-      category: 'communication',
-      status: 'available',
-      download_progress: 100,
-      sync_status: 'synced',
-      last_updated: '2024-11-05',
-      size_mb: 5,
-      priority: 'low',
-      auto_sync: true,
-    },
-  ]);
+  const [offlineFeatures, setOfflineFeatures] = useState<OfflineFeature[]>([]);
 
   const mobileCapabilities: MobileCapability[] = [
     {
@@ -188,7 +115,7 @@ export default function OfflineFirstMobile() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Simulate storage usage calculation
+    // Calculate storage usage
     const totalSize = offlineFeatures.reduce((sum, feature) => sum + feature.size_mb, 0);
     setStorageUsed(totalSize);
 
@@ -203,61 +130,53 @@ export default function OfflineFirstMobile() {
       case 'available':
       case 'completed':
       case 'synced':
-        return 'text-green-600 bg-green-100';
+        return STATUS_COLOR_GREEN;
       case 'downloading':
       case 'syncing':
-        return 'text-blue-600 bg-blue-100';
+        return STATUS_COLOR_BLUE;
       case 'pending':
-        return 'text-yellow-600 bg-yellow-100';
+        return STATUS_COLOR_YELLOW;
       case 'error':
       case 'conflict':
-        return 'text-red-600 bg-red-100';
+        return STATUS_COLOR_RED;
       default:
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'text-red-600 bg-red-100';
+        return STATUS_COLOR_RED;
       case 'medium':
-        return 'text-yellow-600 bg-yellow-100';
+        return STATUS_COLOR_YELLOW;
       case 'low':
-        return 'text-blue-600 bg-blue-100';
+        return STATUS_COLOR_BLUE;
       default:
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
     }
   };
 
   const getSupportLevelColor = (level: string) => {
     switch (level) {
       case 'full':
-        return 'text-green-600 bg-green-100';
+        return STATUS_COLOR_GREEN;
       case 'partial':
-        return 'text-yellow-600 bg-yellow-100';
+        return STATUS_COLOR_YELLOW;
       case 'none':
-        return 'text-red-600 bg-red-100';
+        return STATUS_COLOR_RED;
       default:
-        return 'text-gray-600 bg-gray-100';
+        return STATUS_COLOR_GRAY;
     }
   };
 
   const syncAllData = async () => {
     setSyncInProgress(true);
 
-    // Simulate sync process
-    setTimeout(() => {
-      setOfflineFeatures(prev =>
-        prev.map(feature => ({
-          ...feature,
-          status: 'available' as const,
-          sync_status: 'synced' as const,
-          last_updated: new Date().toISOString().split('T')[0],
-        }))
-      );
-      setSyncInProgress(false);
-    }, 3000);
+    // TODO: Implement actual sync process with backend
+    // await syncService.syncAll();
+
+    setSyncInProgress(false);
   };
 
   const downloadFeature = (featureId: string) => {
@@ -269,29 +188,21 @@ export default function OfflineFirstMobile() {
       )
     );
 
-    // Simulate download progress
-    const interval = setInterval(() => {
-      setOfflineFeatures(prev => {
-        const updated = prev.map(feature => {
-          if (feature.id === featureId && feature.download_progress < 100) {
-            const newProgress = Math.min(feature.download_progress + 10, 100);
-            return {
+    // TODO: Implement real download logic
+    // await offlineService.downloadFeature(featureId);
+
+    setOfflineFeatures(prev =>
+      prev.map(feature =>
+        feature.id === featureId
+          ? {
               ...feature,
-              download_progress: newProgress,
-              status: newProgress === 100 ? 'available' : 'downloading',
-              last_updated: new Date().toISOString().split('T')[0],
-            };
-          }
-          return feature;
-        });
-
-        if (updated.find(f => f.id === featureId)?.download_progress === 100) {
-          clearInterval(interval);
-        }
-
-        return updated;
-      });
-    }, 500);
+              status: 'available',
+              download_progress: 100,
+              last_updated: new Date().toISOString().split('T')[0] as string,
+            }
+          : feature
+      )
+    );
   };
 
   return (

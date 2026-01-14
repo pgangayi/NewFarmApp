@@ -1,5 +1,8 @@
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import type { FinanceEntry, BudgetCategory } from './types';
+
+const TREND_LABEL = 'vs last month';
 
 interface FinanceMetric {
   label: string;
@@ -10,37 +13,52 @@ interface FinanceMetric {
   color: string;
 }
 
-export function FinanceOverview() {
+interface FinanceOverviewProps {
+  entries: FinanceEntry[];
+  budgets: BudgetCategory[];
+}
+
+export function FinanceOverview({ entries = [], budgets = [] }: FinanceOverviewProps) {
+  const totalRevenue = entries
+    .filter(e => e.type === 'income')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const totalExpenses = entries
+    .filter(e => e.type === 'expense')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const netProfit = totalRevenue - totalExpenses;
+
   const metrics: FinanceMetric[] = [
     {
       label: 'Total Revenue',
-      amount: 45231.89,
+      amount: totalRevenue,
       trend: 20.1,
-      trendLabel: 'vs last month',
+      trendLabel: TREND_LABEL,
       icon: DollarSign,
       color: 'text-green-600',
     },
     {
       label: 'Total Expenses',
-      amount: 12450.0,
+      amount: totalExpenses,
       trend: -5.4,
-      trendLabel: 'vs last month',
+      trendLabel: TREND_LABEL,
       icon: Wallet,
       color: 'text-red-600',
     },
     {
       label: 'Net Profit',
-      amount: 32781.89,
+      amount: netProfit,
       trend: 12.5,
-      trendLabel: 'vs last month',
+      trendLabel: TREND_LABEL,
       icon: TrendingUp,
       color: 'text-blue-600',
     },
     {
-      label: 'Outstanding Invoices',
-      amount: 4500.0,
+      label: 'Budget Usage',
+      amount: budgets.reduce((sum, b) => sum + b.spent, 0),
       trend: 2.3,
-      trendLabel: 'vs last month',
+      trendLabel: TREND_LABEL,
       icon: TrendingDown,
       color: 'text-orange-600',
     },

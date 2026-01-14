@@ -20,6 +20,9 @@ import { UnifiedModal, ModalField } from '../components/ui/UnifiedModal';
 import { useConfirmation, ConfirmDialogs } from '../components/ui/ConfirmationDialog';
 import { LoadingErrorContent } from '../components/ui/LoadingStates';
 
+const ACTIVE_VIEW_CLASS = 'bg-green-600 text-white';
+const INACTIVE_VIEW_CLASS = 'bg-white text-gray-700';
+
 // --- Helpers ---
 
 function getFirstFarm(farms: Farm[] | undefined): Farm | null {
@@ -103,7 +106,10 @@ export function FieldsPage() {
   // Mutations
   const createFieldMutation = useMutation({
     mutationFn: (data: FieldFormDataInternal) =>
-      apiClient.post<ApiResponse<Field>>(apiEndpoints.fields.create, data),
+      apiClient.post<ApiResponse<Field>>(
+        apiEndpoints.fields.create,
+        data as unknown as Record<string, unknown>
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
       setShowCreateForm(false);
@@ -112,7 +118,7 @@ export function FieldsPage() {
 
   const updateFieldMutation = useMutation({
     mutationFn: ({ id, ...data }: FieldFormDataInternal & { id: number }) =>
-      apiClient.put<ApiResponse<Field>>(apiEndpoints.fields.update, { id, ...data }),
+      apiClient.put<ApiResponse<Field>>(apiEndpoints.fields.update(id.toString()), { id, ...data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fields'] });
       setEditingField(null);
@@ -199,25 +205,25 @@ export function FieldsPage() {
             <div className="flex rounded-md shadow-sm">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${viewMode === 'grid' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}`}
+                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${viewMode === 'grid' ? ACTIVE_VIEW_CLASS : INACTIVE_VIEW_CLASS}`}
               >
                 Grid
               </button>
               <button
                 onClick={() => setViewMode('map')}
-                className={`px-4 py-2 text-sm font-medium border-t border-b ${viewMode === 'map' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}`}
+                className={`px-4 py-2 text-sm font-medium border-t border-b ${viewMode === 'map' ? ACTIVE_VIEW_CLASS : INACTIVE_VIEW_CLASS}`}
               >
                 Map
               </button>
               <button
                 onClick={() => setViewMode('analytics')}
-                className={`px-4 py-2 text-sm font-medium border-t border-b ${viewMode === 'analytics' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}`}
+                className={`px-4 py-2 text-sm font-medium border-t border-b ${viewMode === 'analytics' ? ACTIVE_VIEW_CLASS : INACTIVE_VIEW_CLASS}`}
               >
                 Analytics
               </button>
               <button
                 onClick={() => setViewMode('soil')}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border ${viewMode === 'soil' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}`}
+                className={`px-4 py-2 text-sm font-medium rounded-r-lg border ${viewMode === 'soil' ? ACTIVE_VIEW_CLASS : INACTIVE_VIEW_CLASS}`}
               >
                 Soil
               </button>

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AuditLog } from '../../types/audit';
 
+const UNKNOWN_ERROR = 'Unknown error';
+
 export default function AuditLogs() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,7 @@ export default function AuditLogs() {
       setNextCursor(body.next_cursor || null);
       setPrevCursor(body.prev_cursor || null);
     } catch (err: any) {
-      setError(err.message || 'Unknown error');
+      setError(err.message || UNKNOWN_ERROR);
     } finally {
       setLoading(false);
     }
@@ -222,7 +224,7 @@ export default function AuditLogs() {
                   setNextCursor(body.next_cursor || null);
                   setPrevCursor(body.prev_cursor || null);
                 } catch (err: any) {
-                  setError(err.message || 'Unknown error');
+                  setError(err.message || UNKNOWN_ERROR);
                 } finally {
                   setLoading(false);
                 }
@@ -253,7 +255,7 @@ export default function AuditLogs() {
                   setNextCursor(body.next_cursor || null);
                   setPrevCursor(body.prev_cursor || null);
                 } catch (err: any) {
-                  setError(err.message || 'Unknown error');
+                  setError(err.message || UNKNOWN_ERROR);
                 } finally {
                   setLoading(false);
                 }

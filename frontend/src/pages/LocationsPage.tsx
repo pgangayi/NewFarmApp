@@ -138,6 +138,7 @@ export function LocationsPage() {
     const request: CreateRequest<Location> = {
       name: data.name,
       type: data.type,
+      location_type: data.type,
       description: data.description,
       capacity: data.capacity ? Number(data.capacity) : undefined,
       farm_id: currentFarm.id,

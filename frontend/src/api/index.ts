@@ -175,3 +175,5 @@ export {
   useUpdateFinanceRecord,
   useDeleteFinanceRecord,
 } from './hooks/useFinance';
+
+export { useIrrigation } from './hooks/useIrrigation';

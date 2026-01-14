@@ -65,7 +65,7 @@ export function InventoryPage() {
     try {
       await createMutation.mutateAsync({
         ...itemData,
-        farm_id: currentFarm.id,
+        farm_id: currentFarm?.id || '',
       } as any);
       setShowCreateForm(false);
       toast('Item created successfully', 'success');

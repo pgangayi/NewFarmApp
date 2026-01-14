@@ -8,6 +8,8 @@ import { render, renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import React from 'react';
+
+const TEST_DATE_ISO = '2024-01-01T00:00:00Z';
 import type { ReactElement } from 'react';
 
 // ============================================================================
@@ -107,7 +109,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     email: 'test@example.com',
     name: 'Test User',
     avatar_url: '',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: TEST_DATE_ISO,
     updated_at: '',
     ...overrides,
   } as User;
@@ -123,7 +125,7 @@ export function createMockFarm(overrides: Partial<Farm> = {}): Farm {
     latitude: 0,
     longitude: 0,
     timezone: 'UTC',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: TEST_DATE_ISO,
     updated_at: '',
     ...overrides,
   } as Farm;
@@ -141,7 +143,7 @@ export function createMockAnimal(overrides: Partial<Animal> = {}): Animal {
     sex: 'female',
     health_status: 'healthy',
     status: 'active',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: TEST_DATE_ISO,
     updated_at: '',
     ...overrides,
   } as Animal;
@@ -155,7 +157,7 @@ export function createMockField(overrides: Partial<Field> = {}): Field {
     area_hectares: 10,
     crop_type: 'corn',
     soil_type: 'loam',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: TEST_DATE_ISO,
     updated_at: '',
     ...overrides,
   } as Field;
@@ -171,7 +173,7 @@ export function createMockTask(overrides: Partial<Task> = {}): Task {
     status: 'pending',
     priority: 'normal',
     due_date: '2024-12-31',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: TEST_DATE_ISO,
     updated_at: '',
     ...overrides,
   } as Task;
@@ -183,9 +185,9 @@ export function createMockInventoryItem(overrides: Partial<InventoryItem> = {}):
     farm_id: 'farm-1',
     name: 'Test Item',
     category: 'feed',
-    qty: 100,
+    quantity: 100,
     unit: 'kg',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: TEST_DATE_ISO,
     updated_at: '',
     ...overrides,
   } as InventoryItem;
@@ -210,7 +212,7 @@ export function createMockApiResponse<T>(
 
 export function createMockApiError(
   message: string = 'An error occurred',
-  _statusCode: number = 500,
+  _status_code: number = 500,
   error: string = 'INTERNAL_ERROR'
 ): ApiResponse<null> {
   return {
@@ -227,15 +229,13 @@ export function createMockApiError(
 // ============================================================================
 
 export function mockAuthContext(user: User | null = createMockUser()) {
-  const mockUseAuth = vi.fn(() => ({
+  return vi.fn(() => ({
     user,
     login: vi.fn(),
     logout: vi.fn(),
     isLoading: false,
     isAuthenticated: !!user,
   }));
-
-  return mockUseAuth;
 }
 
 // ============================================================================

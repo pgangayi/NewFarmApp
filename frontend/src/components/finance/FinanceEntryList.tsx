@@ -1,6 +1,6 @@
 import { UnifiedList } from '../ui/UnifiedList';
 import type { FinanceEntry } from './types';
-import { Edit, Eye, Download } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 import { Badge } from '../ui/badge';
 
 interface FinanceEntryListProps {
@@ -16,12 +16,12 @@ export function FinanceEntryList({
   onEdit,
   onView,
   onCreate,
-  onGenerateReport,
+  onGenerateReport: _onGenerateReport,
 }: FinanceEntryListProps) {
   return (
     <UnifiedList
       title="Financial Transactions"
-      items={entries}
+      items={entries as any[]}
       columns={[
         {
           key: 'date',

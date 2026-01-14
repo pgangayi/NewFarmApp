@@ -1,7 +1,7 @@
-import type { Task } from '../../api/types';
+import type { Task, TaskPriority, TaskStatus } from '../../api/types';
 
 export interface ExtendedTask extends Task {
-  priority: 'low' | 'medium' | 'high';
+  // priority is inherited from Task
   assigned_to?: string;
   field_name?: string;
   estimated_hours?: number;
@@ -9,13 +9,14 @@ export interface ExtendedTask extends Task {
   completed_at?: string;
   notes?: string;
   costs?: { description: string; amount: number; currency: string }[];
+  [key: string]: unknown; // Add index signature for UnifiedListItem compatibility
 }
 
 export interface TaskFormData {
   title: string;
   description: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
+  status: TaskStatus;
+  priority: TaskPriority;
   due_date: string;
   assigned_to_id?: string;
   farm_id: string;

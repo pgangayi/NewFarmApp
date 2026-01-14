@@ -38,7 +38,7 @@ interface BulkOperationProgress {
 interface SelectedItem {
   id: string;
   type: string;
-  data: unknown;
+  data: any;
   selected: boolean;
 }
 
@@ -155,36 +155,33 @@ export function useBulkOperations() {
     });
   }, []);
 
-  const selectAll = useCallback(
-    (items: { id: unknown }[], type: string, select: boolean = true) => {
-      setSelectedItems(prev => {
-        const newSelected = [...prev];
-        items.forEach(item => {
-          const existingIndex = newSelected.findIndex(s => s.id === item.id);
-          if (select) {
-            if (existingIndex === -1) {
-              newSelected.push({
-                id: item.id,
-                type,
-                data: item,
-                selected: true,
-              });
-            } else {
-              newSelected[existingIndex].selected = true;
-            }
-          } else {
-            if (existingIndex !== -1) {
-              newSelected.splice(existingIndex, 1);
-            }
+  const selectAll = useCallback((items: any[], type: string, select: boolean = true) => {
+    setSelectedItems(prev => {
+      const newSelected = [...prev];
+      items.forEach(item => {
+        const existingIndex = newSelected.findIndex(s => s.id === item.id);
+        if (select) {
+          if (existingIndex === -1) {
+            newSelected.push({
+              id: item.id,
+              type,
+              data: item,
+              selected: true,
+            });
+          } else if (newSelected[existingIndex]) {
+            newSelected[existingIndex].selected = true;
           }
-        });
-        return newSelected;
+        } else {
+          if (existingIndex !== -1) {
+            newSelected.splice(existingIndex, 1);
+          }
+        }
       });
-    },
-    []
-  );
+      return newSelected;
+    });
+  }, []);
 
-  const toggleItemSelection = useCallback((item: unknown, type: string) => {
+  const toggleItemSelection = useCallback((item: any, type: string) => {
     setSelectedItems(prev => {
       const existingIndex = prev.findIndex(s => s.id === item.id);
       if (existingIndex !== -1) {
@@ -445,7 +442,7 @@ export function useBulkOperations() {
   const exportSelectionToCSV = useCallback(() => {
     if (selectedItems.length === 0) return;
 
-    const headers = Object.keys(selectedItems[0].data);
+    const headers = selectedItems[0]?.data ? Object.keys(selectedItems[0].data) : [];
     const csvContent = [
       headers.join(','),
       ...selectedItems.map(item =>

@@ -236,7 +236,7 @@ test.describe('Performance Testing', () => {
 
     // All pages should load successfully
     await Promise.all(
-      pages.map(async (page, index) => {
+      pages.map(async page => {
         await expect(page).toHaveTitle(/.*Farmers.*/);
       })
     );

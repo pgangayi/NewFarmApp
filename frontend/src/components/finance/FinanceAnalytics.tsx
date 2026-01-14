@@ -1,7 +1,7 @@
 import { Card, CardContent } from '../ui/card';
 import { BarChart3 } from 'lucide-react';
 
-export function FinanceAnalytics({ analytics }: { analytics: any }) {
+export function FinanceAnalytics({ analytics: _analytics }: { analytics: any }) {
   return (
     <div className="space-y-6">
       <Card>

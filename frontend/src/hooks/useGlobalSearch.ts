@@ -93,7 +93,7 @@ export function useGlobalSearch() {
       case 'Enter':
         event.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < (searchResults?.length || 0)) {
-          handleSelect(searchResults[selectedIndex]);
+          handleSelect(searchResults![selectedIndex] as SearchResult);
         }
         break;
       case 'Escape':

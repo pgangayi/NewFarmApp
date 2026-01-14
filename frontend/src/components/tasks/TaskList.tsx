@@ -1,7 +1,9 @@
-import { ActionConfig, ColumnConfig, UnifiedList } from '../ui/UnifiedList';
+import { ColumnConfig, UnifiedList } from '../ui/UnifiedList';
 import type { ExtendedTask } from './types';
 import { Badge } from '../ui/badge';
-import { Play, Square, CheckCircle, Edit, Eye } from 'lucide-react';
+import { Edit } from 'lucide-react';
+
+const COL_SPAN_1 = 'col-span-1';
 
 interface TaskListProps {
   tasks: ExtendedTask[];
@@ -17,15 +19,15 @@ interface TaskListProps {
 export function TaskList({
   tasks,
   onEditTask,
-  onViewTask,
-  onStartTimer,
-  onStopTimer,
-  timerActive,
-  isTimerLoading,
+  onViewTask: _onViewTask,
+  onStartTimer: _onStartTimer,
+  onStopTimer: _onStopTimer,
+  timerActive: _timerActive,
+  isTimerLoading: _isTimerLoading,
   onCreate,
 }: TaskListProps) {
   const columns: ColumnConfig[] = [
-    { key: 'title', label: 'Title', className: 'col-span-1 font-medium' },
+    { key: 'title', label: 'Title', className: `${COL_SPAN_1} font-medium` },
     {
       key: 'status',
       label: 'Status',
@@ -42,59 +44,26 @@ export function TaskList({
 
         return <Badge variant={variant}>{status.replace('_', ' ')}</Badge>;
       },
-      className: 'col-span-1',
+      className: COL_SPAN_1,
     },
     {
       key: 'priority',
       label: 'Priority',
       render: item => <span className="capitalize">{item.priority as string}</span>,
-      className: 'col-span-1',
+      className: COL_SPAN_1,
     },
     {
       key: 'due_date',
       label: 'Due Date',
       render: item =>
         item.due_date ? new Date(item.due_date as string).toLocaleDateString() : '-',
-      className: 'col-span-1',
+      className: COL_SPAN_1,
     },
     {
       key: 'assigned_to',
       label: 'Assigned To',
       render: item => (item.assigned_to as string) || 'Unassigned',
-      className: 'col-span-1',
-    },
-  ];
-
-  const actions: ActionConfig[] = [
-    {
-      key: 'timer',
-      label: 'Timer',
-      icon: Play,
-      getIcon: item => {
-        const task = item as unknown as ExtendedTask;
-        return timerActive[task.id] ? Square : Play;
-      },
-      onClick: item => {
-        const task = item as unknown as ExtendedTask;
-        if (timerActive[task.id]) {
-          onStopTimer(task);
-        } else {
-          onStartTimer(task);
-        }
-      },
-      color: 'blue',
-    },
-    {
-      key: 'view',
-      label: 'View',
-      icon: Eye,
-      onClick: item => onViewTask(item as unknown as ExtendedTask),
-    },
-    {
-      key: 'edit',
-      label: 'Edit',
-      icon: Edit,
-      onClick: item => onEditTask(item as unknown as ExtendedTask),
+      className: COL_SPAN_1,
     },
   ];
 

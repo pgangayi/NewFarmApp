@@ -1,41 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FileText,
   Download,
-  Filter,
-  Calendar,
+  // Filter,
+  // Calendar,
   BarChart3,
-  PieChart,
-  LineChart,
+  // PieChart,
+  // LineChart,
   TrendingUp,
-  Users,
+  // Users,
   DollarSign,
-  Package,
-  Sprout,
+  // Package,
+  // Sprout,
   Activity,
   Clock,
   Target,
-  Award,
+  // Award,
   Eye,
   Settings,
   RefreshCw,
   Share,
-  Printer,
-  Mail,
-  Calendar as CalendarIcon,
-  FileSpreadsheet,
-  FileImage,
+  // Printer,
+  // Mail,
+  // Calendar as CalendarIcon,
+  // FileSpreadsheet,
+  // FileImage,
   CheckCircle,
-  AlertTriangle,
-  Info,
-  Zap,
-  Star,
+  // AlertTriangle,
+  // Info,
+  // Zap,
+  // Star,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
+const CATEGORY_OPERATIONAL = 'operational';
+const CATEGORY_FINANCIAL = 'financial';
+const CATEGORY_COMPLIANCE = 'compliance';
+const CATEGORY_PERFORMANCE = 'performance';
+const CATEGORY_CUSTOM = 'custom';
+
+const TYPE_PDF = 'pdf';
+const TYPE_EXCEL = 'excel';
+const TYPE_CSV = 'csv';
+
+const FREQ_MONTHLY = 'monthly';
+const FREQ_WEEKLY = 'weekly';
+const FREQ_QUARTERLY = 'quarterly';
+const FREQ_ON_DEMAND = 'on_demand';
+
 
 interface ReportTemplate {
   id: string;
@@ -93,9 +109,9 @@ export default function AdvancedReportingSystem() {
       name: 'Financial Overview Report',
       description:
         'Comprehensive financial analysis with profit/loss, cash flow, and budget performance',
-      category: 'financial',
-      type: 'pdf',
-      frequency: 'monthly',
+      category: CATEGORY_FINANCIAL,
+      type: TYPE_PDF,
+      frequency: FREQ_MONTHLY,
       estimated_time: '2-3 minutes',
       sections: [
         'Executive Summary',
@@ -114,9 +130,9 @@ export default function AdvancedReportingSystem() {
       name: 'Operational Performance Report',
       description:
         'Detailed operational metrics including crop yields, animal health, and task efficiency',
-      category: 'operational',
-      type: 'excel',
-      frequency: 'weekly',
+      category: CATEGORY_OPERATIONAL,
+      type: TYPE_EXCEL,
+      frequency: FREQ_WEEKLY,
       estimated_time: '3-5 minutes',
       sections: [
         'Performance Overview',
@@ -133,9 +149,9 @@ export default function AdvancedReportingSystem() {
       id: 'compliance-audit',
       name: 'Compliance & Audit Report',
       description: 'Regulatory compliance tracking and audit trail documentation',
-      category: 'compliance',
-      type: 'pdf',
-      frequency: 'quarterly',
+      category: CATEGORY_COMPLIANCE,
+      type: TYPE_PDF,
+      frequency: FREQ_QUARTERLY,
       estimated_time: '5-7 minutes',
       sections: [
         'Compliance Status',
@@ -153,9 +169,9 @@ export default function AdvancedReportingSystem() {
       name: 'Custom Dashboard Report',
       description:
         'Tailored report with custom metrics and visualizations based on your specifications',
-      category: 'custom',
-      type: 'pdf',
-      frequency: 'on_demand',
+      category: CATEGORY_CUSTOM,
+      type: TYPE_PDF,
+      frequency: FREQ_ON_DEMAND,
       estimated_time: '1-2 minutes',
       sections: ['Custom Metrics', 'Data Visualization', 'Key Insights', 'Action Recommendations'],
       preview_available: true,
@@ -167,9 +183,9 @@ export default function AdvancedReportingSystem() {
       name: 'Inventory Analysis Report',
       description:
         'Comprehensive inventory management with stock levels, turnover rates, and optimization suggestions',
-      category: 'operational',
-      type: 'excel',
-      frequency: 'monthly',
+      category: CATEGORY_OPERATIONAL,
+      type: TYPE_EXCEL,
+      frequency: FREQ_MONTHLY,
       estimated_time: '2-4 minutes',
       sections: [
         'Inventory Overview',
@@ -210,47 +226,37 @@ export default function AdvancedReportingSystem() {
   const [dateRange, setDateRange] = useState({ start: '2024-01-01', end: '2024-12-31' });
   const [format, setFormat] = useState<'pdf' | 'excel' | 'csv'>('pdf');
 
-  // Mock report data
   useEffect(() => {
+    // TODO: Fetch real report data from API
     const mockData: ReportData = {
       financial_summary: {
-        total_revenue: 245000,
-        total_expenses: 187500,
-        net_profit: 57500,
-        profit_margin: 23.5,
-        top_income_sources: [
-          { source: 'Crop Sales', amount: 156000, percentage: 63.7 },
-          { source: 'Animal Products', amount: 65000, percentage: 26.5 },
-          { source: 'Equipment Rental', amount: 24000, percentage: 9.8 },
-        ],
-        major_expenses: [
-          { category: 'Labor', amount: 75000, percentage: 40.0 },
-          { category: 'Feed & Supplies', amount: 45000, percentage: 24.0 },
-          { category: 'Equipment', amount: 32500, percentage: 17.3 },
-          { category: 'Utilities', amount: 20000, percentage: 10.7 },
-          { category: 'Other', amount: 15000, percentage: 8.0 },
-        ],
+        total_revenue: 0,
+        total_expenses: 0,
+        net_profit: 0,
+        profit_margin: 0,
+        top_income_sources: [],
+        major_expenses: [],
       },
       operational_metrics: {
-        total_crops: 12,
-        active_fields: 8,
-        total_animals: 156,
-        inventory_items: 234,
-        pending_tasks: 23,
-        completed_tasks: 187,
+        total_crops: 0,
+        active_fields: 0,
+        total_animals: 0,
+        inventory_items: 0,
+        pending_tasks: 0,
+        completed_tasks: 0,
       },
       performance_indicators: {
-        crop_yield_efficiency: 87.5,
-        animal_health_score: 92.3,
-        inventory_turnover: 6.8,
-        task_completion_rate: 89.1,
-        overall_efficiency: 88.2,
+        crop_yield_efficiency: 0,
+        animal_health_score: 0,
+        inventory_turnover: 0,
+        task_completion_rate: 0,
+        overall_efficiency: 0,
       },
       trends: {
-        revenue_trend: 'up',
+        revenue_trend: 'stable',
         expense_trend: 'stable',
-        productivity_trend: 'up',
-        efficiency_trend: 'up',
+        productivity_trend: 'stable',
+        efficiency_trend: 'stable',
       },
     };
     setReportData(mockData);
@@ -260,7 +266,7 @@ export default function AdvancedReportingSystem() {
     switch (category) {
       case 'financial':
         return DollarSign;
-      case 'operational':
+      case CATEGORY_OPERATIONAL:
         return Activity;
       case 'performance':
         return TrendingUp;
@@ -277,7 +283,7 @@ export default function AdvancedReportingSystem() {
     switch (category) {
       case 'financial':
         return 'text-green-600 bg-green-100';
-      case 'operational':
+      case CATEGORY_OPERATIONAL:
         return 'text-blue-600 bg-blue-100';
       case 'performance':
         return 'text-purple-600 bg-purple-100';
@@ -305,14 +311,18 @@ export default function AdvancedReportingSystem() {
     setLoading(true);
     setSelectedTemplate(templateId);
 
-    // Simulate report generation
-    setTimeout(() => {
-      setLoading(false);
-      // In a real implementation, this would trigger the actual report generation
+    try {
+      // TODO: Implement actual report generation API call
+      // await apiClient.post('/api/reports/generate', { templateId });
+
       alert(
-        `Report &quot;${reportTemplates.find(t => t.id === templateId)?.name}&quot; generated successfully!`
+        `Report "${reportTemplates.find(t => t.id === templateId)?.name}" generation initiated.`
       );
-    }, 3000);
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const downloadReport = (templateId: string, format: string) => {
@@ -544,11 +554,14 @@ export default function AdvancedReportingSystem() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="report-template"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Report Template
                       </label>
                       <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                        <SelectTrigger>
+                        <SelectTrigger id="report-template">
                           <SelectValue placeholder="Select a template..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -562,17 +575,17 @@ export default function AdvancedReportingSystem() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date Range
-                      </label>
+                      <div className="block text-sm font-medium text-gray-700 mb-2">Date Range</div>
                       <div className="grid grid-cols-2 gap-2">
                         <Input
                           type="date"
+                          aria-label="Start Date"
                           value={dateRange.start}
                           onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                         />
                         <Input
                           type="date"
+                          aria-label="End Date"
                           value={dateRange.end}
                           onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                         />
@@ -580,14 +593,17 @@ export default function AdvancedReportingSystem() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="output-format"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Output Format
                       </label>
                       <Select
                         value={format}
                         onValueChange={value => setFormat(value as 'pdf' | 'excel' | 'csv')}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="output-format">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -601,26 +617,44 @@ export default function AdvancedReportingSystem() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="block text-sm font-medium text-gray-700 mb-2">
                         Additional Options
-                      </label>
+                      </div>
                       <div className="space-y-2">
-                        <label className="flex items-center">
-                          <input type="checkbox" className="mr-2" defaultChecked />
-                          <span className="text-sm">Include charts and visualizations</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input type="checkbox" className="mr-2" defaultChecked />
-                          <span className="text-sm">Add executive summary</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input type="checkbox" className="mr-2" />
-                          <span className="text-sm">Include raw data appendix</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input type="checkbox" className="mr-2" />
-                          <span className="text-sm">Email report upon completion</span>
-                        </label>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="include-charts"
+                            className="mr-2"
+                            defaultChecked
+                          />
+                          <label htmlFor="include-charts" className="text-sm">
+                            Include charts and visualizations
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="add-summary"
+                            className="mr-2"
+                            defaultChecked
+                          />
+                          <label htmlFor="add-summary" className="text-sm">
+                            Add executive summary
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input type="checkbox" id="include-raw-data" className="mr-2" />
+                          <label htmlFor="include-raw-data" className="text-sm">
+                            Include raw data appendix
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input type="checkbox" id="email-report" className="mr-2" />
+                          <label htmlFor="email-report" className="text-sm">
+                            Email report upon completion
+                          </label>
+                        </div>
                       </div>
                     </div>
 
@@ -854,7 +888,7 @@ export default function AdvancedReportingSystem() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {reportTemplates.slice(0, 4).map((template, index) => (
+                    {reportTemplates.slice(0, 4).map((template, _index) => (
                       <div key={template.id} className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">{template.name}</span>
                         <div className="flex items-center gap-2">

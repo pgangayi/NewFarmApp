@@ -30,7 +30,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import CropCard from '../components/dashboard/CropCard';
 import StatCard from '../components/dashboard/StatCard';
 import type { ColorVariant, TabConfig, BackgroundImageState } from '../types/dashboard';
-import type { Crop, Animal, Task, InventoryItem } from '../api';
+import type { Crop, Animal, Task, InventoryItem, Farm } from '../api';
 import {
   colorClasses,
   formatStatus,
@@ -45,13 +45,21 @@ import {
   logger,
 } from '../utils/dashboard';
 
+const TEXT_GREEN_600 = 'text-green-600';
+const TEXT_RED_600 = 'text-red-600';
+const TEXT_BLUE_600 = 'text-blue-600';
+const TEXT_GRAY_600 = 'text-gray-600';
+const TEXT_GRAY_600_MB_4 = 'text-gray-600 mb-4';
+
+const TAB_OVERVIEW = 'overview';
+
 // Constants
 const RECENT_ACTIVITIES_LIMIT = 3;
 const BACKGROUND_IMAGE_URL = '/lockscreen-wallpaper.jpg'; // Renamed without spaces
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeTab, setActiveTab] = useState<string>(TAB_OVERVIEW);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [farmSelectorOpen, setFarmSelectorOpen] = useState<boolean>(false);
   const [selectedFarm, setSelectedFarm] = useState<string>('');
@@ -220,7 +228,7 @@ export default function Dashboard() {
   // Memoized tab configuration
   const tabs: TabConfig[] = useMemo(
     () => [
-      { id: 'overview', label: 'Overview', icon: Activity },
+      { id: TAB_OVERVIEW, label: 'Overview', icon: Activity },
       { id: 'crops', label: 'Crops', icon: Sprout, count: cropStats.total },
       { id: 'animals', label: 'Animals', icon: Activity, count: animalStats.active },
       { id: 'tasks', label: 'Tasks', icon: CalendarIcon, count: taskStats.pending },
@@ -274,7 +282,7 @@ export default function Dashboard() {
         <div className="text-center max-w-md mx-auto p-6">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Data</h2>
-          <p className="text-gray-600 mb-4">
+          <p className={TEXT_GRAY_600_MB_4}>
             We&apos;re having trouble loading your dashboard data. Please check your connection and
             try again.
           </p>
@@ -306,7 +314,7 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Welcome to Your Farm Dashboard
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className={TEXT_GRAY_600_MB_4}>
             You don&apos;t have any farms yet. Create your first farm to get started with crop
             management, animal tracking, and more.
           </p>
@@ -408,7 +416,7 @@ export default function Dashboard() {
                               >
                                 <Sprout
                                   className={`h-4 w-4 ${
-                                    selectedFarm === farm.id ? 'text-green-600' : 'text-gray-600'
+                                    selectedFarm === farm.id ? TEXT_GREEN_600 : TEXT_GRAY_600
                                   }`}
                                 />
                               </div>
@@ -423,7 +431,9 @@ export default function Dashboard() {
                                 <p className="text-xs text-gray-500 truncate">{farm.location}</p>
                               </div>
                               {selectedFarm === farm.id && (
-                                <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                <CheckCircle
+                                  className={`h-4 w-4 ${TEXT_GREEN_600} flex-shrink-0`}
+                                />
                               )}
                             </div>
                           </button>
@@ -494,8 +504,8 @@ export default function Dashboard() {
                   onClick={() => handleTabChange(tab.id)}
                   className={`flex items-center space-x-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-all ${
                     activeTab === tab.id
-                      ? 'border-green-500 text-green-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                      ? `border-green-500 ${TEXT_GREEN_600}`
+                      : `border-transparent ${TEXT_GRAY_600} hover:text-gray-900 hover:border-gray-300`
                   }`}
                 >
                   <tab.icon className="h-4 w-4" />
@@ -512,7 +522,7 @@ export default function Dashboard() {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-          {activeTab === 'overview' && (
+          {activeTab === TAB_OVERVIEW && (
             <>
               {/* Quick Stats Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -586,7 +596,7 @@ export default function Dashboard() {
                   </h3>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {tasks.slice(0, RECENT_ACTIVITIES_LIMIT).map(task => (
+                  {tasks.slice(0, RECENT_ACTIVITIES_LIMIT).map((task: Task) => (
                     <div
                       key={task.id}
                       className="px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors"
@@ -600,7 +610,7 @@ export default function Dashboard() {
                           >
                             <CalendarIcon
                               className={`h-4 w-4 ${
-                                task.priority === 'urgent' ? 'text-red-600' : 'text-blue-600'
+                                task.priority === 'urgent' ? TEXT_RED_600 : TEXT_BLUE_600
                               }`}
                             />
                           </div>
@@ -693,7 +703,7 @@ export default function Dashboard() {
                   <div className="text-center py-12">
                     <Sprout className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">No Crops Yet</h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className={TEXT_GRAY_600_MB_4}>
                       Start tracking your crops to monitor growth and health
                     </p>
                     <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto">
@@ -788,7 +798,7 @@ export default function Dashboard() {
                   <div className="text-center py-12">
                     <Activity className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">No Animals Yet</h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className={TEXT_GRAY_600_MB_4}>
                       Start tracking your livestock to monitor health and production
                     </p>
                     <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 mx-auto">
@@ -820,10 +830,11 @@ export default function Dashboard() {
 
               {/* Dynamic crop type selection */}
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="crop-type-select" className="block text-sm font-medium text-gray-700 mb-2">
                   Crop Type for Analytics:
                 </label>
                 <select
+                  id="crop-type-select"
                   value={cropType}
                   onChange={e => setCropType(e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -854,7 +865,7 @@ export default function Dashboard() {
                 <ErrorBoundary>
                   <WeatherCalendar
                     farmId={farmData.id}
-                    operations={tasks.map(task => ({
+                    operations={tasks.map((task: Task) => ({
                       id: task.id,
                       title: task.title,
                       scheduled_date: task.due_date,
@@ -924,8 +935,8 @@ export default function Dashboard() {
                                 : task.priority === 'high'
                                   ? 'text-orange-600'
                                   : task.priority === 'normal'
-                                    ? 'text-blue-600'
-                                    : 'text-gray-600'
+                                    ? TEXT_BLUE_600
+                                    : TEXT_GRAY_600
                             }`}
                           />
                         </div>
@@ -974,7 +985,7 @@ export default function Dashboard() {
                   <div className="text-center py-12">
                     <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Yet</h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className={TEXT_GRAY_600_MB_4}>
                       Create your first task to start organizing your farm work
                     </p>
                     <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 mx-auto">
@@ -996,7 +1007,7 @@ export default function Dashboard() {
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all ${
-                  activeTab === tab.id ? 'bg-green-50 text-green-600' : 'text-gray-600'
+                  activeTab === tab.id ? `bg-green-50 ${TEXT_GREEN_600}` : TEXT_GRAY_600
                 }`}
               >
                 <div className="relative">

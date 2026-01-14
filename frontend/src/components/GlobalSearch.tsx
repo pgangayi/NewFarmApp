@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../hooks/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import {
   Search,
   X,
-  Clock,
-  Filter,
-  TrendingUp,
+  // Clock,
+  // Filter,
+  // TrendingUp,
   Users,
   Sprout,
   Package,
@@ -16,10 +16,17 @@ import {
   ArrowRight,
   Loader,
   AlertCircle,
+  Clock,
+  TrendingUp,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+
+const POST_METHOD = 'POST';
+const GET_METHOD = 'GET';
+const CONTENT_TYPE_JSON = 'application/json';
+const FILTER_ALL = 'all';
 
 interface SearchResult {
   type: 'animal' | 'crop' | 'task' | 'inventory' | 'farm' | 'finance';
@@ -102,7 +109,7 @@ export function GlobalSearch({
   const [recentSearches, setRecentSearches] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [selectedFilter, setSelectedFilter] = useState<string>(FILTER_ALL);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -179,7 +186,7 @@ export function GlobalSearch({
 
   // Debounced search
   const performSearch = useCallback(
-    async (searchQuery: string, filter: string = 'all') => {
+    async (searchQuery: string, filter: string = FILTER_ALL) => {
       if (!searchQuery.trim()) {
         setResults(null);
         setLoading(false);
@@ -197,7 +204,7 @@ export function GlobalSearch({
         });
 
         const response = await fetch(`/api/search?${params}`, {
-          method: 'GET',
+          method: GET_METHOD,
           headers: getAuthHeaders(),
         });
 
@@ -210,9 +217,9 @@ export function GlobalSearch({
 
         // Save search to history
         await fetch('/api/search', {
-          method: 'POST',
+          method: POST_METHOD,
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': CONTENT_TYPE_JSON,
             ...getAuthHeaders(),
           },
           body: JSON.stringify({
@@ -253,12 +260,13 @@ export function GlobalSearch({
       loadSuggestions();
       loadRecentSearches();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const loadSuggestions = async () => {
     try {
       const response = await fetch('/api/search', {
-        method: 'POST',
+        method: POST_METHOD,
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders(),
@@ -281,7 +289,7 @@ export function GlobalSearch({
   const loadRecentSearches = async () => {
     try {
       const response = await fetch('/api/search', {
-        method: 'POST',
+        method: POST_METHOD,
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders(),
@@ -438,7 +446,7 @@ export function GlobalSearch({
                       {getTypeLabel(type)} ({typeResults.length})
                     </h3>
                     <div className="space-y-2">
-                      {typeResults.map((result, index) => (
+                      {typeResults.map((result, _index) => (
                         <div
                           key={`${result.type}-${result.id}`}
                           className={`p-3 rounded-lg border cursor-pointer transition-colors ${

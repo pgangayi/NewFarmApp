@@ -3,6 +3,9 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
+const IMAGE_PNG = 'image/png';
+const ICON_PURPOSE = 'unknown maskable';
+
 export type PWAInstallState = 'not-installable' | 'installable' | 'installed' | 'installing';
 
 export interface PWAInstallPrompt {
@@ -101,8 +104,8 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
     if (typeof window === 'undefined') return { isStandalone: false, isStandaloneIos: false };
 
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isStandaloneIos = (window.navigator as unknown).standalone === true;
-    const isInWebAppiOS = (window.navigator as unknown).standalone === 'yes';
+    const isStandaloneIos = (window.navigator as any).standalone === true;
+    const isInWebAppiOS = (window.navigator as any).standalone === 'yes';
 
     return {
       isStandalone: isStandalone || isInWebAppiOS,
@@ -195,7 +198,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
   // Setup beforeinstallprompt
   const handleBeforeInstallPrompt = useCallback((e: Event) => {
     e.preventDefault();
-    const event = e as unknown;
+    const event = e as any;
 
     installPromptRef.current = {
       prompt: event.prompt,
@@ -319,7 +322,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
 
       try {
         // Type guard for sync support
-        const syncManager = (capabilities.swRegistration as unknown).sync;
+        const syncManager = (capabilities.swRegistration as any).sync;
         if (syncManager && typeof syncManager.register === 'function') {
           await syncManager.register(tag);
           return true;
@@ -423,50 +426,50 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
         {
           src: '/icons/icon-72x72.png',
           sizes: '72x72',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-96x96.png',
           sizes: '96x96',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-128x128.png',
           sizes: '128x128',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-144x144.png',
           sizes: '144x144',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-152x152.png',
           sizes: '152x152',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-192x192.png',
           sizes: '192x192',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-384x384.png',
           sizes: '384x384',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
         {
           src: '/icons/icon-512x512.png',
           sizes: '512x512',
-          type: 'image/png',
-          purpose: 'unknown maskable',
+          type: IMAGE_PNG,
+          purpose: ICON_PURPOSE,
         },
       ],
       categories: ['productivity', 'business', 'agriculture'],

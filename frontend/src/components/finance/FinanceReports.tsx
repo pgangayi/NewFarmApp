@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { FileText, Download } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 interface FinanceReportsProps {
   onGenerateReport: () => void;

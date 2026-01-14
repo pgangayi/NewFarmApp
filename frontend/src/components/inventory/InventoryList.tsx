@@ -1,6 +1,6 @@
 import { UnifiedList, ColumnConfig } from '../ui/UnifiedList';
 import type { InventoryItem } from '../../api/types';
-import { Edit, Trash2, Eye } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 import { Badge } from '../ui/badge';
 
 interface InventoryListProps {
@@ -19,8 +19,7 @@ export function InventoryList({ inventoryItems, onEdit, onView, onCreate }: Inve
       label: 'Stock Level',
       render: item => {
         const i = item as unknown as InventoryItem;
-        // Mock threshold logic if not present
-        const isLow = i.quantity < (i.min_stock_level || 10);
+        const isLow = i.quantity < (i.minimum_quantity || 10);
         return (
           <Badge variant={isLow ? 'destructive' : 'secondary'}>
             {i.quantity} {i.unit}
@@ -40,7 +39,7 @@ export function InventoryList({ inventoryItems, onEdit, onView, onCreate }: Inve
   return (
     <UnifiedList
       title="Inventory Items"
-      items={inventoryItems}
+      items={inventoryItems as any[]}
       columns={columns}
       actions={[
         {

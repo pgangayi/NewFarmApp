@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-// Note: useIrrigation hook needs to be implemented or removed
+import { useIrrigation } from '../api';
 import { useFarm } from '../hooks';
+import { CropService } from '../services/domains/CropService';
+import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   Droplets,
   Calendar,
   TrendingUp,
   Clock,
-  MapPin,
+  // MapPin,
   Settings,
   Zap,
   BarChart3,
@@ -18,6 +20,11 @@ import {
   Play,
   Pause,
 } from 'lucide-react';
+
+const TAB_BASE_CLASS = 'py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-1';
+const TAB_ACTIVE_CLASS = 'border-blue-500 text-blue-600';
+const TAB_INACTIVE_CLASS =
+  'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
 
 interface IrrigationOptimizerProps {
   farmId: string;
@@ -41,7 +48,7 @@ const CROP_WATER_REQUIREMENTS = {
 };
 
 export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
-  const { currentFarm } = useFarm();
+  const { data: currentFarm } = useFarm(farmId);
   const [activeTab, setActiveTab] = useState<'schedules' | 'analytics' | 'optimization'>(
     'schedules'
   );
@@ -59,13 +66,8 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   } = useQuery({
     queryKey: ['irrigation-schedules', 'farm', farmId],
     queryFn: async () => {
-      const response = await fetch('/api/crops/irrigation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'list', farm_id: farmId }),
-      });
-      if (!response.ok) throw new Error('Failed to fetch irrigation schedules');
-      return await response.json();
+      // Use standard service method instead of direct fetch
+      return CropService.getIrrigationSchedules(farmId);
     },
     enabled: !!farmId,
   });
@@ -78,13 +80,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   } = useQuery({
     queryKey: ['irrigation-analytics', farmId],
     queryFn: async () => {
-      const response = await fetch('/api/crops/irrigation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'analytics', farm_id: farmId }),
-      });
-      if (!response.ok) throw new Error('Failed to fetch irrigation analytics');
-      return await response.json();
+      return CropService.getIrrigationAnalytics(farmId);
     },
     enabled: !!farmId,
   });
@@ -93,9 +89,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   const { data: fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      const response = await fetch(`/api/fields?farm_id=${farmId}`);
-      if (!response.ok) throw new Error('Failed to fetch fields');
-      return await response.json();
+      return FieldService.getFieldsByFarm(farmId);
     },
     enabled: !!farmId,
   });
@@ -113,7 +107,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
     optimizeSchedule({ schedule_id: scheduleId });
   };
 
-  const getWateringRecommendation = (schedule: unknown) => {
+  const getWateringRecommendation = (schedule: any) => {
     const cropReqs =
       CROP_WATER_REQUIREMENTS[schedule.crop_type as keyof typeof CROP_WATER_REQUIREMENTS];
     if (!cropReqs) return { shouldWater: false, reason: 'Unknown crop type' };
@@ -146,7 +140,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
     };
   };
 
-  const calculateWaterEfficiency = (schedule: unknown) => {
+  const calculateWaterEfficiency = (schedule: any) => {
     const irrigationType =
       IRRIGATION_TYPES[schedule.irrigation_type as keyof typeof IRRIGATION_TYPES];
     if (!irrigationType) return 0;
@@ -205,10 +199,8 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
           <nav className="-mb-px flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab('schedules')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-1 ${
-                activeTab === 'schedules'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              className={`${TAB_BASE_CLASS} ${
+                activeTab === 'schedules' ? TAB_ACTIVE_CLASS : TAB_INACTIVE_CLASS
               }`}
             >
               <Calendar className="h-4 w-4" />
@@ -216,10 +208,8 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-1 ${
-                activeTab === 'analytics'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              className={`${TAB_BASE_CLASS} ${
+                activeTab === 'analytics' ? TAB_ACTIVE_CLASS : TAB_INACTIVE_CLASS
               }`}
             >
               <BarChart3 className="h-4 w-4" />
@@ -227,10 +217,8 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
             </button>
             <button
               onClick={() => setActiveTab('optimization')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-1 ${
-                activeTab === 'optimization'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              className={`${TAB_BASE_CLASS} ${
+                activeTab === 'optimization' ? TAB_ACTIVE_CLASS : TAB_INACTIVE_CLASS
               }`}
             >
               <Zap className="h-4 w-4" />
@@ -256,7 +244,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {schedules.map(schedule => {
+                  {schedules.map((schedule: any) => {
                     const recommendation = getWateringRecommendation(schedule);
                     const efficiency = calculateWaterEfficiency(schedule);
                     const irrigationType =
@@ -486,7 +474,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                 <h4 className="font-medium mb-4">Recommendations</h4>
                 {analytics?.recommendations && analytics.recommendations.length > 0 ? (
                   <div className="space-y-3">
-                    {analytics.recommendations.map((rec, index) => (
+                    {analytics.recommendations.map((rec: any, index: number) => (
                       <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 rounded">
                         <Zap className="h-5 w-5 text-blue-500 mt-0.5" />
                         <div>
@@ -518,10 +506,18 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
               <form className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Field *</label>
-                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label
+                      htmlFor="field-id"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Field *
+                    </label>
+                    <select
+                      id="field-id"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
                       <option value="">Select a field</option>
-                      {fields?.map(field => (
+                      {fields?.map((field: any) => (
                         <option key={field.id} value={field.id}>
                           {field.name}
                         </option>
@@ -530,10 +526,16 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="crop-type"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Crop Type *
                     </label>
-                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select
+                      id="crop-type"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
                       <option value="">Select crop type</option>
                       {Object.keys(CROP_WATER_REQUIREMENTS).map(crop => (
                         <option key={crop} value={crop}>
@@ -544,10 +546,16 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="irrigation-type"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Irrigation Type *
                     </label>
-                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select
+                      id="irrigation-type"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
                       <option value="">Select irrigation type</option>
                       {Object.entries(IRRIGATION_TYPES).map(([key, type]) => (
                         <option key={key} value={key}>
@@ -558,10 +566,14 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="frequency"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Frequency (days) *
                     </label>
                     <input
+                      id="frequency"
                       type="number"
                       min="1"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -570,10 +582,14 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="duration"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Duration (minutes) *
                     </label>
                     <input
+                      id="duration"
                       type="number"
                       min="1"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -582,10 +598,14 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="water-amount"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Water Amount (liters) *
                     </label>
                     <input
+                      id="water-amount"
                       type="number"
                       min="1"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -594,18 +614,30 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="start-date"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Start Date *
                     </label>
                     <input
+                      id="start-date"
                       type="date"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label
+                      htmlFor="status"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Status
+                    </label>
+                    <select
+                      id="status"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
                       <option value="active">Active</option>
                       <option value="paused">Paused</option>
                     </select>

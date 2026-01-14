@@ -1,7 +1,7 @@
-import React, { FC, memo } from 'react';
+import { FC, memo } from 'react';
 import { Crop } from '../../types/dashboard';
 import { formatDate, getStatusBadgeClasses } from '../../utils/dashboard';
-import { Leaf, Activity, CheckCircle, AlertCircle } from 'lucide-react';
+import { Leaf, Activity } from 'lucide-react';
 
 interface CropCardProps {
   crop: Crop;

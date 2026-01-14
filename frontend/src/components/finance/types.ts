@@ -1,11 +1,11 @@
 export interface FinanceEntry {
-  id: number;
+  id: string;
   date: string;
   description: string;
   amount: number;
   category: string;
   type: 'income' | 'expense';
-  farm_id: number;
+  farm_id: string;
   status: 'pending' | 'completed' | 'cancelled';
   receipt_url?: string;
   created_at: string;
@@ -13,12 +13,12 @@ export interface FinanceEntry {
 }
 
 export interface BudgetCategory {
-  id: number;
+  id: string;
   category: string;
   budget_limit: number;
-  spent_amount: number;
+  spent: number;
   fiscal_year: number;
-  farm_id: number;
+  farm_id: string;
 }
 
 export interface FinanceFormData {
@@ -27,7 +27,7 @@ export interface FinanceFormData {
   amount: number;
   category: string;
   type: 'income' | 'expense';
-  farm_id: number;
+  farm_id: string;
   status?: 'pending' | 'completed';
 }
 

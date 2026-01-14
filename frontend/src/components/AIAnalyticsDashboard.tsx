@@ -580,7 +580,7 @@ export function AIAnalyticsDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Growth Score</span>
                         <span
-                          className={`font-bold ${getScoreColor((comprehensiveData.modules.crops as ModulePerformance).performance_score)}`}
+                          className={`font-bold ${getScoreColor((comprehensiveData.modules.crops as ModulePerformance).performance_score || 0)}`}
                         >
                           {(comprehensiveData.modules.crops as ModulePerformance)
                             .performance_score || 0}
@@ -604,13 +604,13 @@ export function AIAnalyticsDashboard() {
                         <span className="text-sm text-gray-600">Yield Efficiency</span>
                         <span className="font-medium">
                           {Math.round(
-                            (
+                            ((
                               comprehensiveData.modules.crops as ModulePerformance
                             ).yield_performance?.reduce(
                               (sum: number, y: { yield_efficiency?: number }) =>
                                 sum + (y.yield_efficiency || 0),
                               0
-                            ) /
+                            ) || 0) /
                               ((comprehensiveData.modules.crops as ModulePerformance)
                                 .yield_performance?.length || 1)
                           ) || 0}
@@ -636,7 +636,7 @@ export function AIAnalyticsDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Profitability</span>
                         <span
-                          className={`font-bold ${getScoreColor((comprehensiveData.modules.finance as ModulePerformance).performance_score)}`}
+                          className={`font-bold ${getScoreColor((comprehensiveData.modules.finance as ModulePerformance).performance_score || 0)}`}
                         >
                           {(comprehensiveData.modules.finance as ModulePerformance)
                             .performance_score || 0}
