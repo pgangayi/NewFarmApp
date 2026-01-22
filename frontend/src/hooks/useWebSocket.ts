@@ -2,6 +2,25 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { authStorage } from '../lib/authStorage';
 
+// Logger utility for consistent logging
+const logger = {
+  error: (message: string, ...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.error(message, ...args);
+    }
+  },
+  warn: (message: string, ...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(message, ...args);
+    }
+  },
+  log: (message: string, ...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.log(message, ...args);
+    }
+  },
+};
+
 interface WebSocketMessage {
   type: string;
   data?: unknown;
@@ -80,7 +99,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
-        console.log('WebSocket connected');
+        logger.log('WebSocket connected');
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -108,31 +127,31 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
               // Heartbeat received, connection is alive
               break;
             case 'error':
-              console.error('WebSocket error:', message.message);
+              logger.error('WebSocket error:', message.message);
               setState(prev => ({
                 ...prev,
                 connectionError: message.message || 'Unknown error',
               }));
               break;
             case 'initial_data':
-              console.log('Received initial data:', message.data);
+              logger.log('Received initial data:', message.data);
               break;
             case 'dashboard_update':
-              console.log('Dashboard update received:', message);
+              logger.log('Dashboard update received:', message);
               break;
             case 'farm_broadcast':
-              console.log('Farm broadcast received:', message);
+              logger.log('Farm broadcast received:', message);
               break;
             default:
-              console.log('Unknown message type:', message.type);
+              logger.log('Unknown message type:', message.type);
           }
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          logger.error('Failed to parse WebSocket message:', error);
         }
       };
 
       ws.current.onclose = event => {
-        console.log('WebSocket closed:', event.code, event.reason);
+        logger.log('WebSocket closed:', event.code, event.reason);
         setState(prev => ({
           ...prev,
           isConnected: false,
@@ -148,7 +167,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         // Attempt reconnection if not manually closed
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
-          console.log(
+          logger.log(
             `Attempting to reconnect... (${reconnectAttempts.current}/${maxReconnectAttempts})`
           );
 
@@ -159,7 +178,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       };
 
       ws.current.onerror = error => {
-        console.error('WebSocket error:', error);
+        logger.error('WebSocket error:', error);
         setState(prev => ({
           ...prev,
           connectionStatus: 'error',
@@ -167,7 +186,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         }));
       };
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
+      logger.error('Failed to create WebSocket connection:', error);
       setState(prev => ({
         ...prev,
         connectionStatus: 'error',
@@ -212,10 +231,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // Subscribe to a specific farm for real-time updates
   const subscribeToFarm = useCallback(
-    (farmId: string) => {
+    (farm_id: string) => {
       return sendMessage({
         type: 'subscribe_farm',
-        farm_id: farmId,
+        farm_id: farm_id,
       });
     },
     [sendMessage]
@@ -223,10 +242,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // Unsubscribe from a farm
   const unsubscribeFromFarm = useCallback(
-    (farmId: string) => {
+    (farm_id: string) => {
       return sendMessage({
         type: 'unsubscribe_farm',
-        farm_id: farmId,
+        farm_id: farm_id,
       });
     },
     [sendMessage]
@@ -234,10 +253,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // Request dashboard data for a specific farm
   const requestDashboardData = useCallback(
-    (farmId: string) => {
+    (farm_id: string) => {
       return sendMessage({
         type: 'request_dashboard_data',
-        farm_id: farmId,
+        farm_id: farm_id,
       });
     },
     [sendMessage]

@@ -55,7 +55,7 @@ export const QUERY_KEYS = {
     list: (filters?: Record<string, unknown>) => [...QUERY_KEYS.animals.lists(), filters] as const,
     details: () => [...QUERY_KEYS.animals.all, 'detail'] as const,
     detail: (id: string) => [...QUERY_KEYS.animals.details(), id] as const,
-    byFarm: (farmId: string) => [...QUERY_KEYS.animals.all, 'farm', farmId] as const,
+    byFarm: (farm_id: string) => [...QUERY_KEYS.animals.all, 'farm', farm_id] as const,
   },
 
   // Crop keys
@@ -65,7 +65,7 @@ export const QUERY_KEYS = {
     list: (filters?: Record<string, unknown>) => [...QUERY_KEYS.crops.lists(), filters] as const,
     details: () => [...QUERY_KEYS.crops.all, 'detail'] as const,
     detail: (id: string) => [...QUERY_KEYS.crops.details(), id] as const,
-    byFarm: (farmId: string) => [...QUERY_KEYS.crops.all, 'farm', farmId] as const,
+    byFarm: (farm_id: string) => [...QUERY_KEYS.crops.all, 'farm', farm_id] as const,
     stats: () => [...QUERY_KEYS.crops.all, 'stats'] as const,
   },
 
@@ -76,7 +76,7 @@ export const QUERY_KEYS = {
     list: (filters?: Record<string, unknown>) => [...QUERY_KEYS.tasks.lists(), filters] as const,
     details: () => [...QUERY_KEYS.tasks.all, 'detail'] as const,
     detail: (id: string) => [...QUERY_KEYS.tasks.details(), id] as const,
-    byFarm: (farmId: string) => [...QUERY_KEYS.tasks.all, 'farm', farmId] as const,
+    byFarm: (farm_id: string) => [...QUERY_KEYS.tasks.all, 'farm', farm_id] as const,
   },
 
   // Inventory keys
@@ -87,7 +87,7 @@ export const QUERY_KEYS = {
       [...QUERY_KEYS.inventory.lists(), filters] as const,
     details: () => [...QUERY_KEYS.inventory.all, 'detail'] as const,
     detail: (id: string) => [...QUERY_KEYS.inventory.details(), id] as const,
-    byFarm: (farmId: string) => [...QUERY_KEYS.inventory.all, 'farm', farmId] as const,
+    byFarm: (farm_id: string) => [...QUERY_KEYS.inventory.all, 'farm', farm_id] as const,
     lowStock: () => [...QUERY_KEYS.inventory.all, 'lowStock'] as const,
     alerts: () => [...QUERY_KEYS.inventory.all, 'alerts'] as const,
   },
@@ -100,7 +100,7 @@ export const QUERY_KEYS = {
       [...QUERY_KEYS.locations.lists(), filters] as const,
     details: () => [...QUERY_KEYS.locations.all, 'detail'] as const,
     detail: (id: string) => [...QUERY_KEYS.locations.details(), id] as const,
-    byFarm: (farmId: string) => [...QUERY_KEYS.locations.all, 'farm', farmId] as const,
+    byFarm: (farm_id: string) => [...QUERY_KEYS.locations.all, 'farm', farm_id] as const,
   },
 
   // Finance keys
@@ -110,9 +110,9 @@ export const QUERY_KEYS = {
     list: (filters?: Record<string, unknown>) => [...QUERY_KEYS.finance.lists(), filters] as const,
     details: () => [...QUERY_KEYS.finance.all, 'detail'] as const,
     detail: (id: string) => [...QUERY_KEYS.finance.details(), id] as const,
-    summary: (farmId?: string) =>
-      farmId
-        ? [...QUERY_KEYS.finance.all, 'summary', farmId]
+    summary: (farm_id?: string) =>
+      farm_id
+        ? [...QUERY_KEYS.finance.all, 'summary', farm_id]
         : ([...QUERY_KEYS.finance.all, 'summary'] as const),
   },
 

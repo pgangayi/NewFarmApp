@@ -9,18 +9,18 @@ import { Field } from '../../api/types';
  */
 
 export class FieldService {
-  static async getFieldsByFarm(farmId: string): Promise<Field[]> {
+  static async getFieldsByFarm(farm_id: string): Promise<Field[]> {
     const response = await apiClient.get<Field[]>(apiEndpoints.fields.list);
     // If the backend doesn't filter by farm_id on the list endpoint automatically (based on user context),
     // we might need to pass it as query param if the API supports it.
     // Based on previous code, it seems we often pass `?farm_id=...`
     // Let's implement client-side filtering or assume query param support if `list` endpoint is generic.
     // Ideally backend filters by user's access, but specific farm filter is useful if user has multiple farms.
-    return response.filter(f => f.farm_id === farmId);
+    return response.filter(f => f.farm_id === farm_id);
   }
 
-  static async getFields(farmId?: string): Promise<Field[]> {
-    const url = farmId ? `${apiEndpoints.fields.list}?farm_id=${farmId}` : apiEndpoints.fields.list;
+  static async getFields(farm_id?: string): Promise<Field[]> {
+    const url = farm_id ? `${apiEndpoints.fields.list}?farm_id=${farm_id}` : apiEndpoints.fields.list;
     return apiClient.get<Field[]>(url);
   }
 

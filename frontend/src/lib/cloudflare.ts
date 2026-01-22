@@ -1,5 +1,8 @@
 // Cloudflare API client with authentication
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { User } from '../api/types';
+import { apiConfig } from '../config/env';
+
+const API_BASE_URL = apiConfig.baseUrl;
 
 const getAuthToken = () => {
   return localStorage.getItem('auth_token');
@@ -100,7 +103,7 @@ export const apiClient = {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await apiClient.get<{ user: any }>('/api/auth/validate');
+    const response = await apiClient.get<{ user: User }>('/api/auth/validate');
     return response.user || null;
   } catch (err) {
     return null;
@@ -109,7 +112,7 @@ export const getCurrentUser = async () => {
 
 export const signIn = async (email: string, password: string) => {
   try {
-    const response = await apiClient.post<{ token: string; user: any }>('/api/auth/login', {
+    const response = await apiClient.post<{ token: string; user: User }>('/api/auth/login', {
       email,
       password,
     });
@@ -117,14 +120,15 @@ export const signIn = async (email: string, password: string) => {
       localStorage.setItem('auth_token', response.token);
     }
     return { data: response, error: null };
-  } catch (error: any) {
-    return { data: null, error: { message: error.message || 'Login failed' } };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    return { data: null, error: { message: errorMessage } };
   }
 };
 
 export const signUp = async (email: string, password: string, name: string) => {
   try {
-    const response = await apiClient.post<{ token: string; user: any }>('/api/auth/signup', {
+    const response = await apiClient.post<{ token: string; user: User }>('/api/auth/signup', {
       email,
       password,
       name,
@@ -133,8 +137,9 @@ export const signUp = async (email: string, password: string, name: string) => {
       localStorage.setItem('auth_token', response.token);
     }
     return { data: response, error: null };
-  } catch (error: any) {
-    return { data: null, error: { message: error.message || 'Signup failed' } };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Signup failed';
+    return { data: null, error: { message: errorMessage } };
   }
 };
 

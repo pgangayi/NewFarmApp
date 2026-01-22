@@ -8,8 +8,8 @@ import { InventoryItem } from '../../api/types';
  */
 
 export class InventoryServiceAdapter {
-  static async getInventory(farmId?: string) {
-    return InventoryService.getInventoryByFarm(farmId);
+  static async getInventory(farm_id?: string) {
+    return InventoryService.getInventoryByFarm(farm_id);
   }
 
   static async getInventoryItem(id: string) {

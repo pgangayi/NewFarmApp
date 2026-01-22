@@ -15,8 +15,8 @@ interface Notification {
   actionLabel?: string;
   expiresAt?: Date;
   dismissed: boolean;
-  userId?: string;
-  farmId?: string;
+  user_id?: string;
+  farm_id?: string;
 }
 
 // Type interfaces for notification data
@@ -54,8 +54,8 @@ interface NotificationRule {
   id: string;
   name: string;
   type: string;
-  condition: (data: any) => boolean;
-  action: (context: any) => Omit<Notification, 'id' | 'timestamp' | 'read' | 'dismissed'>;
+  condition: (data: unknown) => boolean;
+  action: (context: unknown) => Omit<Notification, 'id' | 'timestamp' | 'read' | 'dismissed'>;
   enabled: boolean;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   cooldown?: number;

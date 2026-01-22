@@ -7,8 +7,8 @@ import { Farm, FarmService } from '../domains/FarmService';
  */
 
 export class FarmServiceAdapter {
-  static async getFarms(userId: string) {
-    return FarmService.getFarmsByOwner(userId);
+  static async getFarms(user_id: string) {
+    return FarmService.getFarmsByOwner(user_id);
   }
 
   static async createFarm(payload: Omit<Farm, 'id' | 'created_at' | 'updated_at'>) {

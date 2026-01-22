@@ -17,6 +17,7 @@ FRONTEND_ORIGIN = "https://47cfb08b.farmers-boot.pages.dev"
 binding = "DB"
 database_name = "farmers_boot"
 database_id = "96ba79d2-c66e-4421-9116-3d231666266c"
+preview_database_id = "a3db5973-eec3-4452-8b23-e19014358ea6"
 
 # Environment variables should be set externally:
 # JWT_SECRET - for JWT token signing

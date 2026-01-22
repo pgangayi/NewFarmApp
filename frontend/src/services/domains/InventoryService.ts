@@ -9,8 +9,8 @@ import { ENDPOINTS as apiEndpoints } from '../../api/config';
  */
 
 export class InventoryService {
-  static async getInventoryByFarm(farmId?: string): Promise<InventoryItem[]> {
-    const query = farmId ? `?farm_id=${farmId}` : '';
+  static async getInventoryByFarm(farm_id?: string): Promise<InventoryItem[]> {
+    const query = farm_id ? `?farm_id=${farm_id}` : '';
     // Use generic type and handle potential { data: ... } wrapper if needed,
     // similar to AnimalService.
     // If apiClient returns T directly, and backend returns array, this is fine.

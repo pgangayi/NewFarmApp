@@ -5,11 +5,11 @@ import type { InventoryItem, CreateRequest, UpdateRequest } from '../types';
 
 const INVENTORY_ENDPOINT = '/api/inventory';
 
-export function useInventory(farmId?: string) {
+export function useInventory(farm_id?: string) {
   return useQuery({
-    queryKey: farmId ? QUERY_KEYS.inventory.byFarm(farmId) : QUERY_KEYS.inventory.all,
+    queryKey: farm_id ? QUERY_KEYS.inventory.byFarm(farm_id) : QUERY_KEYS.inventory.all,
     queryFn: async () => {
-      const endpoint = farmId ? `${INVENTORY_ENDPOINT}?farm_id=${farmId}` : INVENTORY_ENDPOINT;
+      const endpoint = farm_id ? `${INVENTORY_ENDPOINT}?farm_id=${farm_id}` : INVENTORY_ENDPOINT;
       return await apiClient.get<InventoryItem[]>(endpoint);
     },
     staleTime: CACHE_CONFIG.staleTime.inventory,
@@ -27,12 +27,12 @@ export function useInventoryItem(id: string) {
   });
 }
 
-export function useInventoryLowStock(farmId?: string) {
+export function useInventoryLowStock(farm_id?: string) {
   return useQuery({
     queryKey: QUERY_KEYS.inventory.lowStock(),
     queryFn: async () => {
-      const endpoint = farmId
-        ? `${INVENTORY_ENDPOINT}?farm_id=${farmId}&low_stock=true`
+      const endpoint = farm_id
+        ? `${INVENTORY_ENDPOINT}?farm_id=${farm_id}&low_stock=true`
         : `${INVENTORY_ENDPOINT}?low_stock=true`;
       return await apiClient.get<InventoryItem[]>(endpoint);
     },

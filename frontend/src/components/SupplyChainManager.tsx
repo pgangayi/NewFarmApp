@@ -38,9 +38,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +46,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from './ui/dialog';
+import { useToast } from '../hooks/use-toast';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
 
 const STATUS_COLOR_GRAY = 'text-gray-600 bg-gray-100';
@@ -114,6 +115,7 @@ interface SupplyChainMetrics {
 }
 
 export default function SupplyChainManager() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'vendors' | 'orders' | 'inventory' | 'analytics'
   >('overview');
@@ -530,7 +532,13 @@ export default function SupplyChainManager() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => alert('Vendor details view coming soon!')}
+                          onClick={() =>
+                            toast({
+                              title: 'Coming Soon',
+                              description:
+                                'Vendor details view will be available in the next update.',
+                            })
+                          }
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           View
@@ -538,7 +546,12 @@ export default function SupplyChainManager() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => alert('Vendor editing coming soon!')}
+                          onClick={() =>
+                            toast({
+                              title: 'Coming Soon',
+                              description: 'Vendor editing will be available in the next update.',
+                            })
+                          }
                         >
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
@@ -647,7 +660,13 @@ export default function SupplyChainManager() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => alert('Order details view coming soon!')}
+                            onClick={() =>
+                              toast({
+                                title: 'Coming Soon',
+                                description:
+                                  'Order details view will be available in the next update.',
+                              })
+                            }
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             View Details
@@ -655,7 +674,12 @@ export default function SupplyChainManager() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => alert('PDF download coming soon!')}
+                            onClick={() =>
+                              toast({
+                                title: 'Coming Soon',
+                                description: 'PDF download will be available in the next update.',
+                              })
+                            }
                           >
                             <Download className="h-3 w-3 mr-1" />
                             Download PDF
@@ -666,7 +690,13 @@ export default function SupplyChainManager() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => alert('Order editing coming soon!')}
+                              onClick={() =>
+                                toast({
+                                  title: 'Coming Soon',
+                                  description:
+                                    'Order editing will be available in the next update.',
+                                })
+                              }
                             >
                               <Edit className="h-3 w-3 mr-1" />
                               Edit
@@ -676,7 +706,13 @@ export default function SupplyChainManager() {
                             <Button
                               size="sm"
                               className="bg-green-600 hover:bg-green-700"
-                              onClick={() => alert('Order approval coming soon!')}
+                              onClick={() =>
+                                toast({
+                                  title: 'Coming Soon',
+                                  description:
+                                    'Order approval will be available in the next update.',
+                                })
+                              }
                             >
                               <Check className="h-3 w-3 mr-1" />
                               Approve

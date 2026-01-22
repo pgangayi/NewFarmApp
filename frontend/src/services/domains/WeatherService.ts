@@ -12,9 +12,9 @@ export class WeatherService {
   /**
    * Get weather forecast/history for a specific farm
    */
-  static async getFarmWeather(farmId: string, days: number = 7): Promise<WeatherData[]> {
+  static async getFarmWeather(farm_id: string, days: number = 7): Promise<WeatherData[]> {
     return apiClient.get<WeatherData[]>(
-      `${apiEndpoints.weather.farm}?farm_id=${farmId}&days=${days}`
+      `${apiEndpoints.weather.farm}?farm_id=${farm_id}&days=${days}`
     );
   }
 
@@ -22,11 +22,11 @@ export class WeatherService {
    * Get weather impact analysis for crops and livestock
    */
   static async getWeatherImpactAnalysis(
-    farmId: string,
+    farm_id: string,
     cropType?: string
   ): Promise<WeatherImpact[]> {
     return apiClient.post<WeatherImpact[]>(apiEndpoints.weather.impact, {
-      farm_id: farmId,
+      farm_id: farm_id,
       crop_type: cropType,
     });
   }

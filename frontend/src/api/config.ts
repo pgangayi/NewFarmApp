@@ -1,5 +1,38 @@
+const DEFAULT_RELATIVE_BASE = '/api';
+
+const sanitizeBaseUrl = (value?: string | null): string => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return DEFAULT_RELATIVE_BASE;
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      const parsed = new URL(trimmed);
+      const normalizedPath = parsed.pathname.endsWith('/') && parsed.pathname !== '/'
+        ? parsed.pathname.slice(0, -1)
+        : parsed.pathname;
+      return `${parsed.origin}${normalizedPath}`;
+    } catch (error) {
+      console.warn('Invalid VITE_API_BASE_URL provided, falling back to relative /api', error);
+      return DEFAULT_RELATIVE_BASE;
+    }
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed.endsWith('/') && trimmed !== '/'
+      ? trimmed.slice(0, -1)
+      : trimmed || DEFAULT_RELATIVE_BASE;
+  }
+
+  console.warn('VITE_API_BASE_URL must be an absolute URL or start with /. Falling back to /api.');
+  return DEFAULT_RELATIVE_BASE;
+};
+
+const resolvedBaseUrl = sanitizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+
 export const API_CONFIG = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseUrl: resolvedBaseUrl,
   timeout: Number(import.meta.env.VITE_API_TIMEOUT_MS) || 30000,
   retryAttempts: Number(import.meta.env.VITE_API_RETRY_ATTEMPTS) || 3,
 };

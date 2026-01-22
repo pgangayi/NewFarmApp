@@ -2,8 +2,9 @@
 // Centralized configuration management for the entire application
 
 import { featureFlags } from './featureFlags';
+import { API_CONFIG } from '../api/config';
 
-const DEFAULT_API_URL = '/';
+const DEFAULT_API_URL = API_CONFIG.baseUrl || '/api';
 
 export interface AppConfig {
   // App Information
@@ -61,7 +62,7 @@ const createAppConfig = (): AppConfig => {
 
     // API Configuration
     api: {
-      baseUrl: import.meta.env.VITE_API_BASE_URL || DEFAULT_API_URL,
+      baseUrl: DEFAULT_API_URL,
       timeout: isDevelopment ? 30000 : 45000,
       retryAttempts: isDevelopment ? 3 : 5,
       enableCaching: !isTesting,
@@ -115,7 +116,7 @@ const environmentOverrides: Record<string, Partial<AppConfig>> = {
 
   production: {
     api: {
-      baseUrl: 'https://api.farmersboot.com',
+      baseUrl: DEFAULT_API_URL,
       timeout: 45000,
       retryAttempts: 5,
       enableCaching: true,

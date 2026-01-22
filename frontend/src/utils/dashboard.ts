@@ -87,12 +87,12 @@ export const formatStatus = (status: string | undefined): string => {
 // Farm selection utility
 export const getSelectedFarm = <T extends { id?: string }>(
   farms: T[] = [],
-  selectedFarmId?: string
+  selected_farm_id?: string
 ): T | undefined => {
   if (!farms || farms.length === 0) return undefined;
 
-  if (selectedFarmId) {
-    const farm = farms.find(f => f.id === selectedFarmId);
+  if (selected_farm_id) {
+    const farm = farms.find(f => f.id === selected_farm_id);
     if (farm) return farm;
   }
 

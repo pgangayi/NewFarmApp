@@ -90,8 +90,8 @@ export function useFarm() {
 // ANIMALS HOOK (legacy interface)
 // ============================================================================
 
-export function useAnimals(farmId?: string) {
-  const { data: animals = [], isLoading, error, refetch } = useAnimalsQuery(farmId);
+export function useAnimals(farm_id?: string) {
+  const { data: animals = [], isLoading, error, refetch } = useAnimalsQuery(farm_id);
   const createMutation = useCreateAnimal();
   const updateMutation = useUpdateAnimal();
   const deleteMutation = useDeleteAnimal();
@@ -115,8 +115,8 @@ export function useAnimals(farmId?: string) {
 // CROPS HOOK (legacy interface)
 // ============================================================================
 
-export function useCrops(farmId?: string) {
-  const { data: crops = [], isLoading, error, refetch } = useCropsQuery(farmId);
+export function useCrops(farm_id?: string) {
+  const { data: crops = [], isLoading, error, refetch } = useCropsQuery(farm_id);
   const createMutation = useCreateCrop();
 
   return {
@@ -151,13 +151,13 @@ export function useCropsStats() {
 // TASKS HOOK (legacy interface)
 // ============================================================================
 
-export function useTasks(farmId?: string) {
+export function useTasks(farm_id?: string) {
   const {
     data: tasks = [],
     isLoading,
     error,
     refetch,
-  } = useTasksQuery(farmId ? { farm_id: farmId } : undefined);
+  } = useTasksQuery(farm_id ? { farm_id: farm_id } : undefined);
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
   const deleteMutation = useDeleteTask();
@@ -181,8 +181,8 @@ export function useTasks(farmId?: string) {
 // INVENTORY HOOK (legacy interface)
 // ============================================================================
 
-export function useInventory(farmId?: string) {
-  const { data: items = [], isLoading, error, refetch } = useInventoryQuery(farmId);
+export function useInventory(farm_id?: string) {
+  const { data: items = [], isLoading, error, refetch } = useInventoryQuery(farm_id);
   const createMutation = useCreateInventoryItem();
 
   return {

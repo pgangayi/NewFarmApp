@@ -47,7 +47,7 @@ export interface QueryFilters {
   search?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export type CreateRequest<T> = Omit<T, 'id' | 'created_at' | 'updated_at'>;
@@ -320,7 +320,7 @@ export interface CropPlan extends BaseEntity {
   projected_cost?: number;
   projected_revenue?: number;
   projected_profit?: number;
-  activities?: any[]; // Detailed activity plan
+  activities?: CropActivity[]; // Detailed activity plan
   // Join
   field_name?: string;
 }

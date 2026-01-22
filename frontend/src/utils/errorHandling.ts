@@ -32,7 +32,7 @@ export class AppError extends Error {
   }
 
   static fromApiError(apiError: ApiErrorResponse): AppError {
-    return new AppError(apiError.message, apiError.error, apiError.statusCode, apiError.details);
+    return new AppError(apiError.message, apiError.error, apiError.status_code, apiError.details);
   }
 
   static fromUnknownError(
@@ -254,13 +254,5 @@ export function getErrorCode(error: unknown): string {
 }
 
 export function shouldRetry(error: unknown): boolean {
-  if (error instanceof NetworkError) {
-    return true;
-  }
-
-  if (error instanceof AppError && error.statusCode >= 500) {
-    return true;
-  }
-
-  return false;
+  return error instanceof NetworkError || (error instanceof AppError && error.statusCode >= 500);
 }

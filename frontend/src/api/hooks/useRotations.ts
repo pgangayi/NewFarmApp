@@ -24,17 +24,17 @@ export interface RotationPlan {
   created_at?: string;
 }
 
-export function useRotations(farmId?: string) {
+export function useRotations(farm_id?: string) {
   return useQuery({
-    queryKey: ['rotations', farmId],
+    queryKey: ['rotations', farm_id],
     queryFn: async () => {
-      if (!farmId) return [];
+      if (!farm_id) return [];
       const response = await apiClient.get<{ data: RotationPlan[] }>(
-        `/api/rotations?farm_id=${farmId}`
+        `/api/rotations?farm_id=${farm_id}`
       );
       return response.data;
     },
-    enabled: !!farmId,
+    enabled: !!farm_id,
   });
 }
 

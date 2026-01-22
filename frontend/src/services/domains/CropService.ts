@@ -1,6 +1,67 @@
 import { apiClient } from '../../lib/cloudflare';
-import { Crop, CropPlan } from '../../api/types';
+import { Crop, CropPlan, CreateRequest, QueryFilters } from '../../api/types';
 import { ENDPOINTS as apiEndpoints } from '../../api/config';
+
+// Define missing interfaces
+interface IrrigationSchedule {
+  id: string;
+  schedule_name: string;
+  crop_id: string;
+  field_id: string;
+  start_date: string;
+  end_date: string;
+  frequency: string;
+  duration: number;
+  water_amount: number;
+  status: 'active' | 'paused' | 'completed';
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface CropRotation {
+  id: string;
+  rotation_name: string;
+  field_id: string;
+  start_date: string;
+  end_date?: string;
+  status: 'active' | 'completed' | 'archived';
+  crops: Crop[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface IrrigationAnalytics {
+  water_usage: number;
+  efficiency_score: number;
+  recommendations: string[];
+  cost_analysis: {
+    total_cost: number;
+    cost_per_acre: number;
+  };
+}
+
+interface SoilHealthMetrics {
+  ph_level: number;
+  nitrogen_level: number;
+  phosphorus_level: number;
+  potassium_level: number;
+  organic_matter: number;
+  moisture_content: number;
+  temperature: number;
+  recommendations: string[];
+  health_score: number;
+}
+
+interface SoilHealthRecommendations {
+  recommendations: string[];
+  priority_actions: string[];
+  fertilizer_suggestions: {
+    nitrogen: string;
+    phosphorus: string;
+    potassium: string;
+  };
+  timeline_recommendations: string[];
+}
 
 /**
  * DOMAIN SERVICE: Crop
@@ -9,10 +70,10 @@ import { ENDPOINTS as apiEndpoints } from '../../api/config';
  */
 
 export class CropService {
-  static async getCropsByFarm(farmId?: string): Promise<Crop[]> {
+  static async getCropsByFarm(farm_id?: string): Promise<Crop[]> {
     const crops = await apiClient.get<Crop[]>(apiEndpoints.crops.list);
-    if (farmId) {
-      return crops.filter(c => c.farm_id === farmId);
+    if (farm_id) {
+      return crops.filter(c => c.farm_id === farm_id);
     }
     return crops;
   }
@@ -35,10 +96,10 @@ export class CropService {
   }
   // --- Planning ---
 
-  static async getCropPlans(farmId: string): Promise<CropPlan[]> {
+  static async getCropPlans(farm_id: string): Promise<CropPlan[]> {
     const response = await apiClient.get<CropPlan[]>(apiEndpoints.crops.planning);
     // Client-side filtering if backend returns all
-    return response.filter(p => p.farm_id === farmId);
+    return response.filter(p => p.farm_id === farm_id);
   }
 
   static async createCropPlan(
@@ -49,26 +110,29 @@ export class CropService {
 
   // --- Irrigation ---
 
-  static async getIrrigationSchedules(farmId: string): Promise<any[]> {
-    return apiClient.post<any[]>('/api/crops/irrigation', {
+  static async getIrrigationSchedules(farm_id: string): Promise<IrrigationSchedule[]> {
+    return apiClient.post<IrrigationSchedule[]>('/api/crops/irrigation', {
       action: 'list',
-      farm_id: farmId,
+      farm_id: farm_id,
     });
   }
 
-  static async getIrrigationAnalytics(farmId: string): Promise<any> {
-    return apiClient.post<any>('/api/crops/irrigation', {
+  static async getIrrigationAnalytics(farm_id: string): Promise<IrrigationAnalytics> {
+    return apiClient.post<IrrigationAnalytics>('/api/crops/irrigation', {
       action: 'analytics',
-      farm_id: farmId,
+      farm_id: farm_id,
     });
   }
 
-  static async updateIrrigationSchedule(scheduleId: string, updates: any): Promise<any> {
-    return apiClient.put<any>(`/api/crops/irrigation/${scheduleId}`, updates);
+  static async updateIrrigationSchedule(
+    scheduleId: string,
+    updates: Partial<IrrigationSchedule>
+  ): Promise<IrrigationSchedule> {
+    return apiClient.put<IrrigationSchedule>(`/api/crops/irrigation/${scheduleId}`, updates);
   }
 
-  static async optimizeIrrigationSchedule(scheduleId: string): Promise<any> {
-    return apiClient.post<any>('/api/crops/irrigation', {
+  static async optimizeIrrigationSchedule(scheduleId: string): Promise<IrrigationAnalytics> {
+    return apiClient.post<IrrigationAnalytics>('/api/crops/irrigation', {
       action: 'optimize',
       schedule_id: scheduleId,
     });
@@ -76,35 +140,33 @@ export class CropService {
 
   // --- Soil Health ---
 
-  static async getSoilHealthMetrics(farmId: string): Promise<any> {
-    return apiClient.post<any>('/api/crops/soil-health', {
+  static async getSoilHealthMetrics(farm_id: string): Promise<SoilHealthMetrics> {
+    return apiClient.post<SoilHealthMetrics>('/api/crops/soil-health', {
       action: 'metrics',
-      farm_id: farmId,
+      farm_id: farm_id,
     });
   }
 
-  static async getSoilHealthRecommendations(farmId: string): Promise<any> {
-    return apiClient.post<any>('/api/crops/soil-health', {
+  static async getSoilHealthRecommendations(farm_id: string): Promise<SoilHealthRecommendations> {
+    return apiClient.post<SoilHealthRecommendations>('/api/crops/soil-health', {
       action: 'recommendations',
-      farm_id: farmId,
+      farm_id: farm_id,
     });
   }
 
   // --- Crop Rotation ---
 
-  static async getRotations(farmId: string): Promise<any[]> {
+  static async getRotations(farm_id: string): Promise<CropRotation[]> {
     // Assuming backend endpoint based on hook naming, but let's check hook usage
     // The component uses `useRotations` which might fetch from `/api/crops/rotations` or similar?
     // Let's use a generic endpoint for now or verify where `useRotations` fetches from.
-    // Based on `IrrigationOptimizer` usage, it might be `/api/crops/rotations`.
-    // However, I will assume a standard endpoint for now and adjust if needed.
     // Given the lack of visibility into `useRotations` implementation, I'll stick to a plausible path
     // or checks `apiEndpoints` in config if available.
     // For now, I'll add the method but might need to verify path.
-    return apiClient.get<any[]>(`/api/crops/rotations?farm_id=${farmId}`);
+    return apiClient.get<CropRotation[]>(`/api/crops/rotations?farm_id=${farm_id}`);
   }
 
-  static async createRotation(rotation: any): Promise<any> {
-    return apiClient.post<any>('/api/crops/rotations', rotation);
+  static async createCropRotation(rotation: CreateRequest<CropRotation>): Promise<CropRotation> {
+    return apiClient.post<CropRotation>('/api/crops/rotations', rotation);
   }
 }

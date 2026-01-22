@@ -217,6 +217,233 @@ export class EmailService {
   }
 
   /**
+   * Send account verification email
+   */
+  async sendVerificationEmail(userEmail, verificationToken, userName) {
+    try {
+      const verificationLink = `${this.baseUrl}/verify-email?token=${verificationToken}`;
+
+      // Development fallback if no API key
+      if (!this.env.RESEND_API_KEY) {
+        console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
+        console.warn("📧 [MOCK] Verification email would be sent to:", userEmail);
+        console.warn("🔗 [MOCK] Verification link:", verificationLink);
+        return { success: true, emailId: "mock_verification_id_" + Date.now() };
+      }
+
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verify Your Email - ${this.appName}</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+              .button { display: inline-block; background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+              .footer { text-align: center; color: #666; font-size: 14px; margin-top: 30px; }
+              .warning { background: #fef3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🌱 ${this.appName}</h1>
+                <p>Email Verification</p>
+              </div>
+              
+              <div class="content">
+                <h2>Verify Your Email Address</h2>
+                <p>Hi ${userName},</p>
+                <p>Thank you for signing up for ${this.appName}! To complete your registration and secure your account, please verify your email address.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${verificationLink}" class="button">Verify Email Address</a>
+                </div>
+                
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 4px; font-family: monospace;">
+                  ${verificationLink}
+                </p>
+                
+                <div class="warning">
+                  <strong>⚠️ Important:</strong>
+                  <ul>
+                    <li>This link will expire in 24 hours</li>
+                    <li>If you didn't create an account with us, please ignore this email</li>
+                    <li>Verifying your email helps us keep your account secure</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="footer">
+                <p>This email was sent by ${this.appName}</p>
+                <p>If you have any questions, contact our support team.</p>
+                <p>© 2025 ${this.appName}. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const emailText = `
+        ${this.appName} - Email Verification
+        
+        Hi ${userName},
+        
+        Thank you for signing up for ${this.appName}! 
+        Please verify your email address to complete your registration.
+        
+        Click the link below to verify your email:
+        ${verificationLink}
+        
+        This link will expire in 24 hours.
+        
+        If you didn't create an account with us, please ignore this email.
+        
+        ---
+        This email was sent by ${this.appName}
+        © 2025 ${this.appName}. All rights reserved.
+      `;
+
+      const result = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: [userEmail],
+        subject: `Verify Your Email - ${this.appName}`,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      console.log(`✅ Verification email sent successfully to ${userEmail}`);
+      return { success: true, emailId: result.data?.id };
+    } catch (error) {
+      console.error("❌ Failed to send verification email:", error);
+      throw new Error(`Verification email sending failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Send farm worker invitation email
+   */
+  async sendFarmInviteEmail(userEmail, inviteToken, farmName, inviterName, role = 'worker') {
+    try {
+      const inviteLink = `${this.baseUrl}/accept-invite?token=${inviteToken}`;
+
+      // Development fallback if no API key
+      if (!this.env.RESEND_API_KEY) {
+        console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
+        console.warn("📧 [MOCK] Farm invite email would be sent to:", userEmail);
+        console.warn("🔗 [MOCK] Invite link:", inviteLink);
+        return { success: true, emailId: "mock_invite_id_" + Date.now() };
+      }
+
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Farm Invitation - ${this.appName}</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+              .button { display: inline-block; background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+              .footer { text-align: center; color: #666; font-size: 14px; margin-top: 30px; }
+              .invite-card { background: white; border: 2px solid #16a34a; border-radius: 8px; padding: 20px; margin: 20px 0; }
+              .role-badge { background: #16a34a; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🌱 ${this.appName}</h1>
+                <p>Farm Invitation</p>
+              </div>
+              
+              <div class="content">
+                <h2>You've Been Invited to Join a Farm!</h2>
+                <p>Hello,</p>
+                <p><strong>${inviterName}</strong> has invited you to join <strong>${farmName}</strong> on ${this.appName} as a <span class="role-badge">${role}</span>.</p>
+                
+                <div class="invite-card">
+                  <h3>📋 Farm Details</h3>
+                  <p><strong>Farm:</strong> ${farmName}</p>
+                  <p><strong>Role:</strong> ${role}</p>
+                  <p><strong>Invited by:</strong> ${inviterName}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${inviteLink}" class="button">Accept Invitation</a>
+                </div>
+                
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 4px; font-family: monospace;">
+                  ${inviteLink}
+                </p>
+                
+                <div class="warning">
+                  <strong>⚠️ Important:</strong>
+                  <ul>
+                    <li>This invitation will expire in 7 days</li>
+                    <li>If you don't have an account yet, you'll be able to create one when you accept</li>
+                    <li>If you didn't expect this invitation, please ignore this email</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="footer">
+                <p>This email was sent by ${this.appName}</p>
+                <p>If you have any questions, contact our support team.</p>
+                <p>© 2025 ${this.appName}. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const emailText = `
+        ${this.appName} - Farm Invitation
+        
+        Hello,
+        
+        ${inviterName} has invited you to join ${farmName} on ${this.appName} as a ${role}.
+        
+        Click the link below to accept the invitation:
+        ${inviteLink}
+        
+        This invitation will expire in 7 days.
+        
+        If you don't have an account yet, you'll be able to create one when you accept.
+        
+        If you didn't expect this invitation, please ignore this email.
+        
+        ---
+        This email was sent by ${this.appName}
+        © 2025 ${this.appName}. All rights reserved.
+      `;
+
+      const result = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: [userEmail],
+        subject: `Invitation to join ${farmName} - ${this.appName}`,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      console.log(`✅ Farm invite email sent successfully to ${userEmail}`);
+      return { success: true, emailId: result.data?.id };
+    } catch (error) {
+      console.error("❌ Failed to send farm invite email:", error);
+      throw new Error(`Farm invite email sending failed: ${error.message}`);
+    }
+  }
+
+  /**
    * Test email connectivity
    */
   async testEmailConnection() {

@@ -3,6 +3,25 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
+// Simple logger utility for consistent logging
+const logger = {
+  error: (message: string, ...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.error(message, ...args);
+    }
+  },
+  warn: (message: string, ...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(message, ...args);
+    }
+  },
+  log: (message: string, ...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.log(message, ...args);
+    }
+  },
+};
+
 const IMAGE_PNG = 'image/png';
 const ICON_PURPOSE = 'unknown maskable';
 
@@ -146,7 +165,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
           processed.push(item.id);
         }
       } catch (error) {
-        console.error('Failed to sync offline request:', error);
+        logger.error('Failed to sync offline request:', error);
         // Keep failed items in queue for retry
       }
     }
@@ -157,7 +176,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
   // Register service worker
   const registerServiceWorker = useCallback(async () => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-      console.warn('Service Worker not supported in this environment');
+      logger.warn('Service Worker not supported in this environment');
       return null;
     }
 
@@ -190,7 +209,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
 
       return registration;
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      logger.error('Service Worker registration failed:', error);
       return null;
     }
   }, []);
@@ -215,7 +234,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
   // Install PWA
   const installPWA = useCallback(async (): Promise<boolean> => {
     if (!installPromptRef.current) {
-      console.warn('No install prompt available');
+      logger.warn('No install prompt available');
       return false;
     }
 
@@ -234,7 +253,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
 
       return result.outcome === 'accepted';
     } catch (error) {
-      console.error('PWA installation failed:', error);
+      logger.error('PWA installation failed:', error);
       return false;
     }
   }, []);
@@ -242,7 +261,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
   // Request notification permission
   const requestNotificationPermission = useCallback(async (): Promise<NotificationPermission> => {
     if (!('Notification' in window)) {
-      console.warn('Notifications not supported');
+      logger.warn('Notifications not supported');
       return 'denied';
     }
 
@@ -282,7 +301,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
 
       return true;
     } catch (error) {
-      console.error('Push subscription failed:', error);
+      logger.error('Push subscription failed:', error);
       return false;
     }
   }, [capabilities.swRegistration, capabilities.pushSubscription]);
@@ -302,7 +321,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
         throw new Error('Failed to send subscription to server');
       }
     } catch (error) {
-      console.error('Failed to send subscription to server:', error);
+      logger.error('Failed to send subscription to server:', error);
     }
   }, []);
 
@@ -316,7 +335,7 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
   const registerBackgroundSync = useCallback(
     async (tag: string, options?: unknown) => {
       if (!capabilities.swRegistration) {
-        console.warn('No service worker registration available');
+        logger.warn('No service worker registration available');
         return false;
       }
 
@@ -327,11 +346,11 @@ export function usePWACapabilities(customConfig?: Partial<PWAConfig>) {
           await syncManager.register(tag);
           return true;
         } else {
-          console.warn('Background sync not supported');
+          logger.warn('Background sync not supported');
           return false;
         }
       } catch (error) {
-        console.error('Background sync registration failed:', error);
+        logger.error('Background sync registration failed:', error);
         return false;
       }
     },

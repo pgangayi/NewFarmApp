@@ -1,6 +1,24 @@
 import { apiClient } from '../../lib/cloudflare';
-import { Animal, AnimalHealth, ProductionRecord, BreedingRecord } from '../../api/types';
+import {
+  Animal,
+  AnimalHealth,
+  ProductionRecord,
+  BreedingRecord,
+  QueryFilters,
+} from '../../api/types';
 import { ENDPOINTS as apiEndpoints } from '../../api/config';
+
+// Define AnimalAnalytics interface since it's not in types.ts
+interface AnimalAnalytics {
+  total_animals: number;
+  healthy_animals: number;
+  sick_animals: number;
+  production_stats: {
+    total_production: number;
+    average_production: number;
+  };
+  breed_distribution: Record<string, number>;
+}
 
 /**
  * DOMAIN SERVICE: Animal
@@ -9,16 +27,18 @@ import { ENDPOINTS as apiEndpoints } from '../../api/config';
  */
 
 export class AnimalService {
-  static async getAnimalsByFarm(farmId?: string): Promise<Animal[]> {
-    const query = farmId ? `?farm_id=${farmId}` : '';
+  static async getAnimalsByFarm(farm_id?: string): Promise<Animal[]> {
+    const query = farm_id ? `?farm_id=${farm_id}` : '';
     const response = await apiClient.get<{ data: Animal[] }>(
       `${apiEndpoints.animals.list}${query}`
     );
     return response.data || [];
   }
 
-  static async getAnimals(params?: any): Promise<Animal[]> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+  static async getAnimals(params?: QueryFilters): Promise<Animal[]> {
+    const query = params
+      ? `?${new URLSearchParams(params as Record<string, string>).toString()}`
+      : '';
     const response = await apiClient.get<{ data: Animal[] }>(
       `${apiEndpoints.animals.list}${query}`
     );
@@ -35,13 +55,20 @@ export class AnimalService {
     // but here I need to map whatever the backend returns to Animal[].
     // If we assume standardize API: data property is common.
     // But BreedingManager used `data.animals`.
-    // Let's try to handle `any` return and look for data.animals or data.data or data.
-    return (response as any).animals || (response as any).data || response || [];
+    // Let's try to handle unknown return and look for data.animals or data.data or data.
+    const unknownResponse = response as unknown;
+    const animalsResponse = unknownResponse as { animals?: Animal[] };
+    const dataResponse = unknownResponse as { data?: Animal[] };
+    const arrayResponse = unknownResponse as Animal[];
+
+    return animalsResponse.animals || dataResponse.data || arrayResponse;
   }
 
-  static async getAnalytics(params?: any): Promise<any> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return await apiClient.get<any>(`${apiEndpoints.animals.analytics}${query}`);
+  static async getAnalytics(params?: QueryFilters): Promise<AnimalAnalytics> {
+    const query = params
+      ? `?${new URLSearchParams(params as Record<string, string>).toString()}`
+      : '';
+    return await apiClient.get<AnimalAnalytics>(`${apiEndpoints.animals.analytics}${query}`);
   }
 
   static async getAnimalById(id: string): Promise<Animal | null> {
@@ -112,8 +139,13 @@ export class AnimalService {
   }
   // --- Production Records ---
 
-  static async getProductionRecords(animalId: string, params?: any): Promise<ProductionRecord[]> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+  static async getProductionRecords(
+    animalId: string,
+    params?: QueryFilters
+  ): Promise<ProductionRecord[]> {
+    const query = params
+      ? `?${new URLSearchParams(params as Record<string, string>).toString()}`
+      : '';
     const response = await apiClient.get<ProductionRecord[]>(
       `${apiEndpoints.animals.production(animalId)}${query}`
     );

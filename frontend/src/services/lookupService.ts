@@ -13,20 +13,20 @@ export const LookupService = {
   async getBreeds(species?: string): Promise<Breed[]> {
     const params = new URLSearchParams();
     if (species) params.append('species', species);
-    const response = await apiClient.get<{ data: any[] }>(
+    const response = await apiClient.get<{ data: Breed[] }>(
       `/api/lookup/breeds?${params.toString()}`
     );
     return response.data.map(b => ({
       id: String(b.id),
       name: b.name,
       species: b.species,
-      characteristics: b.description,
+      characteristics: (b as Breed & { description?: string }).description || '',
       created_at: b.created_at,
     }));
   },
 
   async addBreed(breed: Omit<Breed, 'id' | 'created_at' | 'updated_at'>): Promise<Breed> {
-    const response = await apiClient.post<{ data: any }>('/api/lookup/breeds', {
+    const response = await apiClient.post<{ data: Breed }>('/api/lookup/breeds', {
       ...breed,
       description: breed.characteristics,
     });
@@ -35,7 +35,7 @@ export const LookupService = {
       id: String(b.id),
       name: b.name,
       species: b.species,
-      characteristics: b.description,
+      characteristics: (b as Breed & { description?: string }).description || '',
       created_at: b.created_at,
     };
   },
@@ -43,7 +43,7 @@ export const LookupService = {
   async getCropVarieties(cropType?: string): Promise<CropVariety[]> {
     const params = new URLSearchParams();
     if (cropType) params.append('crop_type', cropType);
-    const response = await apiClient.get<{ data: any[] }>(
+    const response = await apiClient.get<{ data: CropVariety[] }>(
       `/api/lookup/varieties?${params.toString()}`
     );
     return response.data.map(v => ({
@@ -56,7 +56,7 @@ export const LookupService = {
   },
 
   async addCropVariety(variety: Omit<CropVariety, 'id'>): Promise<CropVariety> {
-    const response = await apiClient.post<{ data: any }>('/api/lookup/varieties', variety);
+    const response = await apiClient.post<{ data: CropVariety }>('/api/lookup/varieties', variety);
     const v = response.data;
     return {
       id: String(v.id),

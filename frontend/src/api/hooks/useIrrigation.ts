@@ -14,7 +14,7 @@ export function useIrrigation() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (_data: any) => {
+    mutationFn: async (_data: Record<string, unknown>) => {
       // Placeholder endpoint
       // return apiClient.put(`/api/irrigation/schedules/${data.id}`, data);
     },

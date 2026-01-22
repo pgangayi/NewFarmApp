@@ -4,11 +4,11 @@ import { QUERY_KEYS, CACHE_CONFIG } from '../constants';
 import type { Animal, CreateRequest, UpdateRequest } from '../types';
 import { LookupService } from '../../services/lookupService';
 
-export function useAnimals(farmId?: string) {
+export function useAnimals(farm_id?: string) {
   return useQuery({
-    queryKey: farmId ? QUERY_KEYS.animals.byFarm(farmId) : QUERY_KEYS.animals.all,
+    queryKey: farm_id ? QUERY_KEYS.animals.byFarm(farm_id) : QUERY_KEYS.animals.all,
     queryFn: async () => {
-      const endpoint = farmId ? `/api/livestock?farm_id=${farmId}` : '/api/livestock';
+      const endpoint = farm_id ? `/api/livestock?farm_id=${farm_id}` : '/api/livestock';
       const response = await apiClient.get<{ animals: Animal[] }>(endpoint);
       return response.animals;
     },

@@ -25,12 +25,12 @@ export function useFinance(filters?: Record<string, unknown>) {
   });
 }
 
-export function useFinanceSummary(farmId?: string) {
+export function useFinanceSummary(farm_id?: string) {
   return useQuery({
-    queryKey: QUERY_KEYS.finance.summary(farmId),
+    queryKey: QUERY_KEYS.finance.summary(farm_id),
     queryFn: async () => {
-      const endpoint = farmId
-        ? `${API_ENDPOINTS.finance.summary}?farm_id=${farmId}`
+      const endpoint = farm_id
+        ? `${API_ENDPOINTS.finance.summary}?farm_id=${farm_id}`
         : API_ENDPOINTS.finance.summary;
       return await apiClient.get<FinanceSummary>(endpoint);
     },
@@ -38,17 +38,17 @@ export function useFinanceSummary(farmId?: string) {
   });
 }
 
-export function useBudgets(farmId?: string, fiscalYear?: number) {
+export function useBudgets(farm_id?: string, fiscalYear?: number) {
   return useQuery({
-    queryKey: ['finance', 'budgets', farmId, fiscalYear],
+    queryKey: ['finance', 'budgets', farm_id, fiscalYear],
     queryFn: async () => {
-      if (!farmId) return [];
+      if (!farm_id) return [];
       const year = fiscalYear || new Date().getFullYear();
       return await apiClient.get<BudgetCategory[]>(
-        `/api/finance/budgets?fiscal_year=${year}&farm_id=${farmId}`
+        `/api/finance/budgets?fiscal_year=${year}&farm_id=${farm_id}`
       );
     },
-    enabled: !!farmId,
+    enabled: !!farm_id,
     staleTime: CACHE_CONFIG.staleTime.finance,
   });
 }

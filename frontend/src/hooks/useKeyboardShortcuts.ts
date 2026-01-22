@@ -327,7 +327,7 @@ export function useKeyboardShortcuts() {
           setShortcuts(prev =>
             prev.map(shortcut => ({
               ...shortcut,
-              ...(savedShortcuts.find((s: any) => s.id === shortcut.id) || {}),
+              ...(savedShortcuts.find((s: { id: string }) => s.id === shortcut.id) || {}),
             }))
           );
         }

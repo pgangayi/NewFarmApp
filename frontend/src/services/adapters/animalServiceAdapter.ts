@@ -8,8 +8,8 @@ import { Animal } from '../../api/types';
  */
 
 export class AnimalServiceAdapter {
-  static async getAnimals(farmId?: string) {
-    return AnimalService.getAnimalsByFarm(farmId);
+  static async getAnimals(farm_id?: string) {
+    return AnimalService.getAnimalsByFarm(farm_id);
   }
 
   static async getAnimal(id: string) {

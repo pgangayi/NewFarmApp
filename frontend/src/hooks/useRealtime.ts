@@ -20,7 +20,7 @@ interface RealtimeData {
   farm_id?: string;
 }
 
-export function useRealtimeData(farmId: string, options: WebSocketOptions = {}) {
+export function useRealtimeData(farm_id: string, options: WebSocketOptions = {}) {
   const [connectionStatus, setConnectionStatus] = useState<
     'connecting' | 'connected' | 'disconnected' | 'error'
   >('disconnected');
@@ -45,7 +45,7 @@ export function useRealtimeData(farmId: string, options: WebSocketOptions = {}) 
     }
 
     setConnectionStatus('connecting');
-    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/dashboard/${farmId}`;
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/dashboard/${farm_id}`;
 
     try {
       const ws = new WebSocket(wsUrl);
@@ -67,7 +67,7 @@ export function useRealtimeData(farmId: string, options: WebSocketOptions = {}) 
 
           // Update React Query cache based on data type
           if (data.type === 'dashboard_update') {
-            queryClient.setQueryData(['dashboard', farmId], data.data);
+            queryClient.setQueryData(['dashboard', farm_id], data.data);
           } else if (data.type === 'inventory_update') {
             queryClient.setQueryData(['inventory'], data.data);
           } else if (data.type === 'task_update') {
@@ -77,7 +77,7 @@ export function useRealtimeData(farmId: string, options: WebSocketOptions = {}) 
           } else if (data.type === 'crop_update') {
             queryClient.setQueryData(['crops'], data.data);
           } else if (data.type === 'weather_update') {
-            queryClient.setQueryData(['weather', farmId], data.data);
+            queryClient.setQueryData(['weather', farm_id], data.data);
           }
 
           onMessage?.(data);
@@ -130,14 +130,14 @@ export function useRealtimeData(farmId: string, options: WebSocketOptions = {}) 
   };
 
   useEffect(() => {
-    if (farmId) {
+    if (farm_id) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [farmId]);
+  }, [farm_id]);
 
   return {
     connectionStatus,
@@ -149,8 +149,8 @@ export function useRealtimeData(farmId: string, options: WebSocketOptions = {}) 
 }
 
 // Specific hooks for different data types
-export function useRealtimeDashboard(farmId: string) {
-  const { connectionStatus, lastUpdate, ...rest } = useRealtimeData(farmId);
+export function useRealtimeDashboard(farm_id: string) {
+  const { connectionStatus, lastUpdate, ...rest } = useRealtimeData(farm_id);
 
   return {
     connectionStatus,
@@ -163,9 +163,12 @@ export function useRealtimeInventory() {
   const [inventoryUpdates, setInventoryUpdates] = useState<unknown[]>([]);
 
   const { connectionStatus, lastUpdate } = useRealtimeData('global', {
-    onMessage: (data: any) => {
-      if (data.type === 'inventory_update') {
-        setInventoryUpdates(prev => [...prev, data].slice(-10)); // Keep last 10 updates
+    onMessage: (data: unknown) => {
+      if (data && typeof data === 'object' && 'type' in data) {
+        const typedData = data as { type: string; [key: string]: unknown };
+        if (typedData.type === 'inventory_update') {
+          setInventoryUpdates(prev => [...prev, typedData].slice(-10)); // Keep last 10 updates
+        }
       }
     },
   });
@@ -181,9 +184,12 @@ export function useRealtimeTasks() {
   const [taskUpdates, setTaskUpdates] = useState<unknown[]>([]);
 
   const { connectionStatus, lastUpdate } = useRealtimeData('global', {
-    onMessage: (data: any) => {
-      if (data.type === 'task_update') {
-        setTaskUpdates(prev => [...prev, data].slice(-10));
+    onMessage: (data: unknown) => {
+      if (data && typeof data === 'object' && 'type' in data) {
+        const typedData = data as { type: string; [key: string]: unknown };
+        if (typedData.type === 'task_update') {
+          setTaskUpdates(prev => [...prev, typedData].slice(-10));
+        }
       }
     },
   });

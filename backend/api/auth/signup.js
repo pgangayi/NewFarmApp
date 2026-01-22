@@ -83,12 +83,27 @@ export async function onRequest(context) {
       true
     );
 
-    // Send welcome email
+    // Send verification email (instead of welcome email)
     try {
       const emailService = new EmailService(env);
-      await emailService.sendWelcomeEmail(createdUser.email, createdUser.name);
+      const verificationToken = auth.generateSecureToken();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Store verification token
+      await env.DB.prepare(`
+        INSERT INTO email_verification_tokens (user_id, email, token, expires_at, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).bind(
+        createdUser.id,
+        createdUser.email,
+        verificationToken,
+        expiresAt.toISOString(),
+        new Date().toISOString()
+      ).run();
+
+      await emailService.sendVerificationEmail(createdUser.email, verificationToken, createdUser.name);
     } catch (emailError) {
-      console.error("Failed to send welcome email:", emailError);
+      console.error("Failed to send verification email:", emailError);
       // Don't fail the signup if email fails
     }
 

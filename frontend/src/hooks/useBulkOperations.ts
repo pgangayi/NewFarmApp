@@ -38,7 +38,7 @@ interface BulkOperationProgress {
 interface SelectedItem {
   id: string;
   type: string;
-  data: any;
+  data: Record<string, unknown>;
   selected: boolean;
 }
 
@@ -155,7 +155,7 @@ export function useBulkOperations() {
     });
   }, []);
 
-  const selectAll = useCallback((items: any[], type: string, select: boolean = true) => {
+  const selectAll = useCallback((items: Array<{ id: string }>, type: string, select: boolean = true) => {
     setSelectedItems(prev => {
       const newSelected = [...prev];
       items.forEach(item => {
@@ -181,7 +181,7 @@ export function useBulkOperations() {
     });
   }, []);
 
-  const toggleItemSelection = useCallback((item: any, type: string) => {
+  const toggleItemSelection = useCallback((item: { id: string }, type: string) => {
     setSelectedItems(prev => {
       const existingIndex = prev.findIndex(s => s.id === item.id);
       if (existingIndex !== -1) {

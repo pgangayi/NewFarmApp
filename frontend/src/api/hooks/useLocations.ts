@@ -16,12 +16,12 @@ import type { Location, CreateRequest, UpdateRequest } from '../types';
 /**
  * Fetch all locations, optionally filtered by farm
  */
-export function useLocations(farmId?: string) {
+export function useLocations(farm_id?: string) {
   return useQuery({
-    queryKey: farmId ? QUERY_KEYS.locations.byFarm(farmId) : QUERY_KEYS.locations.all,
+    queryKey: farm_id ? QUERY_KEYS.locations.byFarm(farm_id) : QUERY_KEYS.locations.all,
     queryFn: async () => {
-      const endpoint: string = farmId
-        ? `${API_ENDPOINTS.locations.list}?farm_id=${farmId}`
+      const endpoint: string = farm_id
+        ? `${API_ENDPOINTS.locations.list}?farm_id=${farm_id}`
         : API_ENDPOINTS.locations.list;
       return await apiClient.get<Location[]>(endpoint);
     },

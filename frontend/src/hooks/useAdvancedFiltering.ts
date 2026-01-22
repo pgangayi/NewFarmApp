@@ -52,8 +52,8 @@ export interface SavedFilter {
   filters: FilterRule[];
   sorts: SortRule[];
   isDefault: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface FilterState {
@@ -388,8 +388,8 @@ export function useAdvancedFiltering(
         filters: [...state.filters],
         sorts: [...state.sorts],
         isDefault: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
       setSavedFilters(prev => [...prev, newSavedFilter]);

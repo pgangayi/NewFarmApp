@@ -8,8 +8,8 @@ import { Crop } from '../../api/types';
  */
 
 export class CropServiceAdapter {
-  static async getCrops(farmId?: string) {
-    return CropService.getCropsByFarm(farmId);
+  static async getCrops(farm_id?: string) {
+    return CropService.getCropsByFarm(farm_id);
   }
 
   static async getCrop(id: string) {

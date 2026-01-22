@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
 import { Button } from './ui/button';
 import { MapPin, Save, Loader2 } from 'lucide-react';
+import { useToast } from './ui/use-toast';
 
 interface Farm {
   id: string;
@@ -18,6 +19,7 @@ interface FarmLocationManagerProps {
 }
 
 export function FarmLocationManager({ farm, onLocationUpdated }: FarmLocationManagerProps) {
+  const { toast } = useToast();
   const { getAuthHeaders } = useAuth();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -85,11 +87,19 @@ export function FarmLocationManager({ farm, onLocationUpdated }: FarmLocationMan
         },
         error => {
           console.error('Error getting location:', error);
-          alert('Unable to get current location. Please enter manually.');
+          toast({
+            title: 'Location Error',
+            description: 'Unable to get current location. Please enter manually.',
+            variant: 'destructive',
+          });
         }
       );
     } else {
-      alert('Geolocation is not supported by this browser.');
+      toast({
+        title: 'Geolocation Not Supported',
+        description: 'Geolocation is not supported by this browser.',
+        variant: 'destructive',
+      });
     }
   };
 

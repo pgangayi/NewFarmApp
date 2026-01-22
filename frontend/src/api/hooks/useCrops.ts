@@ -4,11 +4,11 @@ import { QUERY_KEYS, CACHE_CONFIG } from '../constants';
 import type { Crop, CreateRequest, UpdateRequest } from '../types';
 import { LookupService } from '../../services/lookupService';
 
-export function useCrops(farmId?: string) {
+export function useCrops(farm_id?: string) {
   return useQuery({
-    queryKey: farmId ? QUERY_KEYS.crops.byFarm(farmId) : QUERY_KEYS.crops.all,
+    queryKey: farm_id ? QUERY_KEYS.crops.byFarm(farm_id) : QUERY_KEYS.crops.all,
     queryFn: async () => {
-      const endpoint = farmId ? `/api/crops?farm_id=${farmId}` : '/api/crops';
+      const endpoint = farm_id ? `/api/crops?farm_id=${farm_id}` : '/api/crops';
       return await apiClient.get<Crop[]>(endpoint);
     },
     staleTime: CACHE_CONFIG.staleTime.crops,

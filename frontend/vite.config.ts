@@ -94,8 +94,13 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          router: ['react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-slot'],
           maps: ['mapbox-gl'],
+          utils: ['date-fns', 'clsx', 'tailwind-merge'],
+          query: ['@tanstack/react-query'],
+          validation: ['zod'],
+          icons: ['lucide-react'],
         },
       },
     },
