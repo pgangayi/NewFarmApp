@@ -164,6 +164,20 @@ functions/_redirects
 # Legacy build artifacts (cleaned)
 .wrangler/tmp/
 
+# Wrangler / Miniflare state and temp artifacts
+backend/.wrangler/
+backend/.wrangler/**
+backend/.wrangler/state/
+backend/.wrangler/tmp/
+backend/.wrangler/**/miniflare-*.sqlite*
+backend/.wrangler/**/tmp/**
+
+# Miniflare DB files
+**/miniflare-*.sqlite
+**/miniflare-*.sqlite-shm
+**/miniflare-*.sqlite-wal
+
+
 # Testing
 test-results/
 playwright-report/
