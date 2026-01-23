@@ -9,6 +9,7 @@
     "test:integration": "cd backend && npm run test:integration",
     "test:performance": "node performance-tests/run-performance-tests.js",
     "test:performance:ci": "TEST_BASE_URL=http://localhost:8787 node performance-tests/run-performance-tests.js",
+    "perf:auth": "echo \"Run: k6 run performance-tests/auth.k6.js --env BASE_URL=http://localhost:8787 --env TEST_USER_EMAIL=perfuser@example.com --env TEST_USER_PASSWORD=PerfPassw0rd! --vus 50 --duration 30s\"",
     "test:all": "npm run test:integration && npm run test:e2e && npm run test:performance",
     "deploy": "./scripts/deploy/deploy.sh",
     "deploy:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy/deploy.ps1",

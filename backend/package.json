@@ -9,7 +9,8 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --testPathPattern=integration-workflows.test.js --verbose",
-    "seed:e2e": "node ../backend/scripts/seed-e2e.js"
+    "seed:e2e": "node ../backend/scripts/seed-e2e.js",
+    "check:env": "node scripts/validate-secrets.js"
   },
   "jest": {
     "testEnvironment": "node",

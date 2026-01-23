@@ -164,6 +164,25 @@ export async function onRequest(context) {
             emailId: emailResult.emailId,
           };
 
+          // If running in test/staging with the test flag enabled, include the reset link in the response
+          try {
+            const urlObj = new URL(request.url);
+            const debugParam = urlObj.searchParams.get('debug') === '1';
+            const testHeader = request.headers.get('X-TEST-MODE') === '1';
+            const enableDebug =
+              env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === '1' ||
+              env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === 'true' ||
+              process.env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === '1' ||
+              process.env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === 'true';
+
+            if (enableDebug && (debugParam || testHeader)) {
+              // Attach the reset link for test flows only
+              response.debug = { resetLink };
+            }
+          } catch (e) {
+            // ignore URL parsing errors
+          }
+
           // Log successful password reset request
           console.log("Password reset email sent for user:", user.id);
         } else {
