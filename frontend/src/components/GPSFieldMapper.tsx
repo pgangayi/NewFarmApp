@@ -354,7 +354,7 @@ export function GPSFieldMapper({
             GPS: {permissionStatus}
           </Badge>
         </div>
-      </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* GPS Controls */}
@@ -496,7 +496,7 @@ export function GPSFieldMapper({
                         </div>
                       </div>
                       <Badge variant="outline">Edit</Badge>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </CardContent>

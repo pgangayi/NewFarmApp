@@ -39,14 +39,14 @@ export async function onRequest(context) {
   const rateLimitInfo = await rateLimiter.checkLimit(
     identifier,
     endpointPath,
-    request.method
+    request.method,
   );
 
   if (!rateLimitInfo.allowed) {
     return rateLimiter.createRateLimitResponse(
       rateLimitInfo.remaining,
       rateLimitInfo.resetTime,
-      rateLimitInfo.limit
+      rateLimitInfo.limit,
     );
   }
 
@@ -119,12 +119,12 @@ export async function onRequest(context) {
               operation: "run",
               table: "password_reset_tokens",
               userId: "system",
-            }
+            },
           );
         } catch (cleanupError) {
           console.warn(
             "Failed to cleanup existing reset tokens:",
-            cleanupError
+            cleanupError,
           );
           // Continue processing even if cleanup fails
         }
@@ -138,7 +138,7 @@ export async function onRequest(context) {
               operation: "run",
               table: "password_reset_tokens",
               userId: "system",
-            }
+            },
           );
         } catch (insertError) {
           console.error("Failed to store reset token:", insertError);
@@ -148,11 +148,11 @@ export async function onRequest(context) {
         // Send actual email with the full link
         console.log(
           "Attempting to send password reset email for user ID:",
-          user.id
+          user.id,
         );
         const emailResult = await emailService.sendPasswordResetEmail(
           user.email,
-          resetLink // Pass the full link instead of just the token
+          resetLink, // Pass the full link instead of just the token
         );
 
         if (emailResult.success) {
@@ -167,13 +167,13 @@ export async function onRequest(context) {
           // If running in test/staging with the test flag enabled, include the reset link in the response
           try {
             const urlObj = new URL(request.url);
-            const debugParam = urlObj.searchParams.get('debug') === '1';
-            const testHeader = request.headers.get('X-TEST-MODE') === '1';
+            const debugParam = urlObj.searchParams.get("debug") === "1";
+            const testHeader = request.headers.get("X-TEST-MODE") === "1";
             const enableDebug =
-              env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === '1' ||
-              env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === 'true' ||
-              process.env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === '1' ||
-              process.env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === 'true';
+              env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === "1" ||
+              env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === "true" ||
+              process.env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === "1" ||
+              process.env.TEST_ENABLE_RESET_LINK_TO_RESPONSE === "true";
 
             if (enableDebug && (debugParam || testHeader)) {
               // Attach the reset link for test flows only
@@ -193,7 +193,7 @@ export async function onRequest(context) {
         console.error(
           "❌ Email process failed for user ID:",
           user.id,
-          emailError
+          emailError,
         );
         // Fallback to generic response for security, even if processing failed
         response = {
@@ -211,7 +211,7 @@ export async function onRequest(context) {
     const rateLimitHeaders = rateLimiter.buildRateLimitHeaders(
       rateLimitInfo.limit,
       rateLimitInfo.remaining,
-      rateLimitInfo.resetTime
+      rateLimitInfo.resetTime,
     );
 
     // Always return success (200 OK) with the generic message

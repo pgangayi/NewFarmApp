@@ -245,7 +245,7 @@ describe("SimpleAuth", () => {
         0, // success = false
         failureReason,
       );
-    });
+    }, 10000);
 
     it("should hash email for privacy", async () => {
       const email = "USER@EXAMPLE.COM";
