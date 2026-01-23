@@ -110,6 +110,12 @@ jobs:
     name: Backend (Node / migrations)
     runs-on: ubuntu-latest
     needs: root
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+      APP_URL: ${{ secrets.APP_URL }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +136,12 @@ jobs:
         shell: pwsh
         run: |
           cd backend; npm ci
+
+      - name: Validate environment (secrets)
+        if: github.event_name == 'push' && steps.check-backend.outputs.exists == 'true'
+        shell: pwsh
+        run: |
+          cd backend; CHECK_SECRETS=1 npm run check:env
 
       - name: Run backend lint & tests
         if: steps.check-backend.outputs.exists == 'true'
@@ -238,11 +250,16 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps
 
-      - name: Run E2E tests
+      - name: Run E2E tests (with test-mode)
         working-directory: frontend
-        run: npm run test:e2e
         env:
           BASE_URL: http://localhost:3000
+          TEST_ENABLE_RESET_LINK_TO_RESPONSE: '1'
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        run: npm run test:e2e
+
 
   performance-tests:
     name: Performance Tests
@@ -296,6 +313,11 @@ jobs:
         run: node performance-tests/run-performance-tests.js
         env:
           TEST_BASE_URL: http://localhost:8787
+
+      - name: Run k6 auth performance (optional)
+        run: |
+          docker run --rm -v ${{ github.workspace }}/performance-tests:/scripts -w /scripts loadimpact/k6 run auth.k6.js --env BASE_URL=http://localhost:8787 --vus 10 --duration 30s
+        if: always()
 
       - name: Upload performance results
         uses: actions/upload-artifact@v4
