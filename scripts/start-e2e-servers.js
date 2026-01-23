@@ -8,12 +8,27 @@ function spawnProcess(command, args, opts = {}) {
   return p;
 }
 
-// Start Wrangler dev (Cloudflare Workers) on port 8787
-console.log("Starting Wrangler dev (backend) on port 8787...");
+const BACKEND_PORT =
+  process.env.BACKEND_PORT || process.env.BACKEND_PORT_DEFAULT || "8787";
+const FRONTEND_PORT = process.env.FRONTEND_PORT || process.env.PORT || "3000";
+
+// Start Wrangler dev (Cloudflare Workers)
+console.log(`Starting Wrangler dev (backend) on port ${BACKEND_PORT}...`);
 const wrangler = spawnProcess(
   "npx",
-  ["wrangler", "dev", "--config", "wrangler.toml", "--local", "--port", "8787"],
-  { cwd: path.join(__dirname, "..", "backend") }
+  [
+    "wrangler",
+    "dev",
+    "--config",
+    "wrangler.toml",
+    "--local",
+    "--port",
+    BACKEND_PORT,
+  ],
+  {
+    cwd: path.join(__dirname, "..", "backend"),
+    env: { ...process.env, BACKEND_PORT },
+  },
 );
 
 // After starting wrangler, wait for it to become ready then seed the local D1 database
@@ -37,9 +52,10 @@ async function buildAndPreview() {
   });
   await new Promise((res) => build.on("exit", res));
 
-  console.log("Starting frontend preview on port 3000...");
+  console.log(`Starting frontend preview on port ${FRONTEND_PORT}...`);
   const preview = spawnProcess("node", ["server.js"], {
     cwd: path.join(__dirname, "..", "frontend"),
+    env: { ...process.env, FRONTEND_PORT },
   });
   return preview;
 }

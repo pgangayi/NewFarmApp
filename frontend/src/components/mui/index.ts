@@ -1,6 +1,6 @@
 // Material UI Components Export
 export { default as ModernHeader } from './Header';
-export { FarmThemeProvider, farmTheme, darkFarmTheme } from './theme';
+export { FarmThemeProvider, farmTheme, darkFarmTheme } from './theme.tsx';
 
 // Re-export commonly used MUI components for convenience
 export {

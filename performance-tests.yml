@@ -1,0 +1,239 @@
+config:
+  target: 'http://localhost:8787'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 1
+      name: "Warm-up"
+
+    # Normal load phase
+    - duration: 300
+      arrivalRate: 5
+      name: "Normal Load"
+
+    # High load phase
+    - duration: 120
+      arrivalRate: 20
+      name: "High Load"
+
+    # Stress test phase
+    - duration: 60
+      arrivalRate: 50
+      name: "Stress Test"
+
+    # Spike test
+    - duration: 30
+      arrivalRate: 100
+      name: "Spike Test"
+
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+  processor: './performance-tests/processor.js'
+
+scenarios:
+  - name: "Authentication Flow"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "performance-test@example.com"
+            password: "TestPass123!"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: "/api/auth/validate"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Farm Management"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "performance-test@example.com"
+            password: "TestPass123!"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+
+      - get:
+          url: "/api/farms"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "length"
+          capture:
+            json: "$[0].id"
+            as: "farm_id"
+
+      - get:
+          url: "/api/farms/{{ farm_id }}"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Crop Operations"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "performance-test@example.com"
+            password: "TestPass123!"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+
+      - get:
+          url: "/api/farms"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          capture:
+            json: "$[0].id"
+            as: "farm_id"
+
+      - get:
+          url: "/api/crops?farm_id={{ farm_id }}"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+      - post:
+          url: "/api/crops"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          json:
+            farm_id: "{{ farm_id }}"
+            crop_type: "Corn"
+            planting_date: "2025-04-01"
+            status: "active"
+          capture:
+            json: "$.id"
+            as: "crop_id"
+
+      - get:
+          url: "/api/crops/{{ crop_id }}"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Inventory Management"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "performance-test@example.com"
+            password: "TestPass123!"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+
+      - get:
+          url: "/api/farms"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          capture:
+            json: "$[0].id"
+            as: "farm_id"
+
+      - get:
+          url: "/api/inventory?farm_id={{ farm_id }}"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+      - post:
+          url: "/api/inventory"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          json:
+            farm_id: "{{ farm_id }}"
+            name: "Performance Test Item {{ $randomInt }}"
+            category: "Equipment"
+            quantity: 10
+            unit: "pieces"
+          capture:
+            json: "$.id"
+            as: "inventory_id"
+
+  - name: "Task Management"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "performance-test@example.com"
+            password: "TestPass123!"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+
+      - get:
+          url: "/api/tasks"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+      - post:
+          url: "/api/tasks"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          json:
+            title: "Performance Test Task {{ $randomInt }}"
+            description: "Task created during performance testing"
+            priority: "medium"
+            status: "pending"
+            due_date: "2025-12-31"
+          capture:
+            json: "$.id"
+            as: "task_id"
+
+  - name: "Dashboard and Analytics"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "performance-test@example.com"
+            password: "TestPass123!"
+          capture:
+            json: "$.token"
+            as: "auth_token"
+
+      - get:
+          url: "/api/dashboard"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: "/api/analytics/overview"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: "/api/search?q=performance"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: 200

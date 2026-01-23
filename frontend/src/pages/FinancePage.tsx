@@ -12,6 +12,7 @@ import {
   useBudgets,
   useFarmWithSelection,
   apiClient,
+  API_ENDPOINTS,
 } from '../api';
 import { FinanceEntry, BudgetCategory, FinanceFormData } from '../components/finance/types';
 import { FinanceOverview } from '../components/finance/FinanceOverview';
@@ -63,7 +64,7 @@ export function FinancePage() {
     queryFn: async () => {
       if (!currentFarm?.id) return null;
       return await apiClient.get<any>(
-        `/api/finance/analytics?farm_id=${currentFarm.id}&period=12months`
+        `${API_ENDPOINTS.finance.analytics}?farm_id=${currentFarm.id}&period=12months`
       );
     },
     enabled: !!currentFarm?.id && isAuthenticated(),
@@ -98,7 +99,7 @@ export function FinancePage() {
   const handleGenerateReport = async () => {
     if (currentFarm) {
       try {
-        await apiClient.post('/api/finance/reports', {
+        await apiClient.post(API_ENDPOINTS.finance.reports, {
           farm_id: currentFarm.id,
           report_type: 'monthly',
           report_period: new Date().toISOString().substring(0, 7),

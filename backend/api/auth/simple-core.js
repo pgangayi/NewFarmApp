@@ -1,10 +1,10 @@
 import { onRequest as signupHandler } from "./signup.js";
 import { onRequest as loginHandler } from "./login.js";
 import { onRequest as validateHandler } from "./validate.js";
-import { 
+import {
   onRequestSendVerification,
   onRequestVerify,
-  onRequestResend 
+  onRequestResend
 } from "./verification.js";
 import {
   onRequestSendInvite,
@@ -58,4 +58,5 @@ export class AuthCore {
   static async myInvites(request, env) {
     return onRequestMyInvites({ request, env });
   }
+
 }

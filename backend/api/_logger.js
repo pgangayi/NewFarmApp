@@ -1,7 +1,111 @@
-// Comprehensive audit logging for security events
-// This file provides secure logging for authentication and system events
+// Comprehensive logging system for security events and general debugging
+// This file provides secure logging for authentication, system events, and error debugging
 
 import { getSecurityHeaders } from "./_validation.js";
+
+/**
+ * General Logger class for debugging and error logging
+ */
+export class Logger {
+  constructor(env) {
+    this.env = env;
+    this.levels = {
+      ERROR: 0,
+      WARN: 1,
+      INFO: 2,
+      DEBUG: 3,
+    };
+    this.currentLevel = this.env.NODE_ENV === 'development' ? this.levels.DEBUG : this.levels.INFO;
+  }
+
+  /**
+   * Log error with context
+   */
+  error(message, context = {}) {
+    if (this.currentLevel >= this.levels.ERROR) {
+      const logEntry = {
+        level: 'ERROR',
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+        stack: context.error?.stack,
+      };
+      console.error('[ERROR]', logEntry);
+    }
+  }
+
+  /**
+   * Log warning
+   */
+  warn(message, context = {}) {
+    if (this.currentLevel >= this.levels.WARN) {
+      const logEntry = {
+        level: 'WARN',
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      };
+      console.warn('[WARN]', logEntry);
+    }
+  }
+
+  /**
+   * Log info
+   */
+  info(message, context = {}) {
+    if (this.currentLevel >= this.levels.INFO) {
+      const logEntry = {
+        level: 'INFO',
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      };
+      console.info('[INFO]', logEntry);
+    }
+  }
+
+  /**
+   * Log debug (development only)
+   */
+  debug(message, context = {}) {
+    if (this.currentLevel >= this.levels.DEBUG) {
+      const logEntry = {
+        level: 'DEBUG',
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      };
+      console.debug('[DEBUG]', logEntry);
+    }
+  }
+
+  /**
+   * Log API request/response
+   */
+  logRequest(method, url, statusCode, duration, userId = null) {
+    const logEntry = {
+      method,
+      url,
+      statusCode,
+      duration,
+      userId,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (statusCode >= 400) {
+      this.error(`API Error: ${method} ${url} - ${statusCode}`, logEntry);
+    } else {
+      this.info(`API Request: ${method} ${url} - ${statusCode}`, logEntry);
+    }
+  }
+}
+
+/**
+ * Create logger instance
+ */
+export function createLogger(env) {
+  return new Logger(env);
+}
 
 export class AuditLogger {
   constructor(env) {

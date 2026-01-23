@@ -5,14 +5,14 @@
 import {
   AuthUtils,
   createUnauthorizedResponse,
-  createErrorResponse,
-  createSuccessResponse,
 } from "./_auth.js";
+import { ErrorHandler, ResponseHandler } from "./_errors.js";
 import {
   DatabaseOperations,
   FarmRepository,
   DB_ERROR_CODES,
 } from "./_database.js";
+import { sanitizeInput } from "./_validation.js";
 
 // Security Constants
 const RATE_LIMITS = {
@@ -91,11 +91,8 @@ const ValidationUtils = {
       );
     }
 
-    // Basic XSS sanitization
-    return trimmed.replace(
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      ""
-    );
+    // Enhanced sanitization
+    return sanitizeInput(trimmed, { maxLength });
   },
 
   // Enum validation
@@ -308,6 +305,8 @@ export async function onRequest(context) {
     const auth = new AuthUtils(env);
     const db = new DatabaseOperations(env);
     const farmRepo = new FarmRepository(db);
+    const errorHandler = new ErrorHandler(env);
+    const responseHandler = new ResponseHandler(env);
 
     // Get user from token
     const user = await auth.getUserFromToken(request);
@@ -317,24 +316,24 @@ export async function onRequest(context) {
 
     // Route to appropriate handler
     if (method === "GET") {
-      return await handleGetFarms(request, url, user, auth, farmRepo);
+      return await handleGetFarms(request, url, user, auth, farmRepo, errorHandler, responseHandler);
     } else if (method === "POST") {
-      return await handleCreateFarm(request, user, auth, farmRepo);
+      return await handleCreateFarm(request, user, auth, farmRepo, errorHandler, responseHandler);
     } else if (method === "PUT") {
-      return await handleUpdateFarm(request, user, auth, farmRepo);
+      return await handleUpdateFarm(request, user, auth, farmRepo, errorHandler, responseHandler);
     } else if (method === "DELETE") {
-      return await handleDeleteFarm(request, url, user, auth, farmRepo);
+      return await handleDeleteFarm(request, url, user, auth, farmRepo, errorHandler, responseHandler);
     } else {
-      return createErrorResponse("Method not allowed", 405);
+      return errorHandler.createErrorResponse("BAD_REQUEST_ERROR", "Method not allowed", 405);
     }
   } catch (error) {
     console.error("Farms API error:", error);
-    return createErrorResponse("Internal server error", 500);
+    return errorHandler.internalError("Internal server error");
   }
 }
 
 // GET handler using FarmRepository
-async function handleGetFarms(request, url, user, auth, farmRepo) {
+async function handleGetFarms(request, url, user, auth, farmRepo, errorHandler, responseHandler) {
   const farmId = request.params?.id || url.searchParams.get("id");
   const stats = url.searchParams.get("stats");
   const operations = url.searchParams.get("operations");
@@ -359,7 +358,7 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
       const farm = await farmRepo.findWithStats(farmId, { userId: user.id });
 
       if (!farm) {
-        return createErrorResponse("Farm not found", 404);
+        return errorHandler.notFoundError("Farm");
       }
 
       // Get farm statistics if requested
@@ -392,7 +391,7 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
         farm.operations = operations;
       }
 
-      return createSuccessResponse(farm);
+      return responseHandler.createSuccessResponse(farm);
     } else if (analytics === "true") {
       // Get farms with analytics data using repository
       // findByOwner already includes animal_count, field_count, and pending_tasks
@@ -404,7 +403,7 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
         userId: user.id,
       });
 
-      return createSuccessResponse(farms);
+      return responseHandler.createSuccessResponse(farms);
     } else {
       // Standard farms list using repository
       // Use findByUser to get all farms the user has access to (owned + member)
@@ -416,11 +415,11 @@ async function handleGetFarms(request, url, user, auth, farmRepo) {
         userId: user.id,
       });
 
-      return createSuccessResponse(farms || []);
+      return responseHandler.createSuccessResponse(farms || []);
     }
   } catch (error) {
     console.error("Error in handleGetFarms:", error);
-    return createErrorResponse("Database error", 500);
+    return errorHandler.internalError("Database error");
   }
 }
 
@@ -477,7 +476,7 @@ async function handleUpdateFarm(request, user, auth, farmRepo) {
 
   // Check access BEFORE querying database
   if (!(await auth.hasFarmAccess(user.id, farmId))) {
-    return createErrorResponse("Access denied", 403);
+    return errorHandler.authorizationError("Access denied");
   }
 
   // Validate update data

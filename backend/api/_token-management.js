@@ -2,22 +2,24 @@
 // Supports token revocation, validation, and security monitoring
 // Date: November 12, 2025
 
-import crypto from "crypto";
-
 export class TokenManager {
   constructor(env) {
     this.env = env;
   }
 
-  // Hash token for secure storage and comparison
-  hashToken(token) {
-    return crypto.createHash("sha256").update(token).digest("hex");
+  // Hash token for secure storage and comparison using Web Crypto API
+  async hashToken(token) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   // Check if token is revoked
   async isTokenRevoked(token, tokenType = "access") {
     try {
-      const tokenHash = this.hashToken(token);
+      const tokenHash = await this.hashToken(token);
 
       const { results } = await this.env.DB.prepare(
         `
@@ -63,7 +65,7 @@ export class TokenManager {
     requestContext = {}
   ) {
     try {
-      const tokenHash = this.hashToken(token);
+      const tokenHash = await this.hashToken(token);
 
       // Extract token expiration time if it's a JWT
       let expiresAt = new Date();
@@ -228,7 +230,7 @@ export class TokenManager {
 
       // Store attempt (anonymized email for security)
       const anonymizedEmail = email
-        ? this.hashToken(email.toLowerCase())
+        ? await this.hashToken(email.toLowerCase())
         : null;
 
       await this.env.DB.prepare(

@@ -830,10 +830,7 @@ export default function Dashboard() {
 
               {/* Dynamic crop type selection */}
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <label
-                  htmlFor="crop-type-select"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="crop-type-select" className="block text-sm font-medium text-gray-700 mb-2">
                   Crop Type for Analytics:
                 </label>
                 <select

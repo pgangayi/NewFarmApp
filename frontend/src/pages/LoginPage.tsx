@@ -80,7 +80,11 @@ export function LoginPage() {
               >
                 <Agriculture fontSize="large" />
               </Avatar>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ fontWeight: 600, color: 'text.primary' }}
+              >
                 Login to Farmers Boot
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -132,11 +136,11 @@ export function LoginPage() {
                 variant="contained"
                 size="large"
                 disabled={loading}
-                sx={{ 
+                sx={{
                   mb: 3,
                   py: 1.5,
                   bgcolor: 'grey.900',
-                  '&:hover': { bgcolor: 'grey.800' }
+                  '&:hover': { bgcolor: 'grey.800' },
                 }}
                 data-testid="login-submit-button"
               >
@@ -168,7 +172,11 @@ export function LoginPage() {
                 Don&apos;t have an account?{' '}
                 <Link
                   to="/signup"
-                  style={{ textDecoration: 'none', color: theme.palette.primary.main, fontWeight: 600 }}
+                  style={{
+                    textDecoration: 'none',
+                    color: theme.palette.primary.main,
+                    fontWeight: 600,
+                  }}
                   data-testid="signup-link"
                 >
                   Sign up

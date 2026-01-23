@@ -19,17 +19,17 @@ export interface PestDiseaseRecord {
   created_at?: string;
 }
 
-export function usePestDisease(farm_id?: string) {
+export function usePestDisease(farmId?: string) {
   return useQuery({
-    queryKey: [QUERY_KEY_PEST_DISEASE, farm_id],
+    queryKey: [QUERY_KEY_PEST_DISEASE, farmId],
     queryFn: async () => {
-      if (!farm_id) return [];
+      if (!farmId) return [];
       const response = await apiClient.get<{ data: PestDiseaseRecord[] }>(
-        `${PEST_DISEASE_ENDPOINT}?farm_id=${farm_id}`
+        `${PEST_DISEASE_ENDPOINT}?farm_id=${farmId}`
       );
       return response.data;
     },
-    enabled: !!farm_id,
+    enabled: !!farmId,
   });
 }
 

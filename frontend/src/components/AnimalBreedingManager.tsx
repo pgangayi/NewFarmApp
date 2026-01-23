@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
-import { Animal, BreedingRecord } from '../api/types';
-import { AnimalService } from '../services/domains/AnimalService';
+import { Animal } from '../api/types';
 import { Plus, Heart, Calendar, AlertCircle, CheckCircle, Baby } from 'lucide-react';
 
-// BreedingRecord interface removed, using global import
+interface BreedingRecord {
+  id: number;
+  animal_id: string;
+  breeding_date: string;
+  sire_id?: number;
+  breeding_type: string;
+  breeding_fee?: number;
+  expected_calving_date?: string;
+  actual_calving_date?: string;
+  breeding_result?: string;
+  offspring_count?: number;
+  breeding_notes?: string;
+  vet_supervision: boolean;
+  animal_name: string;
+  sire_name?: string;
+  created_by_name?: string;
+  created_at: string;
+}
 
 interface AnimalBreedingManagerProps {
   animalId: string;
@@ -57,7 +73,15 @@ export function AnimalBreedingManager({
   } = useQuery({
     queryKey: [BREEDING_RECORDS_KEY, animalId],
     queryFn: async () => {
-      return AnimalService.getBreedingRecords(animalId);
+      const response = await fetch(`/api/animals/${animalId}/breeding`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch breeding records');
+      }
+
+      return await response.json();
     },
     enabled: !!animalId && animalSex === 'female', // Only for females
   });
@@ -66,15 +90,37 @@ export function AnimalBreedingManager({
   const { data: maleAnimals } = useQuery({
     queryKey: ['male-animals-for-breeding'],
     queryFn: async () => {
-      return AnimalService.getAnimals({ species: 'all', sex: 'male' });
+      const response = await fetch('/api/animals?species=all&sex=male', {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch male animals');
+      }
+
+      const data = await response.json();
+      return data.animals || [];
     },
     enabled: !!animalId,
   });
 
   // Create breeding record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: any) => {
-      return AnimalService.addBreedingRecord(animalId, recordData);
+    mutationFn: async (recordData: unknown) => {
+      const response = await fetch(`/api/animals/${animalId}/breeding`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(recordData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create breeding record');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BREEDING_RECORDS_KEY, animalId] });
@@ -84,8 +130,21 @@ export function AnimalBreedingManager({
 
   // Update breeding record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: Partial<BreedingRecord> & { id: string }) => {
-      return AnimalService.updateBreedingRecord(animalId, id, recordData as any);
+    mutationFn: async ({ id, ...recordData }: Partial<BreedingRecord> & { id: number }) => {
+      const response = await fetch(`/api/animals/${animalId}/breeding/${id}`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(recordData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update breeding record');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BREEDING_RECORDS_KEY, animalId] });
@@ -96,7 +155,17 @@ export function AnimalBreedingManager({
   // Delete breeding record mutation
   const deleteMutation = useMutation({
     mutationFn: async (recordId: string) => {
-      return AnimalService.deleteBreedingRecord(animalId, recordId);
+      const response = await fetch(`/api/animals/${animalId}/breeding/${recordId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete breeding record');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BREEDING_RECORDS_KEY, animalId] });
@@ -231,9 +300,8 @@ export function AnimalBreedingManager({
                 <p className="text-sm font-medium text-green-700">Successful</p>
                 <p className="text-2xl font-bold text-green-900">
                   {
-                    breedingRecords.filter(
-                      (r: BreedingRecord) => r.breeding_result === RESULT_PREGNANT
-                    ).length
+                    breedingRecords.filter((r: BreedingRecord) => r.breeding_result === RESULT_PREGNANT)
+                      .length
                   }
                 </p>
               </div>
@@ -261,7 +329,7 @@ export function AnimalBreedingManager({
       {/* Breeding Records List */}
       <div className="space-y-4">
         {(breedingRecords || []).map((record: BreedingRecord) => {
-          const daysUntilCalving = getDaysUntilCalving(record.expected_calving_date || '');
+          const daysUntilCalving = getDaysUntilCalving(record.expected_calving_date);
           // const gestationDays = calculateGestationDays(
           //   record.breeding_date,
           //   record.expected_calving_date
@@ -274,10 +342,10 @@ export function AnimalBreedingManager({
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  {getBreedingTypeIcon(record.breeding_type || '')}
+                  {getBreedingTypeIcon(record.breeding_type)}
                   <div>
                     <h4 className="font-medium text-gray-900 capitalize">
-                      {(record.breeding_type || 'unknown').replace('_', ' ')}
+                      {record.breeding_type.replace('_', ' ')}
                     </h4>
                     <p className="text-sm text-gray-500">
                       {new Date(record.breeding_date).toLocaleDateString()}
@@ -355,7 +423,7 @@ export function AnimalBreedingManager({
                   <div>
                     <span className="font-medium text-gray-700">Expected Calving:</span>
                     <span className="text-gray-600 ml-2">
-                      {new Date(record.expected_calving_date || '').toLocaleDateString()}
+                      {new Date(record.expected_calving_date).toLocaleDateString()}
                     </span>
                     {daysUntilCalving !== null && (
                       <span
@@ -399,7 +467,7 @@ export function AnimalBreedingManager({
               {record.created_by_name && (
                 <div className="mt-2 text-xs text-gray-500">
                   Recorded by {record.created_by_name} on{' '}
-                  {new Date(record.created_at || new Date().toISOString()).toLocaleDateString()}
+                  {new Date(record.created_at).toLocaleDateString()}
                 </div>
               )}
             </div>

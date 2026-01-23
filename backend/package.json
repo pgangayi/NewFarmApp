@@ -2,21 +2,62 @@
   "name": "farmers-boot-functions",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev --remote",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=integration-workflows.test.js --verbose",
+    "seed:e2e": "node ../backend/scripts/seed-e2e.js"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(?:@tsndr)/)"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/tests/integration-workflows.test.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.js"
+    ],
+    "collectCoverageFrom": [
+      "api/**/*.js",
+      "!**/node_modules/**",
+      "!**/tests/**",
+      "!**/coverage/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      }
+    }
   },
   "dependencies": {
     "@sentry/cloudflare": "^8.0.0",
     "@tsndr/cloudflare-worker-jwt": "^3.2.1",
-    "bcryptjs": "^3.0.2",
     "buffer": "^6.0.3",
-    "crypto": "^1.0.1",
     "events": "^3.3.0",
     "itty-router": "^5.0.17",
     "jsonwebtoken": "^9.0.2",
+    "otplib": "^13.1.1",
     "resend": "^3.0.0",
+    "bcryptjs": "^2.4.3",
     "stream": "^0.0.3",
     "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "node-fetch": "^3.0.0"
   }
 }

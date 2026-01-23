@@ -2,16 +2,19 @@
 // Maintains security while reducing complexity
 // Date: November 18, 2025
 
+import crypto from "crypto";
 import { SimpleAuth, createErrorResponse } from "../_auth.js";
 import { CSRFProtection } from "../_csrf.js";
+import { DatabaseOperations } from "../_database.js";
+import { UserRepository } from "../repositories/index.js";
 import {
   buildPublicUser,
   createSessionResponse,
-  SimpleUserRepository,
 } from "./_session-response.js";
 
 export async function onRequest(context) {
   const { request, env } = context;
+  console.log(`[Auth:login] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
@@ -19,7 +22,8 @@ export async function onRequest(context) {
 
   const auth = new SimpleAuth(env);
   const csrf = new CSRFProtection(env);
-  const userRepo = new SimpleUserRepository(env.DB);
+  const db = new DatabaseOperations(env);
+  const userRepo = new UserRepository(db);
 
   try {
     const body = await request.json();
@@ -64,9 +68,44 @@ export async function onRequest(context) {
       return createErrorResponse("Invalid email or password", 401);
     }
 
+
+    // Check concurrent session limits
+    const sessionLimit = user.concurrent_sessions || 3; // Default to 3 concurrent sessions
+    const activeSessions = await env.DB.prepare(
+      "SELECT COUNT(*) as count FROM user_sessions WHERE user_id = ? AND is_active = 1 AND expires_at > datetime('now')"
+    ).bind(user.id).all();
+
+    if (activeSessions.results[0].count >= sessionLimit) {
+      // Terminate oldest session if limit exceeded
+      await env.DB.prepare(
+        "UPDATE user_sessions SET is_active = 0 WHERE user_id = ? AND is_active = 1 ORDER BY last_activity ASC LIMIT 1"
+      ).bind(user.id).run();
+    }
+
     // Generate tokens
     const accessToken = auth.generateAccessToken(user.id, user.email);
     const refreshToken = auth.generateRefreshToken(user.id, user.email);
+
+    // Extract session ID from access token
+    const sessionId = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64')).sessionId;
+
+    // Create session record
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await env.DB.prepare(
+      "INSERT INTO user_sessions (id, user_id, session_id, ip_address, user_agent, expires_at) VALUES (?, ?, ?, ?, ?, ?)"
+    ).bind(
+      crypto.randomUUID(),
+      user.id,
+      sessionId,
+      ipAddress,
+      request.headers.get("user-agent") || "unknown",
+      expiresAt.toISOString()
+    ).run();
+
+    // Update user's last session
+    await env.DB.prepare(
+      "UPDATE users SET last_session_id = ? WHERE id = ?"
+    ).bind(sessionId, user.id).run();
 
     // Track successful login
     await auth.trackLoginAttempt(email, ipAddress, true);

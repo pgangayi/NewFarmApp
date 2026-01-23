@@ -67,6 +67,39 @@ export function TaskList({
     },
   ];
 
+  const actions: ActionConfig[] = [
+    {
+      key: 'timer',
+      label: 'Timer',
+      icon: Play,
+      getIcon: item => {
+        const task = item as unknown as ExtendedTask;
+        return timerActive[task.id] ? Square : Play;
+      },
+      onClick: item => {
+        const task = item as unknown as ExtendedTask;
+        if (timerActive[task.id]) {
+          onStopTimer(task);
+        } else {
+          onStartTimer(task);
+        }
+      },
+      color: 'blue',
+    },
+    {
+      key: 'view',
+      label: 'View',
+      icon: Eye,
+      onClick: item => onViewTask(item as unknown as ExtendedTask),
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: Edit,
+      onClick: item => onEditTask(item as unknown as ExtendedTask),
+    },
+  ];
+
   // Customizing actions to handle the dynamic Timer icon is hard with current UnifiedList type
   // I will just implement basic actions.
 

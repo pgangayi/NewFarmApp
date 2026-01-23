@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
-import { AnimalService } from '../services/domains/AnimalService';
-import { ProductionRecord } from '../api/types';
 import { Plus, TrendingUp, DollarSign, Calendar, Award } from 'lucide-react';
 
-// ProductionRecord interface removed, using global import
+interface ProductionRecord {
+  id: number;
+  animal_id: string;
+  production_date: string;
+  production_type: string;
+  quantity: number;
+  unit: string;
+  quality_grade?: string;
+  price_per_unit?: number;
+  total_value?: number;
+  market_destination?: string;
+  storage_location?: string;
+  notes?: string;
+  animal_name: string;
+  recorded_by_name?: string;
+  created_at: string;
+}
 
 interface AnimalProductionTrackerProps {
   animalId: string;
@@ -51,10 +65,18 @@ export function AnimalProductionTracker({
   } = useQuery({
     queryKey: [PRODUCTION_RECORDS_KEY, animalId, dateFilter],
     queryFn: async () => {
-      return AnimalService.getProductionRecords(
-        animalId,
-        dateFilter ? { date: dateFilter } : undefined
-      );
+      const params = new URLSearchParams();
+      if (dateFilter) params.append('date', dateFilter);
+
+      const response = await fetch(`/api/animals/${animalId}/production?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch production records');
+      }
+
+      return await response.json();
     },
     enabled: !!animalId,
   });
@@ -94,8 +116,21 @@ export function AnimalProductionTracker({
 
   // Create production record mutation
   const createMutation = useMutation({
-    mutationFn: async (recordData: any) => {
-      return AnimalService.addProductionRecord(animalId, recordData);
+    mutationFn: async (recordData: unknown) => {
+      const response = await fetch(`/api/animals/${animalId}/production`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(recordData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create production record');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PRODUCTION_RECORDS_KEY, animalId] });
@@ -105,9 +140,21 @@ export function AnimalProductionTracker({
 
   // Update production record mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...recordData }: Partial<ProductionRecord> & { id: string }) => {
-      // Service expects string IDs
-      return AnimalService.updateProductionRecord(animalId, id, recordData as any);
+    mutationFn: async ({ id, ...recordData }: Partial<ProductionRecord> & { id: number }) => {
+      const response = await fetch(`/api/animals/${animalId}/production/${id}`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(recordData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update production record');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PRODUCTION_RECORDS_KEY, animalId] });
@@ -118,7 +165,17 @@ export function AnimalProductionTracker({
   // Delete production record mutation
   const deleteMutation = useMutation({
     mutationFn: async (recordId: string) => {
-      return AnimalService.deleteProductionRecord(animalId, recordId);
+      const response = await fetch(`/api/animals/${animalId}/production/${recordId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete production record');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PRODUCTION_RECORDS_KEY, animalId] });
@@ -353,7 +410,7 @@ export function AnimalProductionTracker({
             {record.recorded_by_name && (
               <div className="mt-2 text-xs text-gray-500">
                 Recorded by {record.recorded_by_name} on{' '}
-                {new Date(record.created_at || new Date().toISOString()).toLocaleDateString()}
+                {new Date(record.created_at).toLocaleDateString()}
               </div>
             )}
           </div>

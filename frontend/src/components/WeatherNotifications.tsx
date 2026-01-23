@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
-import { WeatherService } from '../services/domains/WeatherService';
 import {
   Bell,
   CheckCircle,
@@ -62,7 +61,12 @@ export function WeatherNotifications({
   } = useQuery({
     queryKey: ['weather-notifications', farmId],
     queryFn: async () => {
-      const recommendations = await WeatherService.getWeatherRecommendations();
+      const response = await fetch('/api/weather/recommendations', {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Failed to fetch notifications');
+
+      const recommendations = await response.json();
 
       // Convert recommendations to notifications
       const notifications: WeatherNotification[] = recommendations.map((rec: any) => ({
@@ -84,7 +88,17 @@ export function WeatherNotifications({
 
   const acknowledgeMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      return WeatherService.acknowledgeAlert(notificationId);
+      const response = await fetch('/api/weather', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          action: 'acknowledge_alert',
+          alert_id: notificationId,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to acknowledge notification');
+      return response.json();
     },
     onSuccess: () => {
       refetch();
@@ -358,7 +372,11 @@ export function WeatherNotifications({
                 htmlFor="daily-summary"
                 className="flex items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100"
               >
-                <input id="daily-summary" type="checkbox" className="mr-3 text-green-500" />
+                <input
+                  id="daily-summary"
+                  type="checkbox"
+                  className="mr-3 text-green-500"
+                />
                 <div>
                   <span className="text-sm font-medium text-gray-900">Daily summary</span>
                   <p className="text-xs text-gray-600">Daily weather summary</p>

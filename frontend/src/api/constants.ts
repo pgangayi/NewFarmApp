@@ -188,13 +188,19 @@ export const API_ENDPOINTS = {
     update: (id: string) => `/api/locations/${id}`,
     delete: (id: string) => `/api/locations/${id}`,
   },
-  finance: {
-    base: '/api/finance',
-    list: '/api/finance',
-    detail: (id: string) => `/api/finance/${id}`,
-    create: '/api/finance',
-    update: (id: string) => `/api/finance/${id}`,
-    delete: (id: string) => `/api/finance/${id}`,
-    summary: '/api/finance/summary',
-  },
+  finance: (() => {
+    const base = '/api/finance-enhanced';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+      summary: `${base}/summary`,
+      budgets: `${base}/budgets`,
+      reports: `${base}/reports`,
+      analytics: `${base}/analytics`,
+    };
+  })(),
 } as const;

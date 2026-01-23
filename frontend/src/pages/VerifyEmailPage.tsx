@@ -17,7 +17,9 @@ export default function VerifyEmailPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>(
+    'pending'
+  );
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [manualToken, setManualToken] = useState('');
@@ -27,7 +29,7 @@ export default function VerifyEmailPage() {
       setManualToken(token);
       handleVerify();
     }
-    
+
     if (user?.email) {
       setEmail(user.email);
     }
@@ -35,7 +37,7 @@ export default function VerifyEmailPage() {
 
   const handleVerify = async () => {
     const tokenToUse = token || manualToken;
-    
+
     if (!tokenToUse) {
       setVerificationStatus('error');
       setMessage('Verification token is required');
@@ -60,7 +62,7 @@ export default function VerifyEmailPage() {
       if (response.ok) {
         setVerificationStatus('success');
         setMessage('Email verified successfully! You can now access all features.');
-        
+
         // Update user context if available
         if (user) {
           // Refresh user data to reflect verification status
@@ -125,9 +127,7 @@ export default function VerifyEmailPage() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Mail className="mx-auto h-12 w-12 text-green-600" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Verify Your Email
-          </h2>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Verify Your Email</h2>
           <p className="mt-2 text-sm text-gray-600">
             We've sent a verification email to complete your registration
           </p>
@@ -144,18 +144,14 @@ export default function VerifyEmailPage() {
             {verificationStatus === 'success' && (
               <Alert className="bg-green-50 border-green-200">
                 <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  {message}
-                </AlertDescription>
+                <AlertDescription className="text-green-800">{message}</AlertDescription>
               </Alert>
             )}
 
             {verificationStatus === 'error' && (
               <Alert className="bg-red-50 border-red-200">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  {message}
-                </AlertDescription>
+                <AlertDescription className="text-red-800">{message}</AlertDescription>
               </Alert>
             )}
 
@@ -167,7 +163,7 @@ export default function VerifyEmailPage() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={e => setEmail(e.target.value)}
                     placeholder="Enter your email address"
                     disabled={isLoading}
                   />
@@ -178,7 +174,7 @@ export default function VerifyEmailPage() {
                   <Input
                     id="token"
                     value={manualToken}
-                    onChange={(e) => setManualToken(e.target.value)}
+                    onChange={e => setManualToken(e.target.value)}
                     placeholder="Enter verification token from email"
                     disabled={isLoading}
                   />

@@ -10,9 +10,7 @@ import {
   createInternalErrorResponse,
 } from "./_errors.js";
 
-const logger = createAuditLogger({
-  ENVIRONMENT: process.env.NODE_ENV || "development",
-});
+// Use instance-level audit logger created from runtime env to avoid module-level process.env reads
 
 /**
  * Database Data Cleanup Manager
@@ -21,7 +19,7 @@ const logger = createAuditLogger({
 export class DatabaseCleanup {
   constructor(dbOperations) {
     this.db = dbOperations;
-    this.logger = logger;
+    this.logger = createAuditLogger(this.db?.env || {});
   }
 
   /**
@@ -163,7 +161,7 @@ export class DatabaseCleanup {
           table,
           context: { countBeforeCleanup: true },
           skipRateLimit: true,
-        }
+        },
       );
 
       const beforeCount = countResult.data?.count || 0;
@@ -177,7 +175,7 @@ export class DatabaseCleanup {
           table,
           context: { cleanup: true, step: step.description },
           skipRateLimit: true,
-        }
+        },
       );
 
       const afterCount = await this.db.executeQuery(
@@ -188,7 +186,7 @@ export class DatabaseCleanup {
           table,
           context: { countAfterCleanup: true },
           skipRateLimit: true,
-        }
+        },
       );
 
       const finalCount = afterCount.data?.count || 0;
@@ -301,7 +299,7 @@ export class DatabaseCleanup {
             table,
             context: { getStats: true },
             skipRateLimit: true,
-          }
+          },
         );
 
         const count = result.data?.count || 0;
@@ -335,12 +333,12 @@ export class DatabaseCleanup {
 
     if (
       !confirm(
-        "Are you sure you want to reset the database? This will delete ALL data!"
+        "Are you sure you want to reset the database? This will delete ALL data!",
       )
     ) {
       throw new DatabaseError(
         "Database reset cancelled by user",
-        "RESET_CANCELLED"
+        "RESET_CANCELLED",
       );
     }
 
@@ -426,7 +424,7 @@ export async function onRequestCleanup(context) {
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -470,7 +468,7 @@ export async function onRequestCleanup(context) {
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 

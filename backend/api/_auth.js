@@ -6,32 +6,93 @@
 // Use user IDs or hashed identifiers for logging. Redact sensitive data from logs.
 
 import jwt from "@tsndr/cloudflare-worker-jwt";
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { TokenManager } from "./_token-management.js";
+import bcrypt from "bcryptjs";
 
-// SHARED DEV SECRET to match Frontend's AuthServiceAdapter
-const DEV_SECRET = "local_dev_secret_key_change_in_prod";
+// Helper: Constant-time comparison to prevent timing attacks
+function safeCompare(a, b) {
+  let mismatch = a.length === b.length ? 0 : 1;
+  if (mismatch) {
+    // If lengths differ, set b to a to avoid out-of-bounds reads; mismatch already set
+    b = a;
+  }
+  for (let i = 0, il = a.length; i < il; ++i) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+// Helper: Convert ArrayBuffer to Hex String
+function bufferToHex(buffer) {
+  return [...new Uint8Array(buffer)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 export class SimpleAuth {
   constructor(env) {
     this.env = env;
-    // Prioritize the hardcoded dev secret for this session to match frontend
-    this.jwtSecret = DEV_SECRET;
+    this.jwtSecret = env.JWT_SECRET;
     this.tokenManager = new TokenManager(env);
+
+    // Note: Tests should control the DB mock lifecycle directly.
+    // Modifying the provided DB mock at construction time caused surprising
+    // interactions with per-test mock setups. Keep constructor behavior simple
+    // and let tests stub/mock DB methods explicitly.
   }
 
-  // Password hashing (keep bcrypt for security)
+  // Password hashing using bcrypt
   async hashPassword(password) {
     const saltRounds = 12;
-    return bcrypt.hash(password, saltRounds);
+    return await bcrypt.hash(password, saltRounds);
   }
 
   async verifyPassword(password, hash) {
-    return bcrypt.compare(password, hash);
+    // Support older pbkdf2 format, otherwise use bcrypt compare
+    if (typeof hash === "string" && hash.startsWith("pbkdf2:")) {
+      const parts = hash.split(":");
+      if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
+
+      const iterations = parseInt(parts[1]);
+      const salt = new Uint8Array(
+        parts[2].match(/.{2}/g).map((byte) => parseInt(byte, 16)),
+      );
+      const expectedHash = parts[3];
+
+      const encoder = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(password),
+        "PBKDF2",
+        false,
+        ["deriveBits"],
+      );
+
+      const derivedKey = await crypto.subtle.deriveBits(
+        {
+          name: "PBKDF2",
+          salt: salt,
+          iterations: iterations,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        256,
+      );
+
+      const hashArray = Array.from(new Uint8Array(derivedKey));
+      const actualHash = hashArray
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      // Use constant-time comparison to avoid timing attacks
+      return safeCompare(actualHash, expectedHash);
+    }
+
+    // Fall back to bcrypt for modern flows
+    return await bcrypt.compare(password, hash);
   }
 
-  // Simplified JWT tokens
+  // Enhanced JWT tokens with shorter expiration for better security
   async generateAccessToken(userId, email) {
     return jwt.sign(
       {
@@ -39,9 +100,10 @@ export class SimpleAuth {
         email,
         type: "access",
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
+        exp: Math.floor(Date.now() / 1000) + 15 * 60, // 15 minutes (reduced from 1 hour)
+        sessionId: crypto.randomUUID(), // Add session ID for tracking
       },
-      this.jwtSecret
+      this.jwtSecret,
     );
   }
 
@@ -52,9 +114,10 @@ export class SimpleAuth {
         email,
         type: "refresh",
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days
+        exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days (reduced from 30 days)
+        sessionId: crypto.randomUUID(), // Add session ID for tracking
       },
-      this.jwtSecret
+      this.jwtSecret,
     );
   }
 
@@ -80,6 +143,19 @@ export class SimpleAuth {
         payload.userId = payload.sub;
       }
 
+      // Update session activity if this is an access token with session ID
+      if (payload.sessionId && payload.type === "access") {
+        try {
+          await this.env.DB.prepare(
+            "UPDATE user_sessions SET last_activity = datetime('now') WHERE session_id = ? AND is_active = 1",
+          )
+            .bind(payload.sessionId)
+            .run();
+        } catch (error) {
+          console.warn("Failed to update session activity:", error);
+        }
+      }
+
       return payload;
     } catch (error) {
       console.error("Token verification failed:", error);
@@ -94,21 +170,49 @@ export class SimpleAuth {
 
   // Simplified login attempt tracking
   async trackLoginAttempt(email, ipAddress, success, failureReason = null) {
+    // Avoid logging PII (do not log email)
+    console.log("trackLoginAttempt called", { ipAddress, success });
     try {
-      const emailHash = crypto
-        .createHash("sha256")
-        .update(email.toLowerCase())
-        .digest("hex");
-      const attemptId = crypto.randomUUID();
+      // Prefer Web Crypto when available, fall back to Node's crypto for tests/environments
+      let emailHash;
+      if (
+        crypto &&
+        crypto.subtle &&
+        typeof crypto.subtle.digest === "function"
+      ) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(email.toLowerCase());
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        emailHash = bufferToHex(hashBuffer);
+      } else {
+        const nodeCrypto = require("crypto");
+        emailHash = nodeCrypto
+          .createHash("sha256")
+          .update(email.toLowerCase())
+          .digest("hex");
+      }
 
-      await this.env.DB.prepare(
+      const attemptId =
+        crypto && crypto.randomUUID
+          ? crypto.randomUUID()
+          : require("crypto").randomUUID();
+
+      const prepared = this.env.DB.prepare(
         `
         INSERT INTO login_attempts (id, email_hash, ip_address, success, failure_reason)
         VALUES (?, ?, ?, ?, ?)
-      `
-      )
-        .bind(attemptId, emailHash, ipAddress, success ? 1 : 0, failureReason)
-        .run();
+      `,
+      );
+
+      const bound = prepared.bind(
+        attemptId,
+        emailHash,
+        ipAddress,
+        success ? 1 : 0,
+        failureReason,
+      );
+
+      await bound.run();
 
       return true;
     } catch (error) {
@@ -126,7 +230,7 @@ export class SimpleAuth {
         `
         SELECT COUNT(*) as attempts FROM login_attempts
         WHERE ip_address = ? AND success = 0 AND attempted_at > ?
-      `
+      `,
       )
         .bind(ipAddress, windowStart.toISOString())
         .all();
@@ -168,12 +272,29 @@ export class SimpleAuth {
       const payload = await this.verifyToken(token);
       if (!payload) return null;
 
-      const { results } = await this.env.DB.prepare(
-        "SELECT id, email, name, created_at FROM users WHERE id = ?"
+      // Protect against DB hangs by racing the DB call with a timeout.
+      const dbQuery = this.env.DB.prepare(
+        "SELECT id, email, name, created_at FROM users WHERE id = ?",
       )
         .bind(payload.userId)
         .all();
 
+      const timeoutMs = 3000; // 3s timeout for DB queries in this hot path
+
+      let queryResult;
+      try {
+        queryResult = await Promise.race([
+          dbQuery,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("DB query timeout")), timeoutMs),
+          ),
+        ]);
+      } catch (err) {
+        console.warn("DB query failed or timed out in getUserFromToken:", err);
+        return null;
+      }
+
+      const { results } = queryResult || {};
       return results && results.length > 0 ? results[0] : null;
     } catch (error) {
       console.error("Auth validation error:", error);
@@ -204,7 +325,7 @@ export class SimpleAuth {
         UNION
         SELECT 1 FROM farm_members WHERE farm_id = ? AND user_id = ?
         LIMIT 1
-      `
+      `,
       )
         .bind(farmId, userId, farmId, userId)
         .all();
@@ -225,7 +346,7 @@ export class SimpleAuth {
     try {
       // Owners implicitly have access
       const ownerCheck = await this.env.DB.prepare(
-        `SELECT 1 FROM farms WHERE id = ? AND owner_id = ? LIMIT 1`
+        `SELECT 1 FROM farms WHERE id = ? AND owner_id = ? LIMIT 1`,
       )
         .bind(farmId, userId)
         .all();
@@ -236,7 +357,7 @@ export class SimpleAuth {
 
       // Existing membership?
       const memberCheck = await this.env.DB.prepare(
-        `SELECT 1 FROM farm_members WHERE farm_id = ? AND user_id = ? LIMIT 1`
+        `SELECT 1 FROM farm_members WHERE farm_id = ? AND user_id = ? LIMIT 1`,
       )
         .bind(farmId, userId)
         .all();
@@ -247,7 +368,7 @@ export class SimpleAuth {
 
       await this.env.DB.prepare(
         `INSERT INTO farm_members (farm_id, user_id, role)
-         VALUES (?, ?, ?)`
+         VALUES (?, ?, ?)`,
       )
         .bind(farmId, userId, role || "member")
         .run();
@@ -271,14 +392,14 @@ export class SimpleAuth {
     resourceType = null,
     resourceId = null,
     ipAddress = null,
-    success = true
+    success = true,
   ) {
     try {
       await this.env.DB.prepare(
         `
         INSERT INTO audit_logs (user_id, action, resource_type, resource_id, ip_address, success)
         VALUES (?, ?, ?, ?, ?, ?)
-      `
+      `,
       )
         .bind(
           userId,
@@ -286,7 +407,7 @@ export class SimpleAuth {
           resourceType,
           resourceId,
           ipAddress,
-          success ? 1 : 0
+          success ? 1 : 0,
         )
         .run();
     } catch (error) {
@@ -302,12 +423,24 @@ export class SimpleCSRF {
   }
 
   generateToken() {
-    return crypto
-      .randomBytes(32)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
+    try {
+      // Prefer Node's crypto.randomBytes when available for deterministic behavior in tests
+      const nodeCrypto = require("crypto");
+      return nodeCrypto
+        .randomBytes(32)
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+    } catch (e) {
+      const arr = new Uint8Array(32);
+      crypto.getRandomValues(arr);
+      return Buffer.from(arr)
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+    }
   }
 
   // Stateless CSRF validation using JWT payload
@@ -361,9 +494,15 @@ export { SimpleAuth as Auth };
 
 // Additional utility functions for backward compatibility
 export function generateSecureToken(length = 32) {
-  return crypto.randomBytes(length).toString("hex");
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return bufferToHex(array.buffer);
 }
 
-export function hashResetToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
+// NOTE: Converted to async to support Web Crypto API
+export async function hashResetToken(token) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return bufferToHex(hashBuffer);
 }

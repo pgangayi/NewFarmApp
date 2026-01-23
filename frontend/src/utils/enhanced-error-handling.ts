@@ -103,7 +103,7 @@ export class EnhancedErrorHandler {
   private setup_global_handlers(): void {
     // Handle unhandled promise rejections
     if (typeof window !== 'undefined') {
-      window.addEventListener('unhandledrejection', (event) => {
+      window.addEventListener('unhandledrejection', event => {
         this.handle_error({
           message: 'Unhandled promise rejection',
           severity: ERROR_SEVERITY.HIGH,
@@ -114,7 +114,7 @@ export class EnhancedErrorHandler {
       });
 
       // Handle uncaught errors
-      window.addEventListener('error', (event) => {
+      window.addEventListener('error', event => {
         this.handle_error({
           message: event.message || 'Uncaught error',
           severity: ERROR_SEVERITY.CRITICAL,
@@ -161,7 +161,7 @@ export class EnhancedErrorHandler {
   // Handle an error
   handle_error(params: Partial<AppError>): AppError {
     const error = this.create_error(params);
-    
+
     // Store error
     this.error_store.set(error.id, error);
 
@@ -408,7 +408,10 @@ export const handle_network_error = (error: unknown, context?: Record<string, an
   });
 };
 
-export const handle_validation_error = (message: string, context?: Record<string, any>): AppError => {
+export const handle_validation_error = (
+  message: string,
+  context?: Record<string, any>
+): AppError => {
   return error_handler.handle_error({
     message,
     severity: ERROR_SEVERITY.MEDIUM,
@@ -436,7 +439,10 @@ export const handle_database_error = (error: unknown, context?: Record<string, a
   });
 };
 
-export const handle_user_input_error = (message: string, context?: Record<string, any>): AppError => {
+export const handle_user_input_error = (
+  message: string,
+  context?: Record<string, any>
+): AppError => {
   return error_handler.handle_error({
     message,
     severity: ERROR_SEVERITY.LOW,

@@ -185,7 +185,7 @@ export function createMockInventoryItem(overrides: Partial<InventoryItem> = {}):
     farm_id: 'farm-1',
     name: 'Test Item',
     category: 'feed',
-    quantity: 100,
+    qty: 100,
     unit: 'kg',
     created_at: TEST_DATE_ISO,
     updated_at: '',
@@ -212,7 +212,7 @@ export function createMockApiResponse<T>(
 
 export function createMockApiError(
   message: string = 'An error occurred',
-  _status_code: number = 500,
+  _statusCode: number = 500,
   error: string = 'INTERNAL_ERROR'
 ): ApiResponse<null> {
   return {

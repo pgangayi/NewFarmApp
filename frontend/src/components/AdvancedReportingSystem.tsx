@@ -36,7 +36,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useToast } from '../hooks/use-toast';
 
 const CATEGORY_OPERATIONAL = 'operational';
 const CATEGORY_FINANCIAL = 'financial';
@@ -52,6 +51,7 @@ const FREQ_MONTHLY = 'monthly';
 const FREQ_WEEKLY = 'weekly';
 const FREQ_QUARTERLY = 'quarterly';
 const FREQ_ON_DEMAND = 'on_demand';
+
 
 interface ReportTemplate {
   id: string;
@@ -99,125 +99,127 @@ interface ReportData {
   };
 }
 
-const reportTemplates: ReportTemplate[] = [
-  {
-    id: 'financial-overview',
-    name: 'Financial Overview Report',
-    description:
-      'Comprehensive financial analysis with profit/loss, cash flow, and budget performance',
-    category: CATEGORY_FINANCIAL,
-    type: TYPE_PDF,
-    frequency: FREQ_MONTHLY,
-    estimated_time: '2-3 minutes',
-    sections: [
-      'Executive Summary',
-      'Revenue Analysis',
-      'Expense Breakdown',
-      'Cash Flow',
-      'Budget Performance',
-      'Recommendations',
-    ],
-    preview_available: true,
-    download_count: 45,
-    last_generated: '2024-11-01',
-  },
-  {
-    id: 'operational-performance',
-    name: 'Operational Performance Report',
-    description:
-      'Detailed operational metrics including crop yields, animal health, and task efficiency',
-    category: CATEGORY_OPERATIONAL,
-    type: TYPE_EXCEL,
-    frequency: FREQ_WEEKLY,
-    estimated_time: '3-5 minutes',
-    sections: [
-      'Performance Overview',
-      'Crop Management',
-      'Animal Care',
-      'Task Efficiency',
-      'Resource Utilization',
-    ],
-    preview_available: true,
-    download_count: 32,
-    last_generated: '2024-11-05',
-  },
-  {
-    id: 'compliance-audit',
-    name: 'Compliance & Audit Report',
-    description: 'Regulatory compliance tracking and audit trail documentation',
-    category: CATEGORY_COMPLIANCE,
-    type: TYPE_PDF,
-    frequency: FREQ_QUARTERLY,
-    estimated_time: '5-7 minutes',
-    sections: [
-      'Compliance Status',
-      'Regulatory Requirements',
-      'Audit Trail',
-      'Documentation Review',
-      'Action Items',
-    ],
-    preview_available: false,
-    download_count: 18,
-    last_generated: '2024-10-15',
-  },
-  {
-    id: 'custom-dashboard',
-    name: 'Custom Dashboard Report',
-    description:
-      'Tailored report with custom metrics and visualizations based on your specifications',
-    category: CATEGORY_CUSTOM,
-    type: TYPE_PDF,
-    frequency: FREQ_ON_DEMAND,
-    estimated_time: '1-2 minutes',
-    sections: ['Custom Metrics', 'Data Visualization', 'Key Insights', 'Action Recommendations'],
-    preview_available: true,
-    download_count: 67,
-    last_generated: '2024-11-03',
-  },
-  {
-    id: 'inventory-analysis',
-    name: 'Inventory Analysis Report',
-    description:
-      'Comprehensive inventory management with stock levels, turnover rates, and optimization suggestions',
-    category: CATEGORY_OPERATIONAL,
-    type: TYPE_EXCEL,
-    frequency: FREQ_MONTHLY,
-    estimated_time: '2-4 minutes',
-    sections: [
-      'Inventory Overview',
-      'Stock Levels',
-      'Turnover Analysis',
-      'Cost Analysis',
-      'Optimization Opportunities',
-    ],
-    preview_available: true,
-    download_count: 29,
-    last_generated: '2024-11-02',
-  },
-  {
-    id: 'yield-prediction',
-    name: 'Yield Prediction Report',
-    description:
-      'AI-powered yield forecasting with historical analysis and improvement recommendations',
-    category: 'performance',
-    type: 'pdf',
-    frequency: 'monthly',
-    estimated_time: '4-6 minutes',
-    sections: [
-      'Yield Forecasts',
-      'Historical Analysis',
-      'Weather Impact',
-      'Optimization Strategies',
-      'Risk Assessment',
-    ],
-    preview_available: true,
-    download_count: 41,
-    last_generated: '2024-11-01',
-  },
-];
-
 export default function AdvancedReportingSystem() {
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<'templates' | 'generate' | 'history' | 'analytics'>(
+    'templates'
+  );
+  const [reportTemplates] = useState<ReportTemplate[]>([
+    {
+      id: 'financial-overview',
+      name: 'Financial Overview Report',
+      description:
+        'Comprehensive financial analysis with profit/loss, cash flow, and budget performance',
+      category: CATEGORY_FINANCIAL,
+      type: TYPE_PDF,
+      frequency: FREQ_MONTHLY,
+      estimated_time: '2-3 minutes',
+      sections: [
+        'Executive Summary',
+        'Revenue Analysis',
+        'Expense Breakdown',
+        'Cash Flow',
+        'Budget Performance',
+        'Recommendations',
+      ],
+      preview_available: true,
+      download_count: 45,
+      last_generated: '2024-11-01',
+    },
+    {
+      id: 'operational-performance',
+      name: 'Operational Performance Report',
+      description:
+        'Detailed operational metrics including crop yields, animal health, and task efficiency',
+      category: CATEGORY_OPERATIONAL,
+      type: TYPE_EXCEL,
+      frequency: FREQ_WEEKLY,
+      estimated_time: '3-5 minutes',
+      sections: [
+        'Performance Overview',
+        'Crop Management',
+        'Animal Care',
+        'Task Efficiency',
+        'Resource Utilization',
+      ],
+      preview_available: true,
+      download_count: 32,
+      last_generated: '2024-11-05',
+    },
+    {
+      id: 'compliance-audit',
+      name: 'Compliance & Audit Report',
+      description: 'Regulatory compliance tracking and audit trail documentation',
+      category: CATEGORY_COMPLIANCE,
+      type: TYPE_PDF,
+      frequency: FREQ_QUARTERLY,
+      estimated_time: '5-7 minutes',
+      sections: [
+        'Compliance Status',
+        'Regulatory Requirements',
+        'Audit Trail',
+        'Documentation Review',
+        'Action Items',
+      ],
+      preview_available: false,
+      download_count: 18,
+      last_generated: '2024-10-15',
+    },
+    {
+      id: 'custom-dashboard',
+      name: 'Custom Dashboard Report',
+      description:
+        'Tailored report with custom metrics and visualizations based on your specifications',
+      category: CATEGORY_CUSTOM,
+      type: TYPE_PDF,
+      frequency: FREQ_ON_DEMAND,
+      estimated_time: '1-2 minutes',
+      sections: ['Custom Metrics', 'Data Visualization', 'Key Insights', 'Action Recommendations'],
+      preview_available: true,
+      download_count: 67,
+      last_generated: '2024-11-03',
+    },
+    {
+      id: 'inventory-analysis',
+      name: 'Inventory Analysis Report',
+      description:
+        'Comprehensive inventory management with stock levels, turnover rates, and optimization suggestions',
+      category: CATEGORY_OPERATIONAL,
+      type: TYPE_EXCEL,
+      frequency: FREQ_MONTHLY,
+      estimated_time: '2-4 minutes',
+      sections: [
+        'Inventory Overview',
+        'Stock Levels',
+        'Turnover Analysis',
+        'Cost Analysis',
+        'Optimization Opportunities',
+      ],
+      preview_available: true,
+      download_count: 29,
+      last_generated: '2024-11-02',
+    },
+    {
+      id: 'yield-prediction',
+      name: 'Yield Prediction Report',
+      description:
+        'AI-powered yield forecasting with historical analysis and improvement recommendations',
+      category: 'performance',
+      type: 'pdf',
+      frequency: 'monthly',
+      estimated_time: '4-6 minutes',
+      sections: [
+        'Yield Forecasts',
+        'Historical Analysis',
+        'Weather Impact',
+        'Optimization Strategies',
+        'Risk Assessment',
+      ],
+      preview_available: true,
+      download_count: 41,
+      last_generated: '2024-11-01',
+    },
+  ]);
+
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
@@ -225,13 +227,7 @@ export default function AdvancedReportingSystem() {
   const [format, setFormat] = useState<'pdf' | 'excel' | 'csv'>('pdf');
 
   useEffect(() => {
-    // NOTE: Replace with actual API call when backend is ready
-    // const fetchReportData = async () => {
-    //   const data = await apiClient.get('/api/reports/data');
-    //   setReportData(data);
-    // };
-
-    // For now, using mock data for development
+    // TODO: Fetch real report data from API
     const mockData: ReportData = {
       financial_summary: {
         total_revenue: 0,
@@ -316,19 +312,11 @@ export default function AdvancedReportingSystem() {
     setSelectedTemplate(templateId);
 
     try {
-      // NOTE: Replace with actual API call when backend is ready
-      // const response = await apiClient.post('/api/reports/generate', { templateId });
-      // if (response.success) {
-      //   toast({ title: 'Success', description: 'Report generated successfully' });
-      // }
+      // TODO: Implement actual report generation API call
+      // await apiClient.post('/api/reports/generate', { templateId });
 
-      // For now, showing placeholder message
-      toast({
-        title: 'Coming Soon',
-        description: 'Report generation will be available in the next update.',
-      });
-      console.log(
-        `Report "${reportTemplates.find((t: any) => t.id === templateId)?.name}" generation initiated.`
+      alert(
+        `Report "${reportTemplates.find(t => t.id === templateId)?.name}" generation initiated.`
       );
     } catch (error) {
       console.error('Failed to generate report:', error);
@@ -645,7 +633,12 @@ export default function AdvancedReportingSystem() {
                           </label>
                         </div>
                         <div className="flex items-center">
-                          <input type="checkbox" id="add-summary" className="mr-2" defaultChecked />
+                          <input
+                            type="checkbox"
+                            id="add-summary"
+                            className="mr-2"
+                            defaultChecked
+                          />
                           <label htmlFor="add-summary" className="text-sm">
                             Add executive summary
                           </label>

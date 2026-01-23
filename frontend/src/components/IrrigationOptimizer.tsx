@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIrrigation } from '../api';
 import { useFarm } from '../hooks';
-import { CropService } from '../services/domains/CropService';
-import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   Droplets,
@@ -66,8 +64,13 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   } = useQuery({
     queryKey: ['irrigation-schedules', 'farm', farmId],
     queryFn: async () => {
-      // Use standard service method instead of direct fetch
-      return CropService.getIrrigationSchedules(farmId);
+      const response = await fetch('/api/crops/irrigation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list', farm_id: farmId }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch irrigation schedules');
+      return await response.json();
     },
     enabled: !!farmId,
   });
@@ -80,7 +83,13 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   } = useQuery({
     queryKey: ['irrigation-analytics', farmId],
     queryFn: async () => {
-      return CropService.getIrrigationAnalytics(farmId);
+      const response = await fetch('/api/crops/irrigation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'analytics', farm_id: farmId }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch irrigation analytics');
+      return await response.json();
     },
     enabled: !!farmId,
   });
@@ -89,7 +98,9 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
   const { data: fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      return FieldService.getFieldsByFarm(farmId);
+      const response = await fetch(`/api/fields?farm_id=${farmId}`);
+      if (!response.ok) throw new Error('Failed to fetch fields');
+      return await response.json();
     },
     enabled: !!farmId,
   });
@@ -628,10 +639,7 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="status"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
+                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                       Status
                     </label>
                     <select

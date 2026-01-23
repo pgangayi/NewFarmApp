@@ -3,6 +3,155 @@
 
 import { AuthUtils } from './_auth.js';
 
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const method = request.method;
+
+  try {
+    // Validate JWT authentication
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify and extract user from token
+    const auth = new AuthUtils(env);
+    const user = await auth.getUserFromToken(request);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const userId = user.id;
+
+    if (method === 'GET') {
+      const farmId = url.searchParams.get('farm_id');
+      const acknowledged = url.searchParams.get('acknowledged') === 'true';
+
+      if (!farmId) {
+        return new Response(JSON.stringify({ error: 'Farm ID required' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Check user access to farm
+      const accessQuery = `
+        SELECT id FROM farm_members
+        WHERE farm_id = ? AND user_id = ?
+      `;
+      const { results: farmAccess } = await env.DB.prepare(accessQuery)
+        .bind(farmId, userId)
+        .all();
+
+      if (!farmAccess || farmAccess.length === 0) {
+        return new Response(JSON.stringify({ error: 'Access denied' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Get weather recommendations/alerts
+      const alertsQuery = `
+        SELECT id, alert_date, alert_type, severity, title, message, action_items,
+               created_at, acknowledged_at
+        FROM weather_alerts
+        WHERE farm_id = ? ${acknowledged ? '' : 'AND acknowledged_at IS NULL'}
+        ORDER BY alert_date DESC, created_at DESC
+        LIMIT 50
+      `;
+      const { results: alerts } = await env.DB.prepare(alertsQuery)
+        .bind(farmId)
+        .all();
+
+      // Parse action_items JSON
+      const processedAlerts = alerts.map(alert => ({
+        ...alert,
+        action_items: alert.action_items ? JSON.parse(alert.action_items) : []
+      }));
+
+      return new Response(JSON.stringify({
+        recommendations: processedAlerts
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (method === 'POST') {
+      const body = await request.json();
+      const { action, farm_id, alert_id } = body;
+
+      if (action === 'acknowledge_alert') {
+        // Check user access to the alert
+        const accessQuery = `
+          SELECT wa.id FROM weather_alerts wa
+          JOIN farm_members fm ON wa.farm_id = fm.farm_id
+          WHERE wa.id = ? AND fm.user_id = ?
+        `;
+        const { results: alertAccess } = await env.DB.prepare(accessQuery)
+          .bind(alert_id, userId)
+          .all();
+
+        if (!alertAccess || alertAccess.length === 0) {
+          return new Response(JSON.stringify({ error: 'Alert not found or access denied' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        // Mark alert as acknowledged
+        const updateQuery = `
+          UPDATE weather_alerts
+          SET acknowledged_at = datetime('now')
+          WHERE id = ?
+        `;
+        const result = await env.DB.prepare(updateQuery)
+          .bind(alert_id)
+          .run();
+
+        if (!result.success) {
+          return new Response(JSON.stringify({ error: 'Failed to acknowledge alert' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Alert acknowledged'
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      return new Response(JSON.stringify({ error: 'Invalid action' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Weather recommendations API error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 export async function generateRecommendations(env, farmId, weatherData) {
   try {
     const recommendations = [];

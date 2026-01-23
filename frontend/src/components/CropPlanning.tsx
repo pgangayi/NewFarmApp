@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFarm } from '../hooks';
-import { CropService } from '../services/domains/CropService';
-import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   Calculator,
@@ -34,7 +32,15 @@ export function CropPlanning({ farmId }: CropPlanningProps) {
   } = useQuery({
     queryKey: ['crop-plans', farmId],
     queryFn: async () => {
-      return CropService.getCropPlans(farmId);
+      const response = await fetch('/api/crops/planning', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add auth header if needed
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch crop plans');
+      return await response.json();
     },
     enabled: !!farmId,
   });
@@ -43,16 +49,26 @@ export function CropPlanning({ farmId }: CropPlanningProps) {
   const { data: fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      return FieldService.getFieldsByFarm(farmId);
+      const response = await fetch(`/api/fields?farm_id=${farmId}`);
+      if (!response.ok) throw new Error('Failed to fetch fields');
+      return await response.json();
     },
     enabled: !!farmId,
   });
 
   const handleCreatePlan = async (planData: any) => {
     try {
-      // Ensure farm_id is included
-      const planWithFarmId = { ...planData, farm_id: farmId };
-      const result = await CropService.createCropPlan(planWithFarmId);
+      const response = await fetch('/api/crops/planning', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(planData),
+      });
+
+      if (!response.ok) throw new Error('Failed to create plan');
+
+      const result = await response.json();
       setShowCreateForm(false);
       refetch();
       return result;

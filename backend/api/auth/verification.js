@@ -3,10 +3,12 @@
 
 import { SimpleAuth, createErrorResponse, createSuccessResponse } from "../_auth.js";
 import { EmailService } from "../_email.js";
-import { SimpleUserRepository } from "./_session-response.js";
+import { DatabaseOperations } from "../_database.js";
+import { UserRepository } from "../repositories/index.js";
 
 export async function onRequestSendVerification(context) {
   const { request, env } = context;
+  console.log(`[Auth:verification:send] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
@@ -73,6 +75,7 @@ export async function onRequestSendVerification(context) {
 
 export async function onRequestVerify(context) {
   const { request, env } = context;
+  console.log(`[Auth:verification:verify] Enter handler - ${request.method} ${request.url}`);
   const url = new URL(request.url);
 
   if (request.method !== "POST") {
@@ -80,7 +83,8 @@ export async function onRequestVerify(context) {
   }
 
   const auth = new SimpleAuth(env);
-  const userRepo = new SimpleUserRepository(env.DB);
+  const db = new DatabaseOperations(env);
+  const userRepo = new UserRepository(db);
 
   try {
     const body = await request.json();
@@ -141,13 +145,15 @@ export async function onRequestVerify(context) {
 
 export async function onRequestResend(context) {
   const { request, env } = context;
+  console.log(`[Auth:verification:resend] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
   }
 
   const auth = new SimpleAuth(env);
-  const userRepo = new SimpleUserRepository(env.DB);
+  const db = new DatabaseOperations(env);
+  const userRepo = new UserRepository(db);
 
   try {
     const body = await request.json();

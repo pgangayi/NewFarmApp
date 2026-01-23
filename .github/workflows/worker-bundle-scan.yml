@@ -1,0 +1,41 @@
+name: CI - Worker bundle safety scan
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+
+      - name: Build Worker bundle (wrangler)
+        working-directory: backend
+        run: |
+          # Use npx so we don't need a global install
+          npx wrangler build --outdir .wrangler || true
+
+      - name: Scan bundle for Node-only or import-time env reads
+        working-directory: backend
+        run: |
+          echo "Scanning .wrangler for forbidden patterns..."
+          set -o pipefail
+          matches=$(grep -R --line-number -E 'process\.env|notImplemented\("fs|require\("fs"|child_process|process\.exit' .wrangler || true)
+          if [ -n "$matches" ]; then
+            echo "Forbidden patterns found in built worker bundle:";
+            echo "$matches";
+            exit 1;
+          else
+            echo "No forbidden patterns found.";
+          fi

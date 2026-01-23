@@ -39,6 +39,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MB to handle large bundles
@@ -54,30 +55,46 @@ export default defineConfig({
               },
             },
           },
+          {
+            urlPattern: /^https:\/\/.*\.openstreetmap\.org\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'osm-tiles',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+            },
+          },
+          {
+            urlPattern: /\/api\/.*$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60, // 1 hour
+              },
+              networkTimeoutSeconds: 10,
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
         ],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
       },
-      manifest: {
-        name: 'Farmers Boot',
-        short_name: 'Farm Mgmt',
-        description: 'Complete farm management platform',
-        theme_color: '#16a34a',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'any',
-        icons: [
-          {
-            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="%2316a34a" width="192" height="192"/><text x="50%" y="50%" font-size="80" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-family="Arial">FB</text></svg>',
-            sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
-          },
-          {
-            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect fill="%2316a34a" width="512" height="512"/><text x="50%" y="50%" font-size="250" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-family="Arial">FB</text></svg>',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
-          },
-        ],
+      devOptions: {
+        enabled: false,
       },
     }),
     visualizer({
@@ -117,7 +134,6 @@ export default defineConfig({
         target: 'http://localhost:8787',
         changeOrigin: true,
         secure: false,
-        rewrite: path => path,
       },
     },
     hmr: {

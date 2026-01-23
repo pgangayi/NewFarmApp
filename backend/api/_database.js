@@ -11,11 +11,11 @@ import {
   createDatabaseErrorResponse,
   createInternalErrorResponse,
 } from "./_errors.js";
+import { performanceMonitor } from "./_performance.js";
 
-const logger = createAuditLogger({
-  // This build-time env var is fine, but runtime checks are fixed inside the class
-  ENVIRONMENT: process.env.NODE_ENV || "development",
-});
+// NOTE: Do not read runtime environment variables at module init.
+// The logger should be created per-request using the runtime `env` object.
+// See DatabaseOperations constructor where `createAuditLogger(env)` is used.
 
 // ============================================================================
 // SECURITY CONSTANTS AND CONFIGURATION
@@ -106,7 +106,10 @@ const VALID_OPERATORS = [
 export class DatabaseOperations {
   constructor(env, options = {}) {
     this.env = env;
-    this.logger = logger;
+    // Create logger with runtime env (Cloudflare Workers pass this in)
+    this.logger = createAuditLogger(
+      env || { ENVIRONMENT: process.env.NODE_ENV || "development" },
+    );
     this.config = { ...CONFIG, ...options };
 
     // **FIX**: Use runtime env, not process.env
@@ -209,7 +212,7 @@ export class DatabaseOperations {
         const result = await this.executeWithTimeout(
           statement.bind(...sanitizedParams),
           operation, // 'run', 'all', 'first', 'raw'
-          timeout
+          timeout,
         );
 
         const duration = Date.now() - startTime;
@@ -229,6 +232,8 @@ export class DatabaseOperations {
         // Track slow queries
         if (duration > 1000) {
           this.trackSlowQuery(query, duration, table, operation);
+          // Also record in performance monitor
+          performanceMonitor.recordSlowQuery(query, duration, table, operation);
         }
 
         // **UPGRADE**: Standardize return shape for all operation types
@@ -238,10 +243,10 @@ export class DatabaseOperations {
             operation === "run"
               ? []
               : operation === "first"
-              ? result || null
-              : operation === "raw"
-              ? result
-              : result.results || [],
+                ? result || null
+                : operation === "raw"
+                  ? result
+                  : result.results || [],
           changes: (result && result.changes) || 0,
           lastRowId: (result && result.meta?.last_row_id) || null,
           duration,
@@ -269,7 +274,7 @@ export class DatabaseOperations {
         if (attempt < retries && this.isRetryableError(error)) {
           const delay = Math.min(
             this.config.INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1),
-            this.config.MAX_RETRY_DELAY
+            this.config.MAX_RETRY_DELAY,
           );
           await this.delay(delay);
           continue;
@@ -298,7 +303,7 @@ export class DatabaseOperations {
         query: this.sanitizeQueryForLogging(query),
         originalError: lastError.message,
         attempts: attempt,
-      }
+      },
     );
   }
 
@@ -318,11 +323,11 @@ export class DatabaseOperations {
             new DatabaseError(
               "Query timeout exceeded",
               DB_ERROR_CODES.QUERY_TIMEOUT,
-              { timeout: timeoutMs }
-            )
+              { timeout: timeoutMs },
+            ),
           ),
-        timeoutMs
-      )
+        timeoutMs,
+      ),
     );
 
     let resultPromise;
@@ -362,7 +367,7 @@ export class DatabaseOperations {
       throw new DatabaseError(
         "Transaction requires at least one operation",
         DB_ERROR_CODES.TRANSACTION,
-        { transactionId }
+        { transactionId },
       );
     }
 
@@ -371,7 +376,7 @@ export class DatabaseOperations {
       throw new DatabaseError(
         "Transaction too large (max 100 operations)",
         DB_ERROR_CODES.TRANSACTION,
-        { transactionId, operationCount: operations.length }
+        { transactionId, operationCount: operations.length },
       );
     }
 
@@ -435,7 +440,7 @@ export class DatabaseOperations {
           transactionId,
           operations: operations.length,
           originalError: error.message,
-        }
+        },
       );
     }
   }
@@ -499,7 +504,7 @@ export class DatabaseOperations {
         ) {
           // Advanced filter with operator
           const operator = VALID_OPERATORS.includes(
-            value.operator.toUpperCase()
+            value.operator.toUpperCase(),
           )
             ? value.operator.toUpperCase()
             : "=";
@@ -555,7 +560,7 @@ export class DatabaseOperations {
           value.value !== undefined
         ) {
           const operator = VALID_OPERATORS.includes(
-            value.operator.toUpperCase()
+            value.operator.toUpperCase(),
           )
             ? value.operator.toUpperCase()
             : "=";
@@ -600,7 +605,7 @@ export class DatabaseOperations {
     const values = Object.values(validatedData);
 
     const query = `INSERT INTO ${table} (${columns.join(
-      ", "
+      ", ",
     )}) VALUES (${placeholders})`;
 
     const result = await this.executeQuery(query, values, {
@@ -641,7 +646,7 @@ export class DatabaseOperations {
     if (Object.keys(validatedData).length === 0) {
       throw new DatabaseError(
         "No valid fields to update",
-        DB_ERROR_CODES.INVALID_PARAMETER
+        DB_ERROR_CODES.INVALID_PARAMETER,
       );
     }
 
@@ -713,7 +718,7 @@ export class DatabaseOperations {
         throw new DatabaseError(
           `Cannot delete ${table} record: ${count} dependent ${dep.table} records exist`,
           DB_ERROR_CODES.DEPENDENCY,
-          { table, id, dependency: dep, count }
+          { table, id, dependency: dep, count },
         );
       }
     }
@@ -733,7 +738,7 @@ export class DatabaseOperations {
       throw new DatabaseError(
         `Table '${table}' is not allowed`,
         DB_ERROR_CODES.INVALID_TABLE,
-        { table, allowedTables: ALLOWED_TABLES }
+        { table, allowedTables: ALLOWED_TABLES },
       );
     }
   }
@@ -747,7 +752,7 @@ export class DatabaseOperations {
     if (!query || typeof query !== "string") {
       throw new DatabaseError(
         "Invalid query",
-        DB_ERROR_CODES.INVALID_PARAMETER
+        DB_ERROR_CODES.INVALID_PARAMETER,
       );
     }
 
@@ -767,7 +772,7 @@ export class DatabaseOperations {
         throw new DatabaseError(
           "Query contains suspicious patterns",
           DB_ERROR_CODES.SUSPICIOUS_ACTIVITY,
-          { query: this.sanitizeQueryForLogging(query) }
+          { query: this.sanitizeQueryForLogging(query) },
         );
       }
     }
@@ -783,7 +788,7 @@ export class DatabaseOperations {
     if (!Array.isArray(params)) {
       throw new DatabaseError(
         "Parameters must be an array",
-        DB_ERROR_CODES.INVALID_PARAMETER
+        DB_ERROR_CODES.INVALID_PARAMETER,
       );
     }
 
@@ -798,7 +803,7 @@ export class DatabaseOperations {
         if (param.length > 10000) {
           throw new DatabaseError(
             "Parameter too long",
-            DB_ERROR_CODES.INVALID_PARAMETER
+            DB_ERROR_CODES.INVALID_PARAMETER,
           );
         }
         return param;
@@ -808,7 +813,7 @@ export class DatabaseOperations {
         if (!isFinite(param)) {
           throw new DatabaseError(
             "Invalid number parameter",
-            DB_ERROR_CODES.INVALID_PARAMETER
+            DB_ERROR_CODES.INVALID_PARAMETER,
           );
         }
         return param;
@@ -825,21 +830,21 @@ export class DatabaseOperations {
           if (jsonStr.length > 50000) {
             throw new DatabaseError(
               "Parameter object too large",
-              DB_ERROR_CODES.INVALID_PARAMETER
+              DB_ERROR_CODES.INVALID_PARAMETER,
             );
           }
           return jsonStr;
         } catch (error) {
           throw new DatabaseError(
             "Invalid parameter object",
-            DB_ERROR_CODES.INVALID_PARAMETER
+            DB_ERROR_CODES.INVALID_PARAMETER,
           );
         }
       }
 
       throw new DatabaseError(
         `Unsupported parameter type: ${typeof param}`,
-        DB_ERROR_CODES.INVALID_PARAMETER
+        DB_ERROR_CODES.INVALID_PARAMETER,
       );
     });
   }
@@ -854,7 +859,7 @@ export class DatabaseOperations {
     if (!data || typeof data !== "object") {
       throw new DatabaseError(
         "Invalid data object",
-        DB_ERROR_CODES.INVALID_PARAMETER
+        DB_ERROR_CODES.INVALID_PARAMETER,
       );
     }
 
@@ -875,7 +880,7 @@ export class DatabaseOperations {
       if (typeof value === "string" && value.length > 10000) {
         throw new DatabaseError(
           `Field '${key}' value too long`,
-          DB_ERROR_CODES.INVALID_PARAMETER
+          DB_ERROR_CODES.INVALID_PARAMETER,
         );
       }
 
@@ -915,7 +920,7 @@ export class DatabaseOperations {
           requestCount: recentRequests.length,
           limit: this.config.RATE_LIMIT_MAX_QUERIES,
           windowMs: this.config.RATE_LIMIT_WINDOW,
-        }
+        },
       );
     }
 
@@ -1044,7 +1049,7 @@ export class DatabaseOperations {
     // Remove password-related content
     let sanitized = query.replace(
       /\b(password|token|secret|key)\s*=\s*['"][^'"]*['"]/gi,
-      "$1=***"
+      "$1=***",
     );
 
     // Truncate if too long
@@ -1207,7 +1212,7 @@ export class FarmRepository extends BaseRepository {
         operation: "query",
         table: "farms",
         context: { findByOwner: true, ownerId, ...options.context },
-      }
+      },
     );
 
     return results;
@@ -1236,7 +1241,7 @@ export class FarmRepository extends BaseRepository {
         operation: "query",
         table: "farms",
         context: { findByUser: true, userId, ...options.context },
-      }
+      },
     );
 
     return results;
@@ -1263,7 +1268,7 @@ export class FarmRepository extends BaseRepository {
         operation: "first",
         table: "farms",
         context: { findWithStats: true, farmId, userId },
-      }
+      },
     );
 
     return results;
@@ -1280,7 +1285,7 @@ export class FarmRepository extends BaseRepository {
         ...data,
         owner_id: userId,
       },
-      options
+      options,
     );
 
     // Grant owner access
@@ -1291,7 +1296,7 @@ export class FarmRepository extends BaseRepository {
         operation: "run",
         table: "farm_members",
         context: { grantOwnerAccess: true },
-      }
+      },
     );
 
     // Create initial statistics record
@@ -1302,7 +1307,7 @@ export class FarmRepository extends BaseRepository {
         operation: "run",
         table: "farm_statistics",
         context: { createInitialStats: true },
-      }
+      },
     );
 
     return newFarm;
@@ -1332,7 +1337,7 @@ export class UserRepository extends BaseRepository {
         operation: "first",
         table: "users",
         context: { findByEmail: true, email, ...options.context },
-      }
+      },
     );
 
     return result.data;
@@ -1357,7 +1362,7 @@ export class UserRepository extends BaseRepository {
         operation: "first",
         table: "users",
         context: { findWithFarmCount: true, userId, ...options.context },
-      }
+      },
     );
 
     return result.data;
@@ -1373,7 +1378,7 @@ export class UserRepository extends BaseRepository {
       throw new DatabaseError(
         "User with this email already exists",
         DB_ERROR_CODES.DEPENDENCY,
-        { email: data.email }
+        { email: data.email },
       );
     }
 
@@ -1403,7 +1408,7 @@ export class UserRepository extends BaseRepository {
         operation: "first",
         table: "users",
         context: { findAuthData: true, userId, ...options.context },
-      }
+      },
     );
 
     return result.data;
@@ -1416,7 +1421,7 @@ export class UserRepository extends BaseRepository {
     return await this.updateById(
       userId,
       { last_login: new Date().toISOString() },
-      options
+      options,
     );
   }
 }

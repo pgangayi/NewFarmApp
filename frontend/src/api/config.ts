@@ -9,9 +9,10 @@ const sanitizeBaseUrl = (value?: string | null): string => {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     try {
       const parsed = new URL(trimmed);
-      const normalizedPath = parsed.pathname.endsWith('/') && parsed.pathname !== '/'
-        ? parsed.pathname.slice(0, -1)
-        : parsed.pathname;
+      const normalizedPath =
+        parsed.pathname.endsWith('/') && parsed.pathname !== '/'
+          ? parsed.pathname.slice(0, -1)
+          : parsed.pathname;
       return `${parsed.origin}${normalizedPath}`;
     } catch (error) {
       console.warn('Invalid VITE_API_BASE_URL provided, falling back to relative /api', error);

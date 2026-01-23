@@ -1,6 +1,7 @@
 import { AuthUtils, createErrorResponse } from "../_auth.js";
 import { TokenManager } from "../_token-management.js";
 import { CSRFProtection } from "../_csrf.js";
+import { Buffer } from "buffer";
 
 const REFRESH_COOKIE_CLEAR =
   "refresh_token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0; Secure";
@@ -72,6 +73,17 @@ async function handleLogoutPost(context) {
       .get("Cookie")
       ?.match(/refresh_token=([^;]+)/)?.[1];
 
+    // Extract session ID from access token for session termination
+    let sessionId = null;
+    if (accessToken) {
+      try {
+        const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64'));
+        sessionId = payload.sessionId;
+      } catch (e) {
+        console.warn("Could not extract session ID from token:", e);
+      }
+    }
+
     // Revoke access token if present
     if (accessToken) {
       await tokenManager.revokeToken(
@@ -102,6 +114,18 @@ async function handleLogoutPost(context) {
         }
       );
       console.log("Refresh token revoked for user:", user.id);
+    }
+
+    // Terminate user session
+    if (sessionId) {
+      try {
+        await env.DB.prepare(
+          "UPDATE user_sessions SET is_active = 0 WHERE session_id = ? AND user_id = ?"
+        ).bind(sessionId, user.id).run();
+        console.log("Session terminated for user:", user.id);
+      } catch (error) {
+        console.error("Failed to terminate session:", error);
+      }
     }
 
     // Clear refresh token cookie by setting it to expire

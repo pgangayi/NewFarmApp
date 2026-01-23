@@ -89,8 +89,10 @@ export class RateLimiter {
 
     // Clean old requests
     record.requests = record.requests.filter(
-      (timestamp) => timestamp > windowStart
+      (timestamp) => timestamp > windowStart,
     );
+    // Limit to last 100 requests to prevent large arrays causing hangs
+    record.requests = record.requests.slice(-100);
     record.count = record.requests.length;
 
     const allowed = record.count < limit.requests;
@@ -169,7 +171,7 @@ export class RateLimiter {
       : 0;
     const retryAfterSeconds = Math.max(
       0,
-      Math.ceil((resetTime - Date.now()) / 1000)
+      Math.ceil((resetTime - Date.now()) / 1000),
     );
 
     return {
@@ -193,7 +195,7 @@ export class RateLimiter {
       const { allowed, remaining, resetTime, limit } = await this.checkLimit(
         identifier,
         endpoint,
-        method
+        method,
       );
 
       if (!allowed) {
@@ -209,11 +211,17 @@ export class RateLimiter {
    */
   async getIdentifier(request) {
     try {
-      // Try to get user ID from token
-      const auth = new AuthUtils(this.env);
-      const user = await auth.getUserFromToken(request);
-      if (user) {
-        return `user_${user.id}`;
+      // Only attempt to resolve user from token when an Authorization header is present.
+      // Avoids doing DB work for public endpoints (e.g. signup) which can hang the worker.
+      const authHeader =
+        request.headers.get("Authorization") ||
+        request.headers.get("authorization");
+      if (authHeader) {
+        const auth = new AuthUtils(this.env);
+        const user = await auth.getUserFromToken(request);
+        if (user && user.id) {
+          return `user_${user.id}`;
+        }
       }
     } catch (error) {
       // User not authenticated, fall back to IP
@@ -238,7 +246,7 @@ export async function applyRateLimit(request, env, endpoint, method) {
     return rateLimiter.createRateLimitResponse(
       check.remaining,
       check.resetTime,
-      check.limit
+      check.limit,
     );
   }
 

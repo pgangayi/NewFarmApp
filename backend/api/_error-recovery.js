@@ -3,20 +3,22 @@
 // Date: November 11, 2025
 
 import { logError } from "./_errors.js";
-import { createLogger } from "./_logger.js";
+import { createRuntimeLogger } from "./_utils.js";
 
-const logger = createLogger(process.env.NODE_ENV || "development");
+// Use runtime logger factory — avoids module-level process.env reads
 
 /**
  * Enhanced API Error Recovery System
  * Provides graceful degradation for API failures
  */
 export class APIErrorRecovery {
-  constructor() {
+  constructor(env) {
+    this.env = env || {};
     this.circuitBreakers = new Map();
     this.fallbackData = new Map();
     this.healthChecks = new Map();
     this.performanceMetrics = new Map();
+    this.logger = createRuntimeLogger(this.env);
   }
 
   /**
@@ -56,7 +58,7 @@ export class APIErrorRecovery {
         lastCheck: this.circuitBreakers.get(serviceName)?.lastCheck,
       };
     } catch (error) {
-      logger.error(`Health check failed for ${serviceName}`, error);
+      this.logger.error(`Health check failed for ${serviceName}`, error);
       return {
         healthy: false,
         serviceName,
@@ -64,6 +66,88 @@ export class APIErrorRecovery {
         state: "OPEN",
       };
     }
+  }
+
+  /**
+   * Execute operation with automatic retry for transient failures
+   */
+  async executeWithRetry(operationName, operationFn, options = {}) {
+    const {
+      maxRetries = 3,
+      baseDelay = 1000, // 1 second
+      maxDelay = 10000, // 10 seconds
+      backoffFactor = 2,
+      retryableErrors = ["TIMEOUT", "DATABASE_BUSY", "CONNECTION_ERROR"],
+    } = options;
+
+    let lastError;
+    let attempt = 0;
+
+    while (attempt <= maxRetries) {
+      try {
+        const result = await operationFn();
+        // Success, record metrics
+        this.recordPerformanceMetric(operationName, 0, true); // duration not tracked here
+        return result;
+      } catch (error) {
+        lastError = error;
+        const classification = this.classifyError(error);
+
+        // Check if error is retryable
+        if (
+          !retryableErrors.includes(classification) ||
+          attempt >= maxRetries
+        ) {
+          // Not retryable or max retries reached
+          this.recordPerformanceMetric(operationName, 0, false);
+          throw error;
+        }
+
+        // Calculate delay with exponential backoff
+        const delay = Math.min(
+          baseDelay * Math.pow(backoffFactor, attempt),
+          maxDelay,
+        );
+        this.logger.warn(
+          `Retrying ${operationName} after ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`,
+          {
+            error: error.message,
+            classification,
+          },
+        );
+
+        await this.sleep(delay);
+        attempt++;
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * Classify error for retry logic
+   */
+  classifyError(error) {
+    const message = error.message?.toLowerCase() || "";
+    const code = error.code || "";
+
+    if (code === "SQLITE_BUSY" || message.includes("database is locked")) {
+      return "DATABASE_BUSY";
+    }
+    if (message.includes("timeout")) {
+      return "TIMEOUT";
+    }
+    if (message.includes("connection")) {
+      return "CONNECTION_ERROR";
+    }
+    return "UNKNOWN_ERROR";
+  }
+
+  /**
+   * Sleep utility for delays
+   */
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -93,7 +177,7 @@ export class APIErrorRecovery {
       if (breaker && breaker.state === "OPEN") {
         breaker.state = "CLOSED";
         breaker.failureCount = 0;
-        logger.info(`Circuit breaker closed for ${operationName}`);
+        this.logger.info(`Circuit breaker closed for ${operationName}`);
       }
 
       return result;
@@ -103,17 +187,17 @@ export class APIErrorRecovery {
       // Record performance metrics
       this.recordPerformanceMetric(operationName, duration, false);
 
-      logger.error(`Operation ${operationName} failed`, error);
+      this.logger.error(`Operation ${operationName} failed`, error);
 
       // Try fallback if available
       if (fallbackFn) {
         try {
-          logger.info(`Executing fallback for ${operationName}`);
+          this.logger.info(`Executing fallback for ${operationName}`);
           return await fallbackFn();
         } catch (fallbackError) {
-          logger.error(
+          this.logger.error(
             `Fallback for ${operationName} also failed`,
-            fallbackError
+            fallbackError,
           );
         }
       }
@@ -130,7 +214,7 @@ export class APIErrorRecovery {
       return await this.executeWithFallback(
         operationName,
         primaryOp,
-        degradedOp
+        degradedOp,
       );
     } catch (error) {
       // If both primary and fallback fail, provide minimal response
@@ -210,7 +294,7 @@ export class APIErrorRecovery {
         successRate:
           metrics.totalCalls > 0
             ? ((metrics.successfulCalls / metrics.totalCalls) * 100).toFixed(
-                2
+                2,
               ) + "%"
             : "0%",
       };
@@ -247,7 +331,7 @@ export class APIErrorRecovery {
 
     // Determine overall health
     const openBreakers = Array.from(this.circuitBreakers.values()).filter(
-      (b) => b.state === "OPEN"
+      (b) => b.state === "OPEN",
     );
     if (openBreakers.length > 0) {
       healthReport.overall = "DEGRADED";
@@ -376,15 +460,19 @@ export class CacheManager {
   }
 }
 
-// Export singleton instances
-export const apiErrorRecovery = new APIErrorRecovery();
+// Export factory and singleton instances
+export function createAPIErrorRecovery(env) {
+  return new APIErrorRecovery(env);
+}
+
+export const apiErrorRecovery = createAPIErrorRecovery();
 export const cacheManager = new CacheManager();
 
 // Export helper functions
 export async function withErrorRecovery(
   operationName,
   operationFn,
-  options = {}
+  options = {},
 ) {
   const { fallbackFn = null, gracefulDegradation = false } = options;
 
@@ -392,13 +480,13 @@ export async function withErrorRecovery(
     return await apiErrorRecovery.executeWithGracefulDegradation(
       operationName,
       operationFn,
-      fallbackFn
+      fallbackFn,
     );
   } else {
     return await apiErrorRecovery.executeWithFallback(
       operationName,
       operationFn,
-      fallbackFn
+      fallbackFn,
     );
   }
 }
@@ -409,4 +497,12 @@ export async function checkHealth(serviceName, healthCheckFn) {
 
 export function recordPerformance(operationName, duration, success) {
   apiErrorRecovery.recordPerformanceMetric(operationName, duration, success);
+}
+
+export async function withRetry(operationName, operationFn, options = {}) {
+  return await apiErrorRecovery.executeWithRetry(
+    operationName,
+    operationFn,
+    options,
+  );
 }

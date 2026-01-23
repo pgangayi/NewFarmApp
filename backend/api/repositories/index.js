@@ -45,57 +45,60 @@ class RepositoryFactory {
   }
 
   /**
-   * Get a repository instance (singleton pattern)
-   */
-  getRepository(type) {
-    if (!this.repositories.has(type)) {
-      switch (type) {
-        case "farm":
-          this.repositories.set(type, new FarmRepository(this.db));
-          break;
-        case "animal":
-          this.repositories.set(type, new AnimalRepository(this.db));
-          break;
-        case "crop":
-          this.repositories.set(type, new CropRepository(this.db));
-          break;
-        case "finance":
-          this.repositories.set(type, new FinanceRepository(this.db));
-          break;
-        case "inventory":
-          this.repositories.set(type, new InventoryRepository(this.db));
-          break;
-        case "field":
-          this.repositories.set(type, new FieldRepository(this.db));
-          break;
-        case "task":
-          this.repositories.set(type, new TaskRepository(this.db));
-          break;
-        case "timeLog":
-          this.repositories.set(type, new TimeLogRepository(this.db));
-          break;
-        case "comment":
-          this.repositories.set(type, new CommentRepository(this.db));
-          break;
-        case "analytics":
-          this.repositories.set(type, new AnalyticsRepository(this.db));
-          break;
-        case "notification":
-          this.repositories.set(type, new NotificationRepository(this.db));
-          break;
-        case "search":
-          this.repositories.set(type, new SearchRepository(this.db));
-          break;
-        case "webhook":
-          this.repositories.set(type, new WebhookRepository(this.db));
-          break;
-        default:
-          throw new Error(`Unknown repository type: ${type}`);
-      }
-    }
+    * Get a repository instance (singleton pattern)
+    */
+   getRepository(type) {
+     if (!this.repositories.has(type)) {
+       switch (type) {
+         case "farm":
+           this.repositories.set(type, new FarmRepository(this.db));
+           break;
+         case "animal":
+           this.repositories.set(type, new AnimalRepository(this.db));
+           break;
+         case "crop":
+           this.repositories.set(type, new CropRepository(this.db));
+           break;
+         case "user":
+           this.repositories.set(type, new UserRepository(this.db));
+           break;
+         case "finance":
+           this.repositories.set(type, new FinanceRepository(this.db));
+           break;
+         case "inventory":
+           this.repositories.set(type, new InventoryRepository(this.db));
+           break;
+         case "field":
+           this.repositories.set(type, new FieldRepository(this.db));
+           break;
+         case "task":
+           this.repositories.set(type, new TaskRepository(this.db));
+           break;
+         case "timeLog":
+           this.repositories.set(type, new TimeLogRepository(this.db));
+           break;
+         case "comment":
+           this.repositories.set(type, new CommentRepository(this.db));
+           break;
+         case "analytics":
+           this.repositories.set(type, new AnalyticsRepository(this.db));
+           break;
+         case "notification":
+           this.repositories.set(type, new NotificationRepository(this.db));
+           break;
+         case "search":
+           this.repositories.set(type, new SearchRepository(this.db));
+           break;
+         case "webhook":
+           this.repositories.set(type, new WebhookRepository(this.db));
+           break;
+         default:
+           throw new Error(`Unknown repository type: ${type}`);
+       }
+     }
 
-    return this.repositories.get(type);
-  }
+     return this.repositories.get(type);
+   }
 
   /**
    * Get multiple repositories for batch operations
@@ -123,6 +126,7 @@ class RepositoryFactory {
 class RepositoryContainer {
   constructor(dbOperations) {
     this.db = dbOperations;
+    this.user = new UserRepository(dbOperations);
     this.field = new FieldRepository(dbOperations);
     this.farm = new FarmRepository(dbOperations);
     this.animal = new AnimalRepository(dbOperations);
@@ -151,6 +155,7 @@ class RepositoryContainer {
    */
   getAll() {
     return {
+      user: this.user,
       farm: this.farm,
       field: this.field,
       animal: this.animal,

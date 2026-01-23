@@ -1,6 +1,5 @@
 import { apiClient } from '../../lib/cloudflare';
 import { InventoryItem } from '../../api/types';
-import { ENDPOINTS as apiEndpoints } from '../../api/config';
 
 /**
  * DOMAIN SERVICE: Inventory
@@ -8,40 +7,37 @@ import { ENDPOINTS as apiEndpoints } from '../../api/config';
  * Handles business logic for inventory management.
  */
 
+const BASE_PATH = '/api/inventory';
+
 export class InventoryService {
-  static async getInventoryByFarm(farm_id?: string): Promise<InventoryItem[]> {
-    const query = farm_id ? `?farm_id=${farm_id}` : '';
-    // Use generic type and handle potential { data: ... } wrapper if needed,
-    // similar to AnimalService.
-    // If apiClient returns T directly, and backend returns array, this is fine.
-    // If backend returns { data: [] }, we need to handle it.
-    // Given the component was fetching /inventory/items and getting data directly (implied by data.map),
-    // let's assume /inventory returns array or { data: array }.
-    // Safe approach:
-    const response = await apiClient.get<any>(`${apiEndpoints.inventory.list}${query}`);
-    return response.data || response || [];
+  static async getInventoryByFarm(farmId?: string): Promise<InventoryItem[]> {
+    const items = await apiClient.get<InventoryItem[]>(BASE_PATH);
+    if (farmId) {
+      return items.filter(i => i.farm_id === farmId);
+    }
+    return items;
   }
 
   static async getInventoryItemById(id: string): Promise<InventoryItem | null> {
-    return apiClient.get<InventoryItem>(apiEndpoints.inventory.details(id));
+    return apiClient.get<InventoryItem>(`${BASE_PATH}?id=${id}`);
   }
 
   static async getLowStockItems(): Promise<InventoryItem[]> {
-    return apiClient.get<InventoryItem[]>(`${apiEndpoints.inventory.list}?low_stock=true`);
+    return apiClient.get<InventoryItem[]>(`${BASE_PATH}?low_stock=true`);
   }
 
   static async createInventoryItem(
     payload: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>
   ): Promise<InventoryItem> {
-    return apiClient.post<InventoryItem>(apiEndpoints.inventory.create, payload);
+    return apiClient.post<InventoryItem>(BASE_PATH, payload);
   }
 
   static async updateInventoryItem(id: string, updates: Partial<InventoryItem>) {
-    return apiClient.put<InventoryItem>(apiEndpoints.inventory.update(id), updates);
+    return apiClient.put<InventoryItem>('/api/inventory', { id, ...updates });
   }
 
   static async deleteInventoryItem(id: string) {
-    await apiClient.delete(apiEndpoints.inventory.delete(id));
+    await apiClient.delete(`/api/inventory?id=${id}`);
     return true;
   }
 }

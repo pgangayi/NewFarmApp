@@ -2,6 +2,9 @@
 // These are example tests; adjust to your test runner and harness
 import { strict as assert } from "assert";
 
+// Set a per-file timeout for longer-running tests
+jest.setTimeout(5000);
+
 describe("Admin Audit Logs Endpoint", () => {
   it("should require authentication", async () => {
     // Example: call the onRequest handler without Authorization header
@@ -12,13 +15,13 @@ describe("Admin Audit Logs Endpoint", () => {
       env: {},
     });
     assert.equal(resp.status, 401);
-  }).timeout(5000);
+  });
 
   it("should return 403 for global query without admin key", async () => {
     // This is a placeholder demonstrating expected behavior; adapting to your test harness will be required.
     const { onRequest } = await import("../api/admin_audit_logs.js");
     const req = new Request(
-      "https://example.test/api/admin/audit-logs?limit=1"
+      "https://example.test/api/admin/audit-logs?limit=1",
     );
     const resp = await onRequest({
       request: req,
@@ -28,5 +31,5 @@ describe("Admin Audit Logs Endpoint", () => {
     if (resp.status !== 401 && resp.status !== 403) {
       throw new Error(`unexpected status ${resp.status}`);
     }
-  }).timeout(5000);
+  });
 });

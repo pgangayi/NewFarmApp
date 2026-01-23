@@ -3,10 +3,12 @@
 
 import { SimpleAuth, createErrorResponse, createSuccessResponse } from "../_auth.js";
 import { EmailService } from "../_email.js";
-import { SimpleUserRepository } from "./_session-response.js";
+import { DatabaseOperations } from "../_database.js";
+import { UserRepository } from "../repositories/index.js";
 
 export async function onRequestSendInvite(context) {
   const { request, env } = context;
+  console.log(`[Auth:invites:send] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
@@ -123,13 +125,15 @@ export async function onRequestSendInvite(context) {
 
 export async function onRequestAcceptInvite(context) {
   const { request, env } = context;
+  console.log(`[Auth:invites:accept] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
   }
 
   const auth = new SimpleAuth(env);
-  const userRepo = new SimpleUserRepository(env.DB);
+  const db = new DatabaseOperations(env);
+  const userRepo = new UserRepository(db);
 
   try {
     const body = await request.json();
@@ -218,6 +222,7 @@ export async function onRequestAcceptInvite(context) {
 
 export async function onRequestListInvites(context) {
   const { request, env } = context;
+  console.log(`[Auth:invites:list] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "GET") {
     return createErrorResponse("Method not allowed", 405);
@@ -268,6 +273,7 @@ export async function onRequestListInvites(context) {
 
 export async function onRequestRevokeInvite(context) {
   const { request, env } = context;
+  console.log(`[Auth:invites:revoke] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "DELETE") {
     return createErrorResponse("Method not allowed", 405);

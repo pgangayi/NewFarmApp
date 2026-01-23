@@ -4,9 +4,8 @@
 import {
   AuthUtils,
   createUnauthorizedResponse,
-  createErrorResponse,
-  createSuccessResponse,
 } from "./_auth.js";
+import { ErrorHandler, ResponseHandler } from "./_errors.js";
 import { EnhancedAuditLogger } from "./_enhanced-audit.js";
 import { RateLimiter } from "./_rate-limit.js";
 
@@ -26,6 +25,8 @@ export class BaseApiController {
     this.auth = new AuthUtils(env);
     this.audit = new EnhancedAuditLogger(env);
     this.rateLimiter = new RateLimiter(env);
+    this.errorHandler = new ErrorHandler(env);
+    this.responseHandler = new ResponseHandler(env);
   }
 
   /**
@@ -98,7 +99,7 @@ export class BaseApiController {
         { user: null, request }
       );
 
-      return createErrorResponse("Internal server error", 500);
+      return this.errorHandler.internalError("Internal server error");
     }
   }
 
@@ -194,7 +195,7 @@ export class BaseApiController {
     // Validate required fields
     const validationResult = this.validateCreateData(requestBody, config);
     if (!validationResult.isValid) {
-      return createErrorResponse(validationResult.message, 400);
+      return this.errorHandler.validationError(validationResult.message);
     }
 
     // Check farm access if required
@@ -208,7 +209,7 @@ export class BaseApiController {
           resource_type: config.resourceType,
           farm_id: requestBody.farm_id,
         });
-        return createErrorResponse("Farm access denied", 403);
+        return this.errorHandler.authorizationError("Farm access denied");
       }
     }
 
@@ -247,7 +248,7 @@ export class BaseApiController {
       );
     }
 
-    return createSuccessResponse(createdRecord, 201);
+    return this.responseHandler.created(createdRecord);
   }
 
   /**
@@ -256,7 +257,7 @@ export class BaseApiController {
   async handleUpdate(user, recordId, requestBody, config, context = {}) {
     // Validate record ID
     if (!recordId) {
-      return createErrorResponse("Record ID required", 400);
+      return this.errorHandler.badRequestError("Record ID required");
     }
 
     // Check if user has access to update this record
@@ -267,13 +268,13 @@ export class BaseApiController {
         resource_id: recordId,
         reason: accessCheck.reason,
       });
-      return createErrorResponse(accessCheck.message, 403);
+      return this.errorHandler.authorizationError(accessCheck.message);
     }
 
     // Validate update data
     const validationResult = this.validateUpdateData(requestBody, config);
     if (!validationResult.isValid) {
-      return createErrorResponse(validationResult.message, 400);
+      return this.errorHandler.validationError(validationResult.message);
     }
 
     // Build and execute update query
@@ -311,7 +312,7 @@ export class BaseApiController {
       );
     }
 
-    return createSuccessResponse(updatedRecord);
+    return this.responseHandler.createSuccessResponse(updatedRecord);
   }
 
   /**
@@ -331,13 +332,13 @@ export class BaseApiController {
         resource_id: recordId,
         reason: accessCheck.reason,
       });
-      return createErrorResponse(accessCheck.message, 403);
+      return this.errorHandler.authorizationError(accessCheck.message);
     }
 
     // Check for dependencies
     const dependencyCheck = await this.checkDependencies(recordId, config);
     if (!dependencyCheck.allowed) {
-      return createErrorResponse(dependencyCheck.message, 400);
+      return this.errorHandler.badRequestError(dependencyCheck.message);
     }
 
     // Execute delete
@@ -370,7 +371,7 @@ export class BaseApiController {
       );
     }
 
-    return createSuccessResponse({ success: true });
+    return this.responseHandler.createSuccessResponse({ success: true });
   }
 
   // === ABSTRACT METHODS (to be implemented by subclasses) ===

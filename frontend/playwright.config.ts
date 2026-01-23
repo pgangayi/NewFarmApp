@@ -3,6 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * @see https://playwright.dev/docs/test-configuration.
  */
+const FRONTEND_PORT = Number(process.env.FRONTEND_PORT || process.env.PORT || 3000);
+const BASE_URL = process.env.PW_BASE_URL || `http://localhost:${FRONTEND_PORT}`;
+
 export default defineConfig({
   testDir: './e2e',
   /* Run tests in files in parallel */
@@ -22,7 +25,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: BASE_URL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'off',
@@ -86,7 +89,7 @@ export default defineConfig({
     // Start the real backend (Wrangler dev) and preview the built frontend from repo root.
     // This runs `npm run start:e2e` which launches Wrangler and the preview server.
     command: 'cd .. && npm run start:e2e',
-    port: 3000,
+    port: FRONTEND_PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 2 * 60 * 1000,
   },

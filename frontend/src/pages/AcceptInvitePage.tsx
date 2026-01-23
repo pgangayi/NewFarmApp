@@ -29,14 +29,16 @@ export default function AcceptInvitePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
   const [inviteDetails, setInviteDetails] = useState<InviteDetails | null>(null);
-  const [inviteStatus, setInviteStatus] = useState<'loading' | 'valid' | 'invalid' | 'expired' | 'accepted'>('loading');
+  const [inviteStatus, setInviteStatus] = useState<
+    'loading' | 'valid' | 'invalid' | 'expired' | 'accepted'
+  >('loading');
   const [message, setMessage] = useState('');
   const [showSignup, setShowSignup] = useState(false);
   const [signupData, setSignupData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function AcceptInvitePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify({ token }),
       });
@@ -93,7 +95,7 @@ export default function AcceptInvitePage() {
       if (response.ok) {
         setInviteStatus('accepted');
         setMessage(`Successfully joined ${data.farm_name}!`);
-        
+
         // Redirect to dashboard after delay
         setTimeout(() => {
           navigate('/dashboard');
@@ -195,9 +197,7 @@ export default function AcceptInvitePage() {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <UserPlus className="mx-auto h-12 w-12 text-green-600" />
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Create Account to Join
-            </h2>
+            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Create Account to Join</h2>
             <p className="mt-2 text-sm text-gray-600">
               Create an account to accept the farm invitation
             </p>
@@ -206,17 +206,13 @@ export default function AcceptInvitePage() {
           <Card>
             <CardHeader>
               <CardTitle>Create Account</CardTitle>
-              <CardDescription>
-                Join the farm team with your new account
-              </CardDescription>
+              <CardDescription>Join the farm team with your new account</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {message && (
                 <Alert className="bg-red-50 border-red-200">
                   <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">
-                    {message}
-                  </AlertDescription>
+                  <AlertDescription className="text-red-800">{message}</AlertDescription>
                 </Alert>
               )}
 
@@ -225,7 +221,7 @@ export default function AcceptInvitePage() {
                 <Input
                   id="name"
                   value={signupData.name}
-                  onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                  onChange={e => setSignupData({ ...signupData, name: e.target.value })}
                   placeholder="Enter your full name"
                   disabled={isAccepting}
                 />
@@ -237,7 +233,7 @@ export default function AcceptInvitePage() {
                   id="email"
                   type="email"
                   value={signupData.email}
-                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                  onChange={e => setSignupData({ ...signupData, email: e.target.value })}
                   placeholder="Enter your email"
                   disabled={isAccepting}
                 />
@@ -249,7 +245,7 @@ export default function AcceptInvitePage() {
                   id="password"
                   type="password"
                   value={signupData.password}
-                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                  onChange={e => setSignupData({ ...signupData, password: e.target.value })}
                   placeholder="Create a password (min 8 characters)"
                   disabled={isAccepting}
                 />
@@ -261,17 +257,13 @@ export default function AcceptInvitePage() {
                   id="confirmPassword"
                   type="password"
                   value={signupData.confirmPassword}
-                  onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                  onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                   placeholder="Confirm your password"
                   disabled={isAccepting}
                 />
               </div>
 
-              <Button
-                onClick={handleSignupAndAccept}
-                disabled={isAccepting}
-                className="w-full"
-              >
+              <Button onClick={handleSignupAndAccept} disabled={isAccepting} className="w-full">
                 {isAccepting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -303,12 +295,8 @@ export default function AcceptInvitePage() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Users className="mx-auto h-12 w-12 text-green-600" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Farm Invitation
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            You've been invited to join a farm team
-          </p>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Farm Invitation</h2>
+          <p className="mt-2 text-sm text-gray-600">You've been invited to join a farm team</p>
         </div>
 
         <Card>
@@ -317,28 +305,23 @@ export default function AcceptInvitePage() {
               {inviteStatus === 'accepted' ? 'Invitation Accepted!' : 'Accept Invitation'}
             </CardTitle>
             <CardDescription>
-              {inviteStatus === 'accepted' 
+              {inviteStatus === 'accepted'
                 ? 'You have successfully joined the farm team'
-                : 'Review the invitation details below'
-              }
+                : 'Review the invitation details below'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {inviteStatus === 'accepted' && (
               <Alert className="bg-green-50 border-green-200">
                 <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  {message}
-                </AlertDescription>
+                <AlertDescription className="text-green-800">{message}</AlertDescription>
               </Alert>
             )}
 
             {inviteStatus === 'invalid' && (
               <Alert className="bg-red-50 border-red-200">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  {message}
-                </AlertDescription>
+                <AlertDescription className="text-red-800">{message}</AlertDescription>
               </Alert>
             )}
 
@@ -364,11 +347,7 @@ export default function AcceptInvitePage() {
 
                 <div className="flex flex-col space-y-2">
                   {user ? (
-                    <Button
-                      onClick={handleAcceptInvite}
-                      disabled={isAccepting}
-                      className="w-full"
-                    >
+                    <Button onClick={handleAcceptInvite} disabled={isAccepting} className="w-full">
                       {isAccepting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -393,7 +372,11 @@ export default function AcceptInvitePage() {
                           Create Account
                         </Button>
                         <Button
-                          onClick={() => navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
+                          onClick={() =>
+                            navigate(
+                              `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+                            )
+                          }
                           className="flex-1"
                         >
                           Login

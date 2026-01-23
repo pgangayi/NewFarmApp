@@ -18,11 +18,19 @@ export function validateEmail(email) {
     return { valid: false, error: "Email is required" };
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  const trimmed = email.trim();
+
+  // Reject consecutive dots in the local part (e.g. "test..double@example.com")
+  const parts = trimmed.split("@");
+  if (parts.length !== 2 || parts[0].includes("..")) {
     return { valid: false, error: "Invalid email format" };
   }
 
-  return { valid: true, email: email.trim().toLowerCase() };
+  if (!EMAIL_REGEX.test(trimmed)) {
+    return { valid: false, error: "Invalid email format" };
+  }
+
+  return { valid: true, email: trimmed.toLowerCase() };
 }
 
 // Password validation function
@@ -169,28 +177,160 @@ export function generateRateLimitKey(endpoint, clientIP) {
 }
 
 // Input sanitization
-export function sanitizeInput(input) {
+export function sanitizeInput(input, options = {}) {
+  const {
+    maxLength = 1000,
+    allowHtml = false,
+    allowQuotes = false,
+    allowAngleBrackets = false,
+  } = options;
+
   if (typeof input !== "string") {
     return "";
   }
 
-  return input
-    .replace(/[<>\"']/g, "") // Remove potentially dangerous characters
-    .trim()
-    .substring(0, 1000); // Limit length
+  let sanitized = input.trim();
+
+  // Remove null bytes and other control characters
+  sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, "");
+
+  // Remove <script> tags (including their content) and javascript: protocols early
+  sanitized = sanitized.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+  // Remove any javascript: URIs and anything after them
+  sanitized = sanitized.replace(/javascript:[\s\S]*/gi, "");
+
+  // If HTML is not allowed, remove common tags including their inner content
+  // e.g. <b>bold</b> => removed entirely
+  if (!allowHtml) {
+    sanitized = sanitized.replace(
+      /<([a-z][a-z0-9-]*)(?:\s[^>]*)?>[\s\S]*?<\/\1>/gi,
+      "",
+    );
+    // Strip remaining simple tags without content
+    sanitized = sanitized.replace(/<\/?([a-z][a-z0-9-]*)\b[^>]*>/gi, "");
+  }
+
+  // If angle brackets are not allowed (and HTML not allowed), strip raw < and > characters
+  if (!allowAngleBrackets && !allowHtml) {
+    sanitized = sanitized.replace(/[<>]/g, "");
+  }
+
+  if (!allowQuotes) {
+    // Remove quote characters only (preserve the text inside)
+    sanitized = sanitized.replace(/["']/g, "");
+  }
+
+  // Remove SQL injection patterns
+  sanitized = sanitized.replace(
+    /(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/gi,
+    "",
+  );
+
+  // Limit length
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+  }
+
+  return sanitized;
+}
+
+// Sanitize object recursively
+export function sanitizeObject(obj, options = {}) {
+  if (typeof obj !== "object" || obj === null) {
+    return sanitizeInput(obj, options);
+  }
+
+  const sanitized = Array.isArray(obj) ? [] : {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip sensitive fields that shouldn't be sanitized
+    if (
+      key.toLowerCase().includes("password") ||
+      key.toLowerCase().includes("secret")
+    ) {
+      sanitized[key] = value;
+      continue;
+    }
+
+    sanitized[key] = sanitizeObject(value, options);
+  }
+
+  return sanitized;
+}
+
+// Validate and sanitize farm data
+export function validateFarmData(data) {
+  const errors = [];
+
+  if (!data.name || typeof data.name !== "string") {
+    errors.push("Farm name is required");
+  } else if (data.name.length > 100) {
+    errors.push("Farm name too long");
+  }
+
+  if (data.location && typeof data.location !== "string") {
+    errors.push("Location must be a string");
+  }
+
+  if (
+    data.area_hectares &&
+    (typeof data.area_hectares !== "number" || data.area_hectares < 0)
+  ) {
+    errors.push("Area must be a positive number");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    sanitized: sanitizeObject(data),
+  };
+}
+
+// Validate and sanitize user data
+export function validateUserData(data) {
+  const errors = [];
+
+  const emailValidation = validateEmail(data.email);
+  if (!emailValidation.valid) {
+    errors.push(emailValidation.error);
+  }
+
+  if (data.name) {
+    const nameValidation = validateName(data.name);
+    if (!nameValidation.valid) {
+      errors.push(nameValidation.error);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    sanitized: sanitizeObject(data),
+  };
 }
 
 // Environment variable validation
-export function validateEnvironmentVars() {
+// Accepts an optional `env` object (Cloudflare Workers pass `env`) and falls back to `process.env` for tests
+export function validateEnvironmentVars(
+  env = typeof process !== "undefined" ? process.env : {},
+) {
   const required = ["JWT_SECRET"];
-  const optional = ["APP_URL", "SENTRY_DSN"];
+  const optional = [
+    "APP_URL",
+    "SENTRY_DSN",
+    "FRONTEND_PORT",
+    "BACKEND_PORT",
+    "TEST_BASE_URL",
+    "RESEND_API_KEY",
+    "FROM_EMAIL",
+  ];
 
   const vars = {};
   const missing = [];
 
   // Check required variables
   for (const key of required) {
-    const value = process.env[key];
+    const value = env[key];
     if (!value) {
       missing.push(key);
     } else {
@@ -200,12 +340,12 @@ export function validateEnvironmentVars() {
 
   // Check optional variables
   for (const key of optional) {
-    vars[key] = process.env[key];
+    vars[key] = env[key];
   }
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variables: ${missing.join(", ")}`
+      `Missing required environment variables: ${missing.join(", ")}`,
     );
   }
 

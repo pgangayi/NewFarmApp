@@ -110,23 +110,3 @@ LEFT JOIN users u ON fi.invited_by = u.id
 WHERE fi.status = 'pending' AND fi.expires_at > datetime('now')
 ORDER BY fi.created_at DESC;
 
--- User's pending invitations view
-CREATE VIEW IF NOT EXISTS user_pending_invites AS
-SELECT 
-    fi.id,
-    fi.farm_id,
-    f.farm_name,
-    f.location,
-    fi.role,
-    fi.message,
-    fi.created_at,
-    fi.expires_at,
-    u.name as inviter_name,
-    u.email as inviter_email
-FROM farm_invites fi
-JOIN farms f ON fi.farm_id = f.id
-LEFT JOIN users u ON fi.invited_by = u.id
-WHERE fi.status = 'pending' 
-  AND fi.expires_at > datetime('now')
-  AND fi.email = (SELECT email FROM users WHERE id = ?)
-ORDER BY fi.created_at DESC;

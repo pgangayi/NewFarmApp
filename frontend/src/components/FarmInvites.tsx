@@ -3,20 +3,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Loader2, 
-  Users, 
-  Mail, 
-  Send, 
-  Trash2, 
-  CheckCircle, 
+import {
+  Loader2,
+  Users,
+  Mail,
+  Send,
+  Trash2,
+  CheckCircle,
   AlertCircle,
   UserPlus,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 
 interface FarmInvite {
@@ -47,7 +53,7 @@ export default function FarmInvites() {
   const [inviteForm, setInviteForm] = useState({
     email: '',
     role: 'worker',
-    message: ''
+    message: '',
   });
 
   useEffect(() => {
@@ -65,7 +71,7 @@ export default function FarmInvites() {
       const token = localStorage.getItem('access_token');
       const response = await fetch('/api/farms', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -90,7 +96,7 @@ export default function FarmInvites() {
       const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/auth/invites?farm_id=${selectedFarm}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -118,13 +124,13 @@ export default function FarmInvites() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           farm_id: selectedFarm,
           email: inviteForm.email,
           role: inviteForm.role,
-          message: inviteForm.message
+          message: inviteForm.message,
         }),
       });
 
@@ -150,7 +156,7 @@ export default function FarmInvites() {
       const response = await fetch(`/api/auth/invites?id=${inviteId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -186,9 +192,9 @@ export default function FarmInvites() {
       owner: 'bg-purple-100 text-purple-800',
       manager: 'bg-blue-100 text-blue-800',
       worker: 'bg-green-100 text-green-800',
-      member: 'bg-gray-100 text-gray-800'
+      member: 'bg-gray-100 text-gray-800',
     };
-    
+
     return (
       <Badge className={colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
         {role}
@@ -212,13 +218,21 @@ export default function FarmInvites() {
       </div>
 
       {message && (
-        <Alert className={message.includes('success') ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}>
+        <Alert
+          className={
+            message.includes('success')
+              ? 'bg-green-50 border-green-200'
+              : 'bg-red-50 border-red-200'
+          }
+        >
           {message.includes('success') ? (
             <CheckCircle className="h-4 w-4 text-green-600" />
           ) : (
             <AlertCircle className="h-4 w-4 text-red-600" />
           )}
-          <AlertDescription className={message.includes('success') ? 'text-green-800' : 'text-red-800'}>
+          <AlertDescription
+            className={message.includes('success') ? 'text-green-800' : 'text-red-800'}
+          >
             {message}
           </AlertDescription>
         </Alert>
@@ -232,9 +246,7 @@ export default function FarmInvites() {
               <UserPlus className="h-5 w-5" />
               Send New Invitation
             </CardTitle>
-            <CardDescription>
-              Invite someone to join your farm team
-            </CardDescription>
+            <CardDescription>Invite someone to join your farm team</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -244,7 +256,7 @@ export default function FarmInvites() {
                   <SelectValue placeholder="Select a farm" />
                 </SelectTrigger>
                 <SelectContent>
-                  {farms.map((farm) => (
+                  {farms.map(farm => (
                     <SelectItem key={farm.id} value={farm.id}>
                       {farm.farm_name} ({farm.role})
                     </SelectItem>
@@ -259,14 +271,17 @@ export default function FarmInvites() {
                 id="email"
                 type="email"
                 value={inviteForm.email}
-                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
                 placeholder="Enter email address"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={inviteForm.role} onValueChange={(role) => setInviteForm({ ...inviteForm, role })}>
+              <Select
+                value={inviteForm.role}
+                onValueChange={role => setInviteForm({ ...inviteForm, role })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -283,7 +298,7 @@ export default function FarmInvites() {
               <Textarea
                 id="message"
                 value={inviteForm.message}
-                onChange={(e) => setInviteForm({ ...inviteForm, message: e.target.value })}
+                onChange={e => setInviteForm({ ...inviteForm, message: e.target.value })}
                 placeholder="Add a personal message to the invitation..."
                 rows={3}
               />
@@ -316,9 +331,7 @@ export default function FarmInvites() {
               <Users className="h-5 w-5" />
               Recent Invitations
             </CardTitle>
-            <CardDescription>
-              View and manage sent invitations
-            </CardDescription>
+            <CardDescription>View and manage sent invitations</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -328,7 +341,7 @@ export default function FarmInvites() {
                   <p>No invitations sent yet</p>
                 </div>
               ) : (
-                invites.map((invite) => (
+                invites.map(invite => (
                   <div key={invite.id} className="border rounded-lg p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -349,7 +362,7 @@ export default function FarmInvites() {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       {getRoleBadge(invite.role)}
                       <span>•</span>
@@ -369,12 +382,7 @@ export default function FarmInvites() {
             </div>
 
             {invites.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadInvites}
-                className="w-full mt-4"
-              >
+              <Button variant="outline" size="sm" onClick={loadInvites} className="w-full mt-4">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>

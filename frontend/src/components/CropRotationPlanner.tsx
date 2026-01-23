@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFarm, useRotations, useCreateRotation } from '../api';
-import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   RotateCcw,
@@ -50,7 +49,9 @@ export function CropRotationPlanner({ farmId }: CropRotationProps) {
   const { data: fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      return FieldService.getFieldsByFarm(farmId);
+      const response = await fetch(`/api/fields?farm_id=${farmId}`);
+      if (!response.ok) throw new Error('Failed to fetch fields');
+      return await response.json();
     },
     enabled: !!farmId,
   });

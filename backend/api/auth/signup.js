@@ -6,138 +6,158 @@ import { SimpleAuth, createErrorResponse } from "../_auth.js";
 import { CSRFProtection } from "../_csrf.js";
 import { EmailService } from "../_email.js";
 import {
+  validatePassword,
+  validateEmail,
+  validateName,
+} from "../_validation.js";
+import {
   buildPublicUser,
   createSessionResponse,
   SimpleUserRepository,
 } from "./_session-response.js";
 
-const MIN_PASSWORD_LENGTH = 8;
-
 export async function onRequest(context) {
   const { request, env } = context;
+  console.log(`[Auth:signup] Enter handler - ${request.method} ${request.url}`);
 
   if (request.method !== "POST") {
+    console.log("Method not POST");
     return createErrorResponse("Method not allowed", 405);
   }
 
   const auth = new SimpleAuth(env);
-  const csrf = new CSRFProtection(env);
   const userRepo = new SimpleUserRepository(env.DB);
+  const emailService = new EmailService(env);
 
   try {
+    console.log("Starting signup process");
+    // Parse request body
+    console.log("Parsing request body");
     const body = await request.json();
     const { email, password, name } = body;
+    console.log("Request body parsed");
 
-    if (!email || !password || !name) {
-      return createErrorResponse("Email, password, and name are required", 400);
+    // Validate input
+    console.log("Validating input");
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return createErrorResponse(emailValidation.error, 400);
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return createErrorResponse("Invalid email format", 400);
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return createErrorResponse(passwordValidation.error, 400);
     }
 
-    // Validate password length
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return createErrorResponse(
-        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
-        400
-      );
+    const nameValidation = validateName(name);
+    if (!nameValidation.valid) {
+      return createErrorResponse(nameValidation.error, 400);
     }
+    console.log("Input validation complete");
 
     // Check if user already exists
-    const existingUser = await userRepo.findByEmail(email);
+    console.log("Checking if user exists");
+    const existingUser = await userRepo.findByEmail(emailValidation.email);
+    console.log("User existence check complete");
     if (existingUser) {
-      return createErrorResponse("User already exists", 409);
+      return createErrorResponse("User with this email already exists", 409);
     }
 
     // Hash password
-    const passwordHash = await auth.hashPassword(password);
+    console.log("Hashing password");
+    const hashedPassword = await auth.hashPassword(password);
+    console.log("Password hashing complete");
 
-    // Create user
-    const createdUser = await userRepo.createUser({
-      email: email.toLowerCase().trim(),
-      password_hash: passwordHash,
-      name: name.trim(),
+    // Insert user into database
+    console.log("Creating user");
+    const user = await userRepo.createUser({
+      email: emailValidation.email,
+      password_hash: hashedPassword,
+      name: nameValidation.name,
     });
+    console.log("User creation complete");
 
-    // Generate tokens
-    const accessToken = auth.generateAccessToken(
-      createdUser.id,
-      createdUser.email
-    );
-    const refreshToken = auth.generateRefreshToken(
-      createdUser.id,
-      createdUser.email
-    );
+    // Generate verification token
+    console.log("Generating verification token");
+    const verificationToken = auth.generateSecureToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    console.log("Verification token generated");
 
-    // Log audit event
-    const ipAddress = auth.getClientIP(request);
-    await auth.logAuditEvent(
-      createdUser.id,
-      "signup",
-      null,
-      null,
-      ipAddress,
-      true
-    );
-
-    // Send verification email (instead of welcome email)
-    try {
-      const emailService = new EmailService(env);
-      const verificationToken = auth.generateSecureToken();
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-      // Store verification token
-      await env.DB.prepare(`
-        INSERT INTO email_verification_tokens (user_id, email, token, expires_at, created_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).bind(
-        createdUser.id,
-        createdUser.email,
+    // Store verification token
+    console.log("Storing verification token");
+    await env.DB.prepare(
+      `
+      INSERT INTO email_verification_tokens (user_id, email, token, expires_at, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `,
+    )
+      .bind(
+        user.id,
+        emailValidation.email,
         verificationToken,
         expiresAt.toISOString(),
-        new Date().toISOString()
-      ).run();
+        new Date().toISOString(),
+      )
+      .run();
+    console.log("Verification token stored");
 
-      await emailService.sendVerificationEmail(createdUser.email, verificationToken, createdUser.name);
+    // Send verification email
+    console.log("Sending verification email");
+    try {
+      await emailService.sendVerificationEmail(
+        emailValidation.email,
+        verificationToken,
+        nameValidation.name,
+      );
+      console.log("Verification email sent");
     } catch (emailError) {
       console.error("Failed to send verification email:", emailError);
-      // Don't fail the signup if email fails
+      // Do not fail signup solely due to email issues during debugging
     }
 
-    // Create session response
-    const sessionResponse = await createSessionResponse({
-      user: buildPublicUser(createdUser),
-      userId: createdUser.id,
-      accessToken,
-      refreshToken,
-      csrf,
-      ipAddress,
-      userAgent: request.headers.get("user-agent") || "unknown",
-      status: 201,
-      env,
-    });
+    // Create session/token
+    console.log("Generating access token");
+    const accessToken = await auth.generateAccessToken(
+      user.id,
+      emailValidation.email,
+    );
+    console.log("Access token generated");
 
-    if (sessionResponse.error) {
-      return sessionResponse.error;
-    }
+    // Build public user object
+    const publicUser = buildPublicUser(user);
 
-    return sessionResponse.response;
+    // Return response with user and token
+    return new Response(
+      JSON.stringify({
+        user: publicUser,
+        token: accessToken,
+        message:
+          "User created successfully. Please check your email to verify your account.",
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
     console.error("Signup error:", error);
-
-    // Log security event for errors
-    const ipAddress = auth.getClientIP(request);
-    await auth.logAuditEvent(
-      null,
-      "signup_failed",
-      null,
-      null,
-      ipAddress,
-      false
-    );
+    // Return stack and message when debug flag present in URL (local dev only)
+    try {
+      const url = new URL(request.url);
+      if (url.searchParams.get("debug") === "1") {
+        return new Response(
+          JSON.stringify({
+            error: "Internal server error",
+            message: error?.message || "unknown",
+            stack: error?.stack || null,
+          }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        );
+      }
+    } catch (e) {
+      // ignore URL parse errors and fall back to generic response
+      console.error("Error parsing URL for debug flag:", e);
+    }
 
     return createErrorResponse("Internal server error", 500);
   }

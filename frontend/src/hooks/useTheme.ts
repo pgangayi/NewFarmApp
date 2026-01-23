@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 
-type Theme = 'light' | 'dark' | 'system' | 'spring' | 'summer' | 'autumn' | 'winter' | 'high-contrast';
+type Theme =
+  | 'light'
+  | 'dark'
+  | 'system'
+  | 'spring'
+  | 'summer'
+  | 'autumn'
+  | 'winter'
+  | 'high-contrast';
 type ThemeMode = 'automatic' | 'manual';
 
 interface ThemeConfig {
@@ -31,7 +39,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#10b981',
     warning: '#f59e0b',
     error: '#ef4444',
-    info: '#06b6d4'
+    info: '#06b6d4',
   },
   dark: {
     primary: '#60a5fa',
@@ -45,7 +53,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#34d399',
     warning: '#fbbf24',
     error: '#f87171',
-    info: '#22d3ee'
+    info: '#22d3ee',
   },
   spring: {
     primary: '#10b981',
@@ -59,7 +67,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#22c55e',
     warning: '#eab308',
     error: '#ef4444',
-    info: '#06b6d4'
+    info: '#06b6d4',
   },
   summer: {
     primary: '#f59e0b',
@@ -73,7 +81,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#16a34a',
     warning: '#f59e0b',
     error: '#dc2626',
-    info: '#0891b2'
+    info: '#0891b2',
   },
   autumn: {
     primary: '#ea580c',
@@ -87,7 +95,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#15803d',
     warning: '#d97706',
     error: '#b91c1c',
-    info: '#0c4a6e'
+    info: '#0c4a6e',
   },
   winter: {
     primary: '#0284c7',
@@ -101,7 +109,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#059669',
     warning: '#d97706',
     error: '#dc2626',
-    info: '#0284c7'
+    info: '#0284c7',
   },
   'high-contrast': {
     primary: '#0000ff',
@@ -115,7 +123,7 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#008000',
     warning: '#ff8c00',
     error: '#ff0000',
-    info: '#0000ff'
+    info: '#0000ff',
   },
   system: {
     primary: '#3b82f6',
@@ -129,8 +137,8 @@ const themeConfigs: Record<Theme, ThemeConfig> = {
     success: '#10b981',
     warning: '#f59e0b',
     error: '#ef4444',
-    info: '#06b6d4'
-  }
+    info: '#06b6d4',
+  },
 };
 
 export function useTheme() {
@@ -138,7 +146,7 @@ export function useTheme() {
     const stored = localStorage.getItem('theme') as Theme;
     return stored || 'system';
   });
-  
+
   const [mode, setMode] = useState<ThemeMode>(() => {
     const stored = localStorage.getItem('theme-mode') as ThemeMode;
     return stored || 'automatic';
@@ -166,59 +174,68 @@ export function useTheme() {
     return theme;
   }, [theme]);
 
-  const applyThemeToDocument = useCallback((newTheme: Theme, newMode?: ThemeMode) => {
-    let appliedTheme: Theme;
-    
-    if (newMode === 'automatic' || mode === 'automatic') {
-      if (newTheme === 'system') {
-        appliedTheme = getSunriseSunsetTheme();
-      } else if (['spring', 'summer', 'autumn', 'winter'].includes(newTheme)) {
-        appliedTheme = newTheme;
+  const applyThemeToDocument = useCallback(
+    (newTheme: Theme, newMode?: ThemeMode) => {
+      let appliedTheme: Theme;
+
+      if (newMode === 'automatic' || mode === 'automatic') {
+        if (newTheme === 'system') {
+          appliedTheme = getSunriseSunsetTheme();
+        } else if (['spring', 'summer', 'autumn', 'winter'].includes(newTheme)) {
+          appliedTheme = newTheme;
+        } else {
+          appliedTheme = getAutomaticTheme();
+        }
       } else {
-        appliedTheme = getAutomaticTheme();
+        appliedTheme = newTheme;
       }
-    } else {
-      appliedTheme = newTheme;
-    }
 
-    const config = themeConfigs[appliedTheme];
-    const root = document.documentElement;
-    
-    // Apply CSS custom properties
-    Object.entries(config).forEach(([key, value]) => {
-      root.style.setProperty(`--color-${key}`, value);
-    });
-    
-    // Set data attributes
-    root.setAttribute('data-theme', appliedTheme);
-    root.setAttribute('data-theme-mode', newMode || mode);
-    
-    // Store preferences
-    localStorage.setItem('theme', newTheme);
-    if (newMode) {
-      localStorage.setItem('theme-mode', newMode);
-      setMode(newMode);
-    }
-    
-    setThemeState(newTheme);
-    
-    // Apply high contrast styles if needed
-    if (appliedTheme === 'high-contrast') {
-      root.style.setProperty('--font-weight-base', '600');
-      root.style.setProperty('--border-width-base', '2px');
-    } else {
-      root.style.removeProperty('--font-weight-base');
-      root.style.removeProperty('--border-width-base');
-    }
-  }, [mode, getAutomaticTheme, getSunriseSunsetTheme]);
+      const config = themeConfigs[appliedTheme];
+      const root = document.documentElement;
 
-  const setTheme = useCallback((newTheme: Theme) => {
-    applyThemeToDocument(newTheme);
-  }, [applyThemeToDocument]);
+      // Apply CSS custom properties
+      Object.entries(config).forEach(([key, value]) => {
+        root.style.setProperty(`--color-${key}`, value);
+      });
 
-  const setThemeMode = useCallback((newMode: ThemeMode) => {
-    applyThemeToDocument(theme, newMode);
-  }, [applyThemeToDocument, theme]);
+      // Set data attributes
+      root.setAttribute('data-theme', appliedTheme);
+      root.setAttribute('data-theme-mode', newMode || mode);
+
+      // Store preferences
+      localStorage.setItem('theme', newTheme);
+      if (newMode) {
+        localStorage.setItem('theme-mode', newMode);
+        setMode(newMode);
+      }
+
+      setThemeState(newTheme);
+
+      // Apply high contrast styles if needed
+      if (appliedTheme === 'high-contrast') {
+        root.style.setProperty('--font-weight-base', '600');
+        root.style.setProperty('--border-width-base', '2px');
+      } else {
+        root.style.removeProperty('--font-weight-base');
+        root.style.removeProperty('--border-width-base');
+      }
+    },
+    [mode, getAutomaticTheme, getSunriseSunsetTheme]
+  );
+
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      applyThemeToDocument(newTheme);
+    },
+    [applyThemeToDocument]
+  );
+
+  const setThemeMode = useCallback(
+    (newMode: ThemeMode) => {
+      applyThemeToDocument(theme, newMode);
+    },
+    [applyThemeToDocument, theme]
+  );
 
   const toggleTheme = useCallback(() => {
     const themes: Theme[] = ['light', 'dark', 'spring', 'summer', 'autumn', 'winter'];
@@ -243,7 +260,7 @@ export function useTheme() {
         applyThemeToDocument(theme);
       }
     };
-    
+
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme, mode, applyThemeToDocument]);
@@ -256,7 +273,7 @@ export function useTheme() {
           applyThemeToDocument(theme);
         }
       }, 60000); // Check every minute
-      
+
       return () => clearInterval(interval);
     }
   }, [mode, theme, applyThemeToDocument]);
@@ -273,6 +290,6 @@ export function useTheme() {
     seasonalThemes: ['spring', 'summer', 'autumn', 'winter'] as Theme[],
     isSystem: theme === 'system',
     isAutomatic: mode === 'automatic',
-    isHighContrast: theme === 'high-contrast'
+    isHighContrast: theme === 'high-contrast',
   };
 }

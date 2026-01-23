@@ -155,31 +155,34 @@ export function useBulkOperations() {
     });
   }, []);
 
-  const selectAll = useCallback((items: Array<{ id: string }>, type: string, select: boolean = true) => {
-    setSelectedItems(prev => {
-      const newSelected = [...prev];
-      items.forEach(item => {
-        const existingIndex = newSelected.findIndex(s => s.id === item.id);
-        if (select) {
-          if (existingIndex === -1) {
-            newSelected.push({
-              id: item.id,
-              type,
-              data: item,
-              selected: true,
-            });
-          } else if (newSelected[existingIndex]) {
-            newSelected[existingIndex].selected = true;
+  const selectAll = useCallback(
+    (items: Array<{ id: string }>, type: string, select: boolean = true) => {
+      setSelectedItems(prev => {
+        const newSelected = [...prev];
+        items.forEach(item => {
+          const existingIndex = newSelected.findIndex(s => s.id === item.id);
+          if (select) {
+            if (existingIndex === -1) {
+              newSelected.push({
+                id: item.id,
+                type,
+                data: item,
+                selected: true,
+              });
+            } else if (newSelected[existingIndex]) {
+              newSelected[existingIndex].selected = true;
+            }
+          } else {
+            if (existingIndex !== -1) {
+              newSelected.splice(existingIndex, 1);
+            }
           }
-        } else {
-          if (existingIndex !== -1) {
-            newSelected.splice(existingIndex, 1);
-          }
-        }
+        });
+        return newSelected;
       });
-      return newSelected;
-    });
-  }, []);
+    },
+    []
+  );
 
   const toggleItemSelection = useCallback((item: { id: string }, type: string) => {
     setSelectedItems(prev => {

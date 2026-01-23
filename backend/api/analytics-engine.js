@@ -1101,12 +1101,146 @@ async function getSustainabilityMetrics(env, farmId, timeframe) {
 }
 
 async function getYieldPredictions(env, farmId) {
-  return {
-    next_season_forecast: "15% increase expected",
-    optimal_harvest_time: "2 weeks from current date",
-    yield_variability: "Low to moderate",
-    quality_prediction: "Above average",
-  };
+  // Get historical crop data for predictions
+  const historicalData = await env.DB.prepare(
+    `
+    SELECT
+      c.crop_type,
+      c.planting_date,
+      c.harvest_date,
+      c.expected_yield,
+      c.actual_yield,
+      c.growth_stage,
+      c.health_status,
+      f.area_hectares,
+      AVG(w.temperature_avg) as avg_temp,
+      AVG(w.precipitation) as total_rainfall,
+      COUNT(w.id) as weather_days
+    FROM crops c
+    JOIN fields f ON c.field_id = f.id
+    LEFT JOIN weather_locations wl ON f.farm_id = wl.farm_id
+    LEFT JOIN weather_data w ON wl.id = w.location_id
+      AND date(w.measurement_date) BETWEEN date(c.planting_date) AND date(c.harvest_date)
+    WHERE f.farm_id = ?
+      AND c.actual_yield IS NOT NULL
+      AND c.planting_date IS NOT NULL
+    GROUP BY c.id, c.crop_type, c.planting_date, c.harvest_date, c.expected_yield, c.actual_yield, c.growth_stage, c.health_status, f.area_hectares
+    ORDER BY c.harvest_date DESC
+    LIMIT 50
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  // Calculate yield trends and predictions
+  const predictions = {};
+  const cropTypes = [...new Set(historicalData.map(row => row.crop_type))];
+
+  for (const cropType of cropTypes) {
+    const cropData = historicalData.filter(row => row.crop_type === cropType);
+
+    if (cropData.length < 3) continue; // Need minimum data for prediction
+
+    // Calculate yield trend using linear regression
+    const yields = cropData.map(row => row.actual_yield || 0);
+    const trend = calculateLinearTrend(yields);
+
+    // Calculate average yield and variability
+    const avgYield = yields.reduce((sum, y) => sum + y, 0) / yields.length;
+    const variance = yields.reduce((sum, y) => sum + Math.pow(y - avgYield, 2), 0) / yields.length;
+    const stdDev = Math.sqrt(variance);
+    const variability = stdDev / avgYield;
+
+    // Predict next season yield
+    const nextYield = avgYield * (1 + trend.slope * 0.1); // 10% weight on trend
+    const yieldChange = ((nextYield - avgYield) / avgYield) * 100;
+
+    // Calculate optimal harvest time based on historical data
+    const harvestDelays = cropData
+      .filter(row => row.harvest_date && row.planting_date)
+      .map(row => {
+        const planted = new Date(row.planting_date);
+        const harvested = new Date(row.harvest_date);
+        return Math.ceil((harvested - planted) / (1000 * 60 * 60 * 24));
+      });
+
+    const avgHarvestDays = harvestDelays.length > 0
+      ? harvestDelays.reduce((sum, days) => sum + days, 0) / harvestDelays.length
+      : 90; // Default 90 days
+
+    // Quality prediction based on health status
+    const healthScores = cropData.map(row => {
+      switch (row.health_status) {
+        case 'excellent': return 1.0;
+        case 'good': return 0.8;
+        case 'fair': return 0.6;
+        case 'poor': return 0.4;
+        default: return 0.7;
+      }
+    });
+    const avgQuality = healthScores.reduce((sum, score) => sum + score, 0) / healthScores.length;
+
+    predictions[cropType] = {
+      next_season_forecast: `${yieldChange > 0 ? '+' : ''}${yieldChange.toFixed(1)}% change expected`,
+      predicted_yield: nextYield.toFixed(2),
+      optimal_harvest_time: `${Math.round(avgHarvestDays)} days from planting`,
+      yield_variability: variability < 0.15 ? "Low" : variability < 0.3 ? "Moderate" : "High",
+      quality_prediction: avgQuality > 0.8 ? "Excellent" : avgQuality > 0.6 ? "Good" : "Fair",
+      confidence_level: Math.min(cropData.length / 10, 1) * 100, // Based on data points
+      influencing_factors: {
+        weather_trend: calculateWeatherImpact(cropData),
+        soil_health: "Stable", // Would need soil analysis data
+        planting_timing: "Optimal", // Would need more analysis
+      }
+    };
+  }
+
+  return predictions;
+}
+
+// Helper function for linear regression calculation
+function calculateLinearTrend(values) {
+  const n = values.length;
+  if (n < 2) return { slope: 0, intercept: values[0] || 0 };
+
+  const x = Array.from({ length: n }, (_, i) => i);
+  const y = values;
+
+  const sumX = x.reduce((a, b) => a + b, 0);
+  const sumY = y.reduce((a, b) => a + b, 0);
+  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+  const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  return { slope, intercept };
+}
+
+// Helper function to calculate weather impact on crops
+function calculateWeatherImpact(cropData) {
+  const weatherImpacts = cropData.map(row => {
+    const temp = row.avg_temp || 20; // Default temperature
+    const rain = row.total_rainfall || 50; // Default rainfall
+
+    // Simple weather impact calculation
+    let impact = 0;
+    if (temp >= 18 && temp <= 25) impact += 0.4; // Optimal temperature
+    else if (temp >= 15 && temp <= 28) impact += 0.2; // Acceptable temperature
+    else impact -= 0.2; // Poor temperature
+
+    if (rain >= 30 && rain <= 80) impact += 0.4; // Optimal rainfall
+    else if (rain >= 20 && rain <= 100) impact += 0.2; // Acceptable rainfall
+    else impact -= 0.2; // Poor rainfall
+
+    return impact;
+  });
+
+  const avgImpact = weatherImpacts.reduce((sum, impact) => sum + impact, 0) / weatherImpacts.length;
+
+  if (avgImpact > 0.5) return "Positive";
+  else if (avgImpact > 0) return "Neutral";
+  else return "Negative";
 }
 
 async function getDemandForecasting(env, farmId) {
@@ -1119,13 +1253,253 @@ async function getDemandForecasting(env, farmId) {
 }
 
 async function getRiskAssessment(env, farmId) {
-  return {
-    weather_risks: "Medium",
-    market_risks: "Low",
-    operational_risks: "Low",
-    financial_risks: "Very low",
-    overall_risk_level: "Low",
+  // Get historical data for risk assessment
+  const weatherRisks = await calculateWeatherRisks(env, farmId);
+  const marketRisks = await calculateMarketRisks(env, farmId);
+  const operationalRisks = await calculateOperationalRisks(env, farmId);
+  const financialRisks = await calculateFinancialRisks(env, farmId);
+
+  // Calculate overall risk level
+  const riskScores = {
+    weather: weatherRisks.score,
+    market: marketRisks.score,
+    operational: operationalRisks.score,
+    financial: financialRisks.score,
   };
+
+  const overallScore = Object.values(riskScores).reduce((sum, score) => sum + score, 0) / Object.values(riskScores).length;
+  const overallLevel = overallScore >= 80 ? "Very High" :
+                      overallScore >= 60 ? "High" :
+                      overallScore >= 40 ? "Medium" :
+                      overallScore >= 20 ? "Low" : "Very Low";
+
+  return {
+    weather_risks: weatherRisks.level,
+    market_risks: marketRisks.level,
+    operational_risks: operationalRisks.level,
+    financial_risks: financialRisks.level,
+    overall_risk_level: overallLevel,
+    risk_factors: [
+      ...weatherRisks.factors,
+      ...marketRisks.factors,
+      ...operationalRisks.factors,
+      ...financialRisks.factors,
+    ].slice(0, 5), // Top 5 risk factors
+    mitigation_strategies: [
+      "Diversify crop varieties to reduce weather dependency",
+      "Implement hedging strategies for market price volatility",
+      "Regular equipment maintenance to prevent operational failures",
+      "Maintain emergency cash reserves for financial stability",
+    ],
+  };
+}
+
+// Risk calculation helper functions
+async function calculateWeatherRisks(env, farmId) {
+  const weatherData = await env.DB.prepare(
+    `
+    SELECT
+      COUNT(*) as total_readings,
+      AVG(temperature_avg) as avg_temp,
+      AVG(precipitation) as total_rainfall,
+      COUNT(CASE WHEN temperature_high > 35 THEN 1 END) as extreme_heat_days,
+      COUNT(CASE WHEN precipitation > 50 THEN 1 END) as heavy_rain_days,
+      COUNT(CASE WHEN precipitation < 5 THEN 1 END) as drought_days
+    FROM weather_data wd
+    JOIN weather_locations wl ON wd.location_id = wl.id
+    WHERE wl.farm_id = ?
+      AND date(measurement_date) >= date('now', '-12 months')
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  const data = weatherData[0] || {};
+  let score = 0;
+  const factors = [];
+
+  // Extreme weather events
+  const extremeEvents = (data.extreme_heat_days || 0) + (data.heavy_rain_days || 0) + (data.drought_days || 0);
+  if (extremeEvents > 10) {
+    score += 30;
+    factors.push("High frequency of extreme weather events");
+  } else if (extremeEvents > 5) {
+    score += 15;
+    factors.push("Moderate extreme weather events");
+  }
+
+  // Temperature variability
+  const tempVariability = Math.abs((data.avg_temp || 20) - 20); // Deviation from optimal
+  if (tempVariability > 10) {
+    score += 25;
+    factors.push("Significant temperature deviations from optimal range");
+  } else if (tempVariability > 5) {
+    score += 10;
+    factors.push("Moderate temperature variability");
+  }
+
+  // Precipitation reliability
+  const rainfallReliability = (data.total_rainfall || 0) / 12; // Monthly average
+  if (rainfallReliability < 20) {
+    score += 20;
+    factors.push("Low and unreliable precipitation");
+  } else if (rainfallReliability > 100) {
+    score += 15;
+    factors.push("Excessive rainfall increasing flood risk");
+  }
+
+  const level = score >= 60 ? "High" : score >= 30 ? "Medium" : "Low";
+  return { score: Math.min(score, 100), level, factors };
+}
+
+async function calculateMarketRisks(env, farmId) {
+  // Analyze price volatility and market dependency
+  const financeData = await env.DB.prepare(
+    `
+    SELECT
+      COUNT(*) as transaction_count,
+      AVG(amount) as avg_transaction,
+      STDDEV(amount) as price_volatility,
+      COUNT(CASE WHEN type = 'income' THEN 1 END) as income_entries,
+      COUNT(CASE WHEN type = 'expense' THEN 1 END) as expense_entries
+    FROM finance_entries
+    WHERE farm_id = ?
+      AND date(entry_date) >= date('now', '-12 months')
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  const data = financeData[0] || {};
+  let score = 0;
+  const factors = [];
+
+  // Price volatility
+  const volatility = (data.price_volatility || 0) / (data.avg_transaction || 1);
+  if (volatility > 0.5) {
+    score += 40;
+    factors.push("High price volatility in market transactions");
+  } else if (volatility > 0.2) {
+    score += 20;
+    factors.push("Moderate price fluctuations");
+  }
+
+  // Market dependency (single income sources)
+  const incomeConcentration = data.income_entries > 0 ? 1 : 0; // Simplified
+  if (incomeConcentration < 0.5) {
+    score += 25;
+    factors.push("Heavy dependence on limited income sources");
+  }
+
+  const level = score >= 50 ? "High" : score >= 25 ? "Medium" : "Low";
+  return { score: Math.min(score, 100), level, factors };
+}
+
+async function calculateOperationalRisks(env, farmId) {
+  // Equipment failure rates, task completion issues
+  const taskData = await env.DB.prepare(
+    `
+    SELECT
+      COUNT(*) as total_tasks,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tasks,
+      COUNT(CASE WHEN due_date < date('now') AND status != 'completed' THEN 1 END) as overdue_tasks,
+      AVG(CASE WHEN estimated_duration IS NOT NULL AND actual_duration IS NOT NULL
+            THEN (actual_duration / estimated_duration) ELSE NULL END) as avg_duration_ratio
+    FROM tasks
+    WHERE farm_id = ?
+      AND date(created_at) >= date('now', '-6 months')
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  const data = taskData[0] || {};
+  let score = 0;
+  const factors = [];
+
+  // Task completion reliability
+  const completionRate = data.total_tasks > 0 ? (data.completed_tasks / data.total_tasks) * 100 : 0;
+  if (completionRate < 70) {
+    score += 30;
+    factors.push("Low task completion rates indicating operational issues");
+  } else if (completionRate < 85) {
+    score += 15;
+    factors.push("Moderate task completion issues");
+  }
+
+  // Overdue tasks
+  const overdueRate = data.total_tasks > 0 ? (data.overdue_tasks / data.total_tasks) * 100 : 0;
+  if (overdueRate > 20) {
+    score += 25;
+    factors.push("High number of overdue tasks");
+  } else if (overdueRate > 10) {
+    score += 10;
+    factors.push("Moderate overdue task issues");
+  }
+
+  // Duration variability (efficiency issues)
+  const durationVariability = data.avg_duration_ratio || 1;
+  if (durationVariability > 1.5) {
+    score += 20;
+    factors.push("Significant delays in task completion");
+  }
+
+  const level = score >= 50 ? "High" : score >= 25 ? "Medium" : "Low";
+  return { score: Math.min(score, 100), level, factors };
+}
+
+async function calculateFinancialRisks(env, farmId) {
+  // Cash flow issues, debt levels, profitability
+  const financeData = await env.DB.prepare(
+    `
+    SELECT
+      COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_revenue,
+      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses,
+      COALESCE(SUM(CASE WHEN type = 'income' THEN amount WHEN type = 'expense' THEN -amount ELSE 0 END), 0) as net_profit,
+      COUNT(CASE WHEN type = 'expense' AND amount > 1000 THEN 1 END) as large_expenses,
+      AVG(CASE WHEN type = 'income' THEN amount ELSE NULL END) as avg_income,
+      AVG(CASE WHEN type = 'expense' THEN amount ELSE NULL END) as avg_expense
+    FROM finance_entries
+    WHERE farm_id = ?
+      AND date(entry_date) >= date('now', '-12 months')
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  const data = financeData[0] || {};
+  let score = 0;
+  const factors = [];
+
+  // Profitability
+  const profitMargin = data.total_revenue > 0 ? (data.net_profit / data.total_revenue) * 100 : 0;
+  if (profitMargin < 0) {
+    score += 40;
+    factors.push("Negative profit margins indicating financial distress");
+  } else if (profitMargin < 10) {
+    score += 20;
+    factors.push("Low profit margins");
+  }
+
+  // Expense volatility
+  const expenseRatio = data.total_expenses > 0 ? data.total_expenses / data.total_revenue : 0;
+  if (expenseRatio > 1.2) {
+    score += 25;
+    factors.push("Expenses exceeding revenue");
+  } else if (expenseRatio > 0.9) {
+    score += 10;
+    factors.push("High expense-to-revenue ratio");
+  }
+
+  // Large expense concentration
+  const largeExpenseRatio = data.total_expenses > 0 ? (data.large_expenses * 1000) / data.total_expenses : 0;
+  if (largeExpenseRatio > 0.3) {
+    score += 15;
+    factors.push("Concentration of large expenses increasing financial risk");
+  }
+
+  const level = score >= 50 ? "High" : score >= 25 ? "Medium" : "Low";
+  return { score: Math.min(score, 100), level, factors };
 }
 
 async function getMaintenancePredictions(env, farmId) {
@@ -1210,12 +1584,287 @@ async function getSustainabilityImprovements(env, farmId) {
 }
 
 async function getTrendAnalysis(env, farmId, timeframe) {
+  // Get historical data for trend analysis
+  const cropTrends = await env.DB.prepare(
+    `
+    SELECT
+      strftime('%Y-%m', c.created_at) as month,
+      AVG(c.actual_yield) as avg_yield,
+      COUNT(c.id) as crop_count,
+      AVG(c.expected_yield) as avg_expected_yield
+    FROM crops c
+    WHERE c.farm_id = ? AND c.actual_yield IS NOT NULL
+      AND date(c.created_at) >= date('now', '-${timeframe}')
+    GROUP BY strftime('%Y-%m', c.created_at)
+    ORDER BY month DESC
+    LIMIT 12
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  const financeTrends = await env.DB.prepare(
+    `
+    SELECT
+      strftime('%Y-%m', entry_date) as month,
+      SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+      SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+      SUM(CASE WHEN type = 'income' THEN amount WHEN type = 'expense' THEN -amount ELSE 0 END) as net_profit
+    FROM finance_entries
+    WHERE farm_id = ?
+      AND date(entry_date) >= date('now', '-${timeframe}')
+    GROUP BY strftime('%Y-%m', entry_date)
+    ORDER BY month DESC
+    LIMIT 12
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  const taskTrends = await env.DB.prepare(
+    `
+    SELECT
+      strftime('%Y-%m', created_at) as month,
+      COUNT(*) as total_tasks,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tasks,
+      AVG(julianday(CASE WHEN status = 'completed' THEN updated_at END) - julianday(created_at)) as avg_completion_days
+    FROM tasks
+    WHERE farm_id = ?
+      AND date(created_at) >= date('now', '-${timeframe}')
+    GROUP BY strftime('%Y-%m', created_at)
+    ORDER BY month DESC
+    LIMIT 12
+  `
+  )
+    .bind(farmId)
+    .all();
+
+  // Analyze trends
+  const cropTrend = analyzeTimeSeriesTrend(cropTrends.map(row => row.avg_yield));
+  const financeTrend = analyzeTimeSeriesTrend(financeTrends.map(row => row.net_profit));
+  const taskTrend = analyzeTimeSeriesTrend(taskTrends.map(row => (row.completed_tasks / row.total_tasks) * 100));
+
+  // Seasonal patterns
+  const seasonalPatterns = analyzeSeasonalPatterns(cropTrends, financeTrends, taskTrends);
+
+  // Growth indicators
+  const growthIndicators = calculateGrowthIndicators(cropTrends, financeTrends, taskTrends);
+
+  // Improvement areas
+  const improvementAreas = identifyImprovementAreas(cropTrend, financeTrend, taskTrend);
+
   return {
-    performance_trends: "Generally positive",
-    seasonal_patterns: "Identified and analyzed",
-    growth_indicators: "Strong upward trend",
-    improvement_areas: "3 key opportunities",
+    performance_trends: {
+      overall: determineOverallTrend([cropTrend, financeTrend, taskTrend]),
+      crops: cropTrend,
+      finance: financeTrend,
+      tasks: taskTrend,
+    },
+    seasonal_patterns: seasonalPatterns,
+    growth_indicators: growthIndicators,
+    improvement_areas: improvementAreas,
+    trend_data: {
+      crops: cropTrends,
+      finance: financeTrends,
+      tasks: taskTrends,
+    },
   };
+}
+
+// Helper function to analyze time series trends
+function analyzeTimeSeriesTrend(values) {
+  if (values.length < 2) return { direction: 'insufficient_data', strength: 0 };
+
+  const n = values.length;
+  const x = Array.from({ length: n }, (_, i) => i);
+  const y = values;
+
+  // Calculate linear regression
+  const sumX = x.reduce((a, b) => a + b, 0);
+  const sumY = y.reduce((a, b) => a + b, 0);
+  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+  const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+
+  // Calculate R-squared for trend strength
+  const yMean = sumY / n;
+  const ssRes = y.reduce((sum, yi, i) => {
+    const predicted = slope * i + (sumY - slope * sumX) / n;
+    return sum + Math.pow(yi - predicted, 2);
+  }, 0);
+  const ssTot = y.reduce((sum, yi) => sum + Math.pow(yi - yMean, 2), 0);
+  const rSquared = 1 - (ssRes / ssTot);
+
+  let direction = 'stable';
+  if (slope > 0.01) direction = 'increasing';
+  else if (slope < -0.01) direction = 'decreasing';
+
+  return {
+    direction,
+    slope,
+    strength: rSquared,
+    confidence: Math.min(n / 6, 1), // Based on data points
+  };
+}
+
+// Helper function to analyze seasonal patterns
+function analyzeSeasonalPatterns(cropData, financeData, taskData) {
+  const patterns = [];
+
+  // Analyze crop seasonality
+  if (cropData.length >= 6) {
+    const monthlyYields = cropData.reduce((acc, row) => {
+      const month = new Date(row.month + '-01').getMonth();
+      if (!acc[month]) acc[month] = [];
+      acc[month].push(row.avg_yield);
+      return acc;
+    }, {});
+
+    const seasonalVariations = Object.entries(monthlyYields).map(([month, yields]) => ({
+      month: parseInt(month),
+      avgYield: yields.reduce((sum, y) => sum + y, 0) / yields.length,
+    }));
+
+    if (seasonalVariations.length >= 4) {
+      patterns.push({
+        type: 'crop_harvest',
+        description: 'Crop yields show seasonal variation with peaks in harvest months',
+        peak_months: seasonalVariations
+          .sort((a, b) => b.avgYield - a.avgYield)
+          .slice(0, 3)
+          .map(m => m.month),
+      });
+    }
+  }
+
+  // Analyze financial seasonality
+  if (financeData.length >= 6) {
+    const monthlyProfits = financeData.reduce((acc, row) => {
+      const month = new Date(row.month + '-01').getMonth();
+      if (!acc[month]) acc[month] = [];
+      acc[month].push(row.net_profit);
+      return acc;
+    }, {});
+
+    const profitVariations = Object.entries(monthlyProfits).map(([month, profits]) => ({
+      month: parseInt(month),
+      avgProfit: profits.reduce((sum, p) => sum + p, 0) / profits.length,
+    }));
+
+    if (profitVariations.length >= 4) {
+      patterns.push({
+        type: 'financial_cycles',
+        description: 'Profit patterns show seasonal variations',
+        high_profit_months: profitVariations
+          .sort((a, b) => b.avgProfit - a.avgProfit)
+          .slice(0, 3)
+          .map(m => m.month),
+      });
+    }
+  }
+
+  return patterns;
+}
+
+// Helper function to calculate growth indicators
+function calculateGrowthIndicators(cropData, financeData, taskData) {
+  const indicators = [];
+
+  // Crop yield growth
+  if (cropData.length >= 3) {
+    const recent = cropData.slice(0, 3);
+    const older = cropData.slice(-3);
+    const recentAvg = recent.reduce((sum, row) => sum + row.avg_yield, 0) / recent.length;
+    const olderAvg = older.reduce((sum, row) => sum + row.avg_yield, 0) / older.length;
+    const growthRate = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+    indicators.push({
+      metric: 'crop_yield_growth',
+      value: growthRate,
+      direction: growthRate > 0 ? 'positive' : 'negative',
+      description: `Crop yields ${growthRate > 0 ? 'increased' : 'decreased'} by ${Math.abs(growthRate).toFixed(1)}%`,
+    });
+  }
+
+  // Financial growth
+  if (financeData.length >= 3) {
+    const recent = financeData.slice(0, 3);
+    const older = financeData.slice(-3);
+    const recentAvg = recent.reduce((sum, row) => sum + row.net_profit, 0) / recent.length;
+    const olderAvg = older.reduce((sum, row) => sum + row.net_profit, 0) / older.length;
+    const growthRate = olderAvg !== 0 ? ((recentAvg - olderAvg) / Math.abs(olderAvg)) * 100 : 0;
+
+    indicators.push({
+      metric: 'financial_growth',
+      value: growthRate,
+      direction: growthRate > 0 ? 'positive' : 'negative',
+      description: `Net profit ${growthRate > 0 ? 'improved' : 'declined'} by ${Math.abs(growthRate).toFixed(1)}%`,
+    });
+  }
+
+  // Task efficiency growth
+  if (taskData.length >= 3) {
+    const recent = taskData.slice(0, 3);
+    const older = taskData.slice(-3);
+    const recentAvg = recent.reduce((sum, row) => sum + (row.completed_tasks / row.total_tasks), 0) / recent.length;
+    const olderAvg = older.reduce((sum, row) => sum + (row.completed_tasks / row.total_tasks), 0) / older.length;
+    const growthRate = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+    indicators.push({
+      metric: 'task_efficiency_growth',
+      value: growthRate,
+      direction: growthRate > 0 ? 'positive' : 'negative',
+      description: `Task completion rate ${growthRate > 0 ? 'improved' : 'declined'} by ${Math.abs(growthRate).toFixed(1)}%`,
+    });
+  }
+
+  return indicators;
+}
+
+// Helper function to identify improvement areas
+function identifyImprovementAreas(cropTrend, financeTrend, taskTrend) {
+  const areas = [];
+
+  if (cropTrend.direction === 'decreasing' || cropTrend.strength < 0.3) {
+    areas.push({
+      area: 'Crop Performance',
+      issue: 'Declining or unstable crop yields',
+      recommendation: 'Implement precision agriculture techniques and soil health monitoring',
+      priority: 'high',
+    });
+  }
+
+  if (financeTrend.direction === 'decreasing' || financeTrend.strength < 0.3) {
+    areas.push({
+      area: 'Financial Management',
+      issue: 'Declining or unstable profitability',
+      recommendation: 'Review cost structure and implement budget controls',
+      priority: 'high',
+    });
+  }
+
+  if (taskTrend.direction === 'decreasing' || taskTrend.strength < 0.3) {
+    areas.push({
+      area: 'Operational Efficiency',
+      issue: 'Declining task completion rates',
+      recommendation: 'Implement workflow optimization and resource planning',
+      priority: 'medium',
+    });
+  }
+
+  return areas;
+}
+
+// Helper function to determine overall trend
+function determineOverallTrend(trends) {
+  const directions = trends.map(t => t.direction);
+  const increasing = directions.filter(d => d === 'increasing').length;
+  const decreasing = directions.filter(d => d === 'decreasing').length;
+
+  if (increasing > decreasing) return 'generally_positive';
+  if (decreasing > increasing) return 'generally_negative';
+  return 'mixed_stable';
 }
 
 async function getROIAnalysis(env, farmId, timeframe) {

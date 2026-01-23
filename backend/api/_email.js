@@ -1,20 +1,35 @@
-import { Resend } from "resend";
+// `resend` client is created lazily at runtime to avoid import-time
+// access of `process.env` which can leak Node-only patterns into the
+// Worker bundle. The actual client is dynamically imported when we
+// have a valid API key in the runtime `env`.
 
-// Get Resend client factory function
-const getResendClient = (apiKey) => {
-  if (!apiKey || apiKey === "demo_key_for_testing") {
-    return null; // Don't create client without valid API key
-  }
-  return new Resend(apiKey);
-};
+// NOTE: No top-level import of `resend` here.
 
 export class EmailService {
   constructor(env) {
     this.env = env;
-    this.resend = getResendClient(env.RESEND_API_KEY);
+    this.resend = null; // created lazily by ensureResendClient()
     this.fromEmail = env.FROM_EMAIL || "noreply@farmersboot.com";
     this.appName = "Farmers Boot";
     this.baseUrl = env.APP_URL || "http://localhost:3000";
+  }
+
+  // Lazily import and create Resend client at runtime when API key present
+  async ensureResendClient() {
+    if (this.resend) return;
+    const apiKey = this.env?.RESEND_API_KEY;
+    if (!apiKey || apiKey === "demo_key_for_testing") {
+      this.resend = null;
+      return;
+    }
+    try {
+      const mod = await import("resend");
+      const { Resend } = mod;
+      this.resend = new Resend(apiKey);
+    } catch (err) {
+      console.error("Failed to dynamically import Resend client:", err);
+      this.resend = null;
+    }
   }
 
   /**
@@ -34,7 +49,7 @@ export class EmailService {
         console.warn("🔧 To enable email sending:");
         console.warn("   1. Get free API key from: https://resend.com");
         console.warn(
-          "   2. Add to functions/.env: RESEND_API_KEY=re_your_key_here"
+          "   2. Add to functions/.env: RESEND_API_KEY=re_your_key_here",
         );
         console.warn("   3. Restart the development server");
         console.warn("");
@@ -43,6 +58,15 @@ export class EmailService {
 
         // Return success with mock ID to allow flow to continue
         return { success: true, emailId: "mock_email_id_" + Date.now() };
+      } else {
+        // Lazily ensure we have a Resend client when an API key exists
+        await this.ensureResendClient();
+        if (!this.resend) {
+          console.warn(
+            "⚠️ Resend client unavailable despite API key. Falling back to mock.",
+          );
+          return { success: true, emailId: "mock_email_id_" + Date.now() };
+        }
       }
 
       const emailHtml = `
@@ -127,6 +151,17 @@ export class EmailService {
         © 2025 ${this.appName}. All rights reserved.
       `;
 
+      // Check if Resend client is available
+      if (!this.resend) {
+        console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
+        console.warn(
+          "📧 [MOCK] Password reset email would be sent to:",
+          userEmail,
+        );
+        console.warn("🔗 [MOCK] Reset link:", resetLink);
+        return { success: true, emailId: "mock_reset_id_" + Date.now() };
+      }
+
       const result = await this.resend.emails.send({
         from: this.fromEmail,
         to: [userEmail],
@@ -136,9 +171,12 @@ export class EmailService {
       });
 
       console.log(`✅ REAL EMAIL SENT to ${userEmail}`);
-      console.log(`📧 Email ID: ${result.data?.id}`);
+      const sentId =
+        result?.data?.id ??
+        (typeof result?.data === "string" ? result.data : (result?.id ?? null));
+      console.log(`📧 Email ID: ${sentId}`);
       console.log(`🔗 Reset link: ${resetLink}`);
-      return { success: true, emailId: result.data?.id };
+      return { success: true, emailId: sentId };
     } catch (error) {
       console.error("❌ FAILED to send real email:", error);
       throw new Error(`Real email sending failed: ${error.message}`);
@@ -155,6 +193,14 @@ export class EmailService {
         console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
         console.warn("📧 [MOCK] Welcome email would be sent to:", userEmail);
         return { success: true, emailId: "mock_welcome_id_" + Date.now() };
+      } else {
+        await this.ensureResendClient();
+        if (!this.resend) {
+          console.warn(
+            "⚠️ Resend client unavailable despite API key. Falling back to mock.",
+          );
+          return { success: true, emailId: "mock_welcome_id_" + Date.now() };
+        }
       }
 
       const emailHtml = `
@@ -201,6 +247,17 @@ export class EmailService {
         </html>
       `;
 
+      // Check if Resend client is available
+      if (!this.resend) {
+        console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
+        console.warn(
+          "📧 [MOCK] Password reset email would be sent to:",
+          userEmail,
+        );
+        console.warn("🔗 [MOCK] Reset link:", resetLink);
+        return { success: true, emailId: "mock_reset_id_" + Date.now() };
+      }
+
       const result = await this.resend.emails.send({
         from: this.fromEmail,
         to: [userEmail],
@@ -226,9 +283,23 @@ export class EmailService {
       // Development fallback if no API key
       if (!this.env.RESEND_API_KEY) {
         console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
-        console.warn("📧 [MOCK] Verification email would be sent to:", userEmail);
+        console.warn(
+          "📧 [MOCK] Verification email would be sent to:",
+          userEmail,
+        );
         console.warn("🔗 [MOCK] Verification link:", verificationLink);
         return { success: true, emailId: "mock_verification_id_" + Date.now() };
+      } else {
+        await this.ensureResendClient();
+        if (!this.resend) {
+          console.warn(
+            "⚠️ Resend client unavailable despite API key. Falling back to mock.",
+          );
+          return {
+            success: true,
+            emailId: "mock_verification_id_" + Date.now(),
+          };
+        }
       }
 
       const emailHtml = `
@@ -309,6 +380,13 @@ export class EmailService {
         © 2025 ${this.appName}. All rights reserved.
       `;
 
+      // Ensure Resend client exists (dynamic import if API key present)
+      await this.ensureResendClient();
+      if (!this.resend) {
+        console.warn("⚠️ Resend client unavailable; using mock fallback");
+        return { success: true, emailId: "mock_verification_id_" + Date.now() };
+      }
+
       const result = await this.resend.emails.send({
         from: this.fromEmail,
         to: [userEmail],
@@ -328,16 +406,33 @@ export class EmailService {
   /**
    * Send farm worker invitation email
    */
-  async sendFarmInviteEmail(userEmail, inviteToken, farmName, inviterName, role = 'worker') {
+  async sendFarmInviteEmail(
+    userEmail,
+    inviteToken,
+    farmName,
+    inviterName,
+    role = "worker",
+  ) {
     try {
       const inviteLink = `${this.baseUrl}/accept-invite?token=${inviteToken}`;
 
       // Development fallback if no API key
       if (!this.env.RESEND_API_KEY) {
         console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
-        console.warn("📧 [MOCK] Farm invite email would be sent to:", userEmail);
+        console.warn(
+          "📧 [MOCK] Farm invite email would be sent to:",
+          userEmail,
+        );
         console.warn("🔗 [MOCK] Invite link:", inviteLink);
         return { success: true, emailId: "mock_invite_id_" + Date.now() };
+      } else {
+        await this.ensureResendClient();
+        if (!this.resend) {
+          console.warn(
+            "⚠️ Resend client unavailable despite API key. Falling back to mock.",
+          );
+          return { success: true, emailId: "mock_invite_id_" + Date.now() };
+        }
       }
 
       const emailHtml = `
@@ -427,6 +522,17 @@ export class EmailService {
         © 2025 ${this.appName}. All rights reserved.
       `;
 
+      // Check if Resend client is available
+      if (!this.resend) {
+        console.warn("⚠️ EMAIL SETUP REQUIRED - Using Mock Implementation");
+        console.warn(
+          "📧 [MOCK] Password reset email would be sent to:",
+          userEmail,
+        );
+        console.warn("🔗 [MOCK] Reset link:", resetLink);
+        return { success: true, emailId: "mock_reset_id_" + Date.now() };
+      }
+
       const result = await this.resend.emails.send({
         from: this.fromEmail,
         to: [userEmail],
@@ -450,7 +556,7 @@ export class EmailService {
     try {
       if (!this.env.RESEND_API_KEY) {
         console.warn(
-          "RESEND_API_KEY not configured - email functionality will be disabled"
+          "RESEND_API_KEY not configured - email functionality will be disabled",
         );
         return { success: false, error: "Email service not configured" };
       }

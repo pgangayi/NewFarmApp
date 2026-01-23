@@ -212,7 +212,15 @@ export class PerformanceMonitor {
       slowQueries: 0,
       cacheHits: 0,
       cacheMisses: 0,
+      queryExecutionTimes: [],
+      alertsTriggered: 0,
     };
+    this.alertThresholds = {
+      slowQueryMs: 1000,
+      errorRatePercent: 5,
+      avgResponseTimeMs: 2000,
+    };
+    this.alerts = [];
   }
 
   // Record request metrics
@@ -235,14 +243,110 @@ export class PerformanceMonitor {
     if (this.metrics.responseTimes.length > 1000) {
       this.metrics.responseTimes = this.metrics.responseTimes.slice(-1000);
     }
+
+    // Check for performance alerts
+    this.checkPerformanceAlerts();
   }
 
   // Record slow query
-  recordSlowQuery(query, executionTime) {
+  recordSlowQuery(query, executionTime, table = 'unknown', operation = 'unknown') {
     this.metrics.slowQueries++;
+    this.metrics.queryExecutionTimes.push({
+      query: query.substring(0, 200),
+      executionTime,
+      table,
+      operation,
+      timestamp: new Date().toISOString()
+    });
+
+    // Keep only last 500 query times
+    if (this.metrics.queryExecutionTimes.length > 500) {
+      this.metrics.queryExecutionTimes.shift();
+    }
 
     if (this.env.ENVIRONMENT === "development") {
       console.warn(`Slow query (${executionTime}ms):`, query.substring(0, 100));
+    }
+
+    // Trigger alert for very slow queries
+    if (executionTime > this.alertThresholds.slowQueryMs * 2) {
+      this.triggerAlert('CRITICAL_SLOW_QUERY', {
+        query: query.substring(0, 200),
+        executionTime,
+        table,
+        operation
+      });
+    }
+  }
+
+  // Check for performance alerts
+  checkPerformanceAlerts() {
+    const stats = this.getStats();
+
+    // Check error rate
+    if (stats.errorRate > this.alertThresholds.errorRatePercent) {
+      this.triggerAlert('HIGH_ERROR_RATE', {
+        errorRate: stats.errorRate,
+        threshold: this.alertThresholds.errorRatePercent
+      });
+    }
+
+    // Check average response time
+    if (stats.avgResponseTime > this.alertThresholds.avgResponseTimeMs) {
+      this.triggerAlert('HIGH_RESPONSE_TIME', {
+        avgResponseTime: stats.avgResponseTime,
+        threshold: this.alertThresholds.avgResponseTimeMs
+      });
+    }
+
+    // Check for too many slow queries
+    if (this.metrics.slowQueries > 10) {
+      this.triggerAlert('EXCESSIVE_SLOW_QUERIES', {
+        slowQueryCount: this.metrics.slowQueries
+      });
+    }
+  }
+
+  // Trigger performance alert
+  triggerAlert(type, data) {
+    const alert = {
+      id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      data,
+      timestamp: new Date().toISOString(),
+      acknowledged: false
+    };
+
+    this.alerts.push(alert);
+    this.metrics.alertsTriggered++;
+
+    // Keep only last 100 alerts
+    if (this.alerts.length > 100) {
+      this.alerts.shift();
+    }
+
+    // Log alert
+    console.warn(`PERFORMANCE ALERT [${type}]:`, data);
+
+    // In production, this could send notifications via email/webhook
+    if (this.env.ENVIRONMENT === "production") {
+      // TODO: Implement notification system (email, webhook, etc.)
+    }
+
+    return alert;
+  }
+
+  // Get active alerts
+  getActiveAlerts() {
+    return this.alerts.filter(alert => !alert.acknowledged);
+  }
+
+  // Acknowledge alert
+  acknowledgeAlert(alertId) {
+    const alert = this.alerts.find(a => a.id === alertId);
+    if (alert) {
+      alert.acknowledged = true;
+      alert.acknowledgedAt = new Date().toISOString();
     }
   }
 
@@ -255,6 +359,8 @@ export class PerformanceMonitor {
       slowQueries,
       cacheHits,
       cacheMisses,
+      queryExecutionTimes,
+      alertsTriggered,
     } = this.metrics;
 
     const avgResponseTime =
@@ -267,6 +373,11 @@ export class PerformanceMonitor {
         ? responseTimes.sort((a, b) => a - b)[
             Math.floor(responseTimes.length * 0.95)
           ]
+        : 0;
+
+    const avgQueryTime =
+      queryExecutionTimes.length > 0
+        ? queryExecutionTimes.reduce((sum, q) => sum + q.executionTime, 0) / queryExecutionTimes.length
         : 0;
 
     const errorRate = requests > 0 ? (errors / requests) * 100 : 0;
@@ -282,9 +393,12 @@ export class PerformanceMonitor {
       avgResponseTime: Math.round(avgResponseTime),
       p95ResponseTime: Math.round(p95ResponseTime),
       slowQueries,
+      avgQueryTime: Math.round(avgQueryTime),
       cacheHits,
       cacheMisses,
       cacheHitRate: cacheHitRate.toFixed(2),
+      alertsTriggered,
+      activeAlerts: this.getActiveAlerts().length,
     };
   }
 
@@ -297,7 +411,10 @@ export class PerformanceMonitor {
       slowQueries: 0,
       cacheHits: 0,
       cacheMisses: 0,
+      queryExecutionTimes: [],
+      alertsTriggered: 0,
     };
+    this.alerts = [];
   }
 }
 

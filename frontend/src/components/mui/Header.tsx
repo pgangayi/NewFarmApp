@@ -139,7 +139,11 @@ export const ModernHeader: React.FC<HeaderProps> = ({
                     {currentFarm?.name || 'Select Farm'}
                   </Typography>
                   {currentFarm?.location && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'flex', alignItems: 'center' }}
+                    >
                       <LocationOn sx={{ fontSize: 12, mr: 0.5 }} />
                       {currentFarm.location}
                     </Typography>
@@ -172,7 +176,7 @@ export const ModernHeader: React.FC<HeaderProps> = ({
                   </Typography>
                 </Box>
                 <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-                  {farms.map((farm) => (
+                  {farms.map(farm => (
                     <ListItem key={farm.id} disablePadding>
                       <ListItemButton onClick={() => handleFarmSelect(farm)}>
                         <ListItemIcon>
@@ -212,19 +216,10 @@ export const ModernHeader: React.FC<HeaderProps> = ({
             >
               Search
             </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Add />}
-              onClick={onAddCrop}
-            >
+            <Button variant="outlined" size="small" startIcon={<Add />} onClick={onAddCrop}>
               Add Crop
             </Button>
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<BarChart />}
-            >
+            <Button variant="text" size="small" startIcon={<BarChart />}>
               Reports
             </Button>
           </Box>
@@ -279,7 +274,7 @@ export const ModernHeader: React.FC<HeaderProps> = ({
                 <ListItem>
                   <ListItemText
                     primary="Task due soon"
-                    secondary "Irrigation scheduled for tomorrow"
+                    secondary="Irrigation scheduled for tomorrow"
                     primaryTypographyProps={{ variant: 'body2' }}
                     secondaryTypographyProps={{ variant: 'caption' }}
                   />

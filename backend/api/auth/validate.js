@@ -76,6 +76,7 @@ async function handleValidationRequest(context) {
 
 export async function onRequest(context) {
   const { request } = context;
+  console.log(`[Auth:validate] Enter handler - ${request.method} ${request.url}`);
   const method = request.method;
 
   // Handle both GET and POST requests for token validation

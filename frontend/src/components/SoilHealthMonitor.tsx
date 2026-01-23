@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 // Note: useSoilHealth hook needs to be implemented or removed
 import { useFarm } from '../hooks';
-import { CropService } from '../services/domains/CropService';
-import { FieldService } from '../services/domains/FieldService';
 import { Button } from './ui/button';
 import {
   TestTube,
@@ -38,6 +36,7 @@ const STATUS_MODERATE = 'moderate';
 const STATUS_DEFICIENT = 'deficient';
 const STATUS_STABLE = 'stable';
 const STATUS_IMPROVING = 'improving';
+
 
 interface SoilHealthMonitorProps {
   farmId: string;
@@ -257,7 +256,13 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
   const { data: soilMetrics } = useQuery({
     queryKey: ['soil-health-metrics', farmId],
     queryFn: async () => {
-      return CropService.getSoilHealthMetrics(farmId);
+      const response = await fetch('/api/crops/soil-health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'metrics', farm_id: farmId }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch soil metrics');
+      return await response.json();
     },
     enabled: !!farmId,
   });
@@ -265,7 +270,13 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
   const { data: recommendations } = useQuery({
     queryKey: ['soil-recommendations', farmId],
     queryFn: async () => {
-      return CropService.getSoilHealthRecommendations(farmId);
+      const response = await fetch('/api/crops/soil-health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'recommendations', farm_id: farmId }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch recommendations');
+      return await response.json();
     },
     enabled: !!farmId,
   });
@@ -274,7 +285,9 @@ export function SoilHealthMonitor({ farmId }: SoilHealthMonitorProps) {
   const { data: _fields } = useQuery({
     queryKey: ['fields', farmId],
     queryFn: async () => {
-      return FieldService.getFieldsByFarm(farmId);
+      const response = await fetch(`/api/fields?farm_id=${farmId}`);
+      if (!response.ok) throw new Error('Failed to fetch fields');
+      return await response.json();
     },
     enabled: !!farmId,
   });

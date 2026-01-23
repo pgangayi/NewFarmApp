@@ -20,7 +20,9 @@ export class FieldService {
   }
 
   static async getFields(farm_id?: string): Promise<Field[]> {
-    const url = farm_id ? `${apiEndpoints.fields.list}?farm_id=${farm_id}` : apiEndpoints.fields.list;
+    const url = farm_id
+      ? `${apiEndpoints.fields.list}?farm_id=${farm_id}`
+      : apiEndpoints.fields.list;
     return apiClient.get<Field[]>(url);
   }
 

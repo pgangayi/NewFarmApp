@@ -116,12 +116,14 @@ export function logError(error, context = {}) {
 /**
  * Create database error response for API endpoints
  */
-export function createDatabaseErrorResponse(error, request) {
+export function createDatabaseErrorResponse(error, request, env = {}) {
   const classification = classifyDatabaseError(error);
 
   // Don't expose internal database details to clients
   let message = "Database operation failed";
   let statusCode = 500;
+  let retryable = false;
+  let retryAfter = null;
 
   switch (classification) {
     case "CONSTRAINT_VIOLATION":
@@ -131,10 +133,14 @@ export function createDatabaseErrorResponse(error, request) {
     case "TIMEOUT":
       message = "Operation timed out, please try again";
       statusCode = 504;
+      retryable = true;
+      retryAfter = 30; // 30 seconds
       break;
     case "DATABASE_BUSY":
       message = "System is busy, please try again";
       statusCode = 503;
+      retryable = true;
+      retryAfter = 10; // 10 seconds
       break;
     case "PERMISSION_DENIED":
       message = "Access denied";
@@ -143,7 +149,7 @@ export function createDatabaseErrorResponse(error, request) {
   }
 
   const errorHandler = new ErrorHandler({
-    ENVIRONMENT: process.env.ENVIRONMENT || "production",
+    ENVIRONMENT: env.ENVIRONMENT || "production",
   });
 
   return errorHandler.createErrorResponse(
@@ -153,16 +159,18 @@ export function createDatabaseErrorResponse(error, request) {
     {
       classification,
       timestamp: new Date().toISOString(),
-    }
+    },
+    retryable,
+    retryAfter,
   );
 }
 
 /**
  * Create internal error response for unexpected database errors
  */
-export function createInternalErrorResponse(error, request) {
+export function createInternalErrorResponse(error, request, env = {}) {
   const errorHandler = new ErrorHandler({
-    ENVIRONMENT: process.env.ENVIRONMENT || "production",
+    ENVIRONMENT: env.ENVIRONMENT || "production",
   });
 
   return errorHandler.internalError("An internal database error occurred", {
@@ -178,15 +186,28 @@ export class ErrorHandler {
   }
 
   // Create standardized error response
-  createErrorResponse(errorType, message, statusCode = 400, details = null) {
+  createErrorResponse(
+    errorType,
+    message,
+    statusCode = 400,
+    details = null,
+    retryable = false,
+    retryAfter = null,
+  ) {
     const errorResponse = {
       error: {
         type: errorType,
         message: message,
         timestamp: new Date().toISOString(),
         requestId: crypto.randomUUID(),
+        retryable: retryable,
       },
     };
+
+    // Add retryAfter if provided
+    if (retryable && retryAfter) {
+      errorResponse.error.retryAfter = retryAfter;
+    }
 
     // Add details in development mode
     if (this.env.ENVIRONMENT === "development" && details) {
@@ -196,13 +217,20 @@ export class ErrorHandler {
     // Sanitize error message to prevent information disclosure
     errorResponse.error.message = sanitizeInput(message);
 
+    const headers = {
+      "Content-Type": "application/json",
+      ...getSecurityHeaders(),
+      "X-Error-Type": errorType,
+    };
+
+    // Add Retry-After header if retryable
+    if (retryable && retryAfter) {
+      headers["Retry-After"] = retryAfter.toString();
+    }
+
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
-      headers: {
-        "Content-Type": "application/json",
-        ...getSecurityHeaders(),
-        "X-Error-Type": errorType,
-      },
+      headers,
     });
   }
 
@@ -215,7 +243,7 @@ export class ErrorHandler {
       ERROR_TYPES.VALIDATION_ERROR,
       message,
       400,
-      details
+      details,
     );
   }
 
@@ -224,7 +252,7 @@ export class ErrorHandler {
     return this.createErrorResponse(
       ERROR_TYPES.AUTHENTICATION_ERROR,
       message,
-      401
+      401,
     );
   }
 
@@ -233,7 +261,7 @@ export class ErrorHandler {
     return this.createErrorResponse(
       ERROR_TYPES.AUTHORIZATION_ERROR,
       message,
-      403
+      403,
     );
   }
 
@@ -242,7 +270,7 @@ export class ErrorHandler {
     return this.createErrorResponse(
       ERROR_TYPES.NOT_FOUND_ERROR,
       `${resource} not found`,
-      404
+      404,
     );
   }
 
@@ -252,7 +280,9 @@ export class ErrorHandler {
       ERROR_TYPES.RATE_LIMIT_ERROR,
       "Too many requests",
       429,
-      { retryAfter }
+      { retryAfter },
+      true,
+      retryAfter,
     );
   }
 
@@ -261,7 +291,7 @@ export class ErrorHandler {
     return this.createErrorResponse(
       ERROR_TYPES.BAD_REQUEST_ERROR,
       message,
-      400
+      400,
     );
   }
 
@@ -280,7 +310,7 @@ export class ErrorHandler {
       ERROR_TYPES.INTERNAL_ERROR,
       errorMessage,
       500,
-      details
+      details,
     );
   }
 
@@ -316,6 +346,7 @@ export class ResponseHandler {
       success: true,
       data: data,
       timestamp: new Date().toISOString(),
+      requestId: crypto.randomUUID(),
     };
 
     if (message) {
@@ -375,7 +406,7 @@ export function validateRequest(rules) {
               if (!emailRegex.test(value)) {
                 return errorHandler.validationError(
                   "Invalid email format",
-                  field
+                  field,
                 );
               }
               break;
@@ -384,19 +415,19 @@ export function validateRequest(rules) {
               if (typeof value !== "string") {
                 return errorHandler.validationError(
                   `${field} must be a string`,
-                  field
+                  field,
                 );
               }
               if (rule.minLength && value.length < rule.minLength) {
                 return errorHandler.validationError(
                   `${field} must be at least ${rule.minLength} characters`,
-                  field
+                  field,
                 );
               }
               if (rule.maxLength && value.length > rule.maxLength) {
                 return errorHandler.validationError(
                   `${field} must be at most ${rule.maxLength} characters`,
-                  field
+                  field,
                 );
               }
               break;
@@ -405,7 +436,7 @@ export function validateRequest(rules) {
               if (isNaN(Number(value))) {
                 return errorHandler.validationError(
                   `${field} must be a number`,
-                  field
+                  field,
                 );
               }
               break;
@@ -418,7 +449,7 @@ export function validateRequest(rules) {
           if (!isValid) {
             return errorHandler.validationError(
               rule.message || `${field} is invalid`,
-              field
+              field,
             );
           }
         }

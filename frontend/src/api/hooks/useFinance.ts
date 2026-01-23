@@ -45,7 +45,7 @@ export function useBudgets(farm_id?: string, fiscalYear?: number) {
       if (!farm_id) return [];
       const year = fiscalYear || new Date().getFullYear();
       return await apiClient.get<BudgetCategory[]>(
-        `/api/finance/budgets?fiscal_year=${year}&farm_id=${farm_id}`
+        `${API_ENDPOINTS.finance.budgets}?fiscal_year=${year}&farm_id=${farm_id}`
       );
     },
     enabled: !!farm_id,

@@ -216,7 +216,10 @@ interface FarmThemeProviderProps {
   darkMode?: boolean;
 }
 
-export const FarmThemeProvider: React.FC<FarmThemeProviderProps> = ({ children, darkMode = false }) => {
+export const FarmThemeProvider: React.FC<FarmThemeProviderProps> = ({
+  children,
+  darkMode = false,
+}) => {
   return React.createElement(
     ThemeProvider,
     { theme: darkMode ? darkFarmTheme : farmTheme },

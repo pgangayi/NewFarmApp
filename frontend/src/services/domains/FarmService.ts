@@ -1,5 +1,4 @@
 import { apiClient } from '../../lib/cloudflare';
-import { ENDPOINTS as apiEndpoints } from '../../api/config';
 
 /**
  * DOMAIN SERVICE: Farm
@@ -20,22 +19,24 @@ export interface Farm {
   updated_at: string;
 }
 
+const BASE_PATH = '/api/farms';
+
 export class FarmService {
   static async getFarmsByOwner(_ownerId: string): Promise<Farm[]> {
     // The backend uses the token to identify the user
-    return apiClient.get<Farm[]>(apiEndpoints.farms.list);
+    return apiClient.get<Farm[]>(BASE_PATH);
   }
 
   static async createFarm(payload: Omit<Farm, 'id' | 'created_at' | 'updated_at'>): Promise<Farm> {
-    return apiClient.post<Farm>(apiEndpoints.farms.create, payload);
+    return apiClient.post<Farm>(BASE_PATH, payload);
   }
 
   static async updateFarm(id: string, updates: Partial<Farm>) {
-    return apiClient.put<Farm>(apiEndpoints.farms.update(id), updates);
+    return apiClient.put<Farm>(BASE_PATH, { id, ...updates });
   }
 
   static async deleteFarm(id: string) {
-    await apiClient.delete(apiEndpoints.farms.delete(id));
+    await apiClient.delete(`/api/farms?id=${id}`);
     return true;
   }
 }

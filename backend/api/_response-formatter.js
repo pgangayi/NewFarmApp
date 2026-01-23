@@ -2,21 +2,22 @@
 // Provides consistent API response formats across all endpoints
 // Date: November 7, 2025
 
-import { createLogger } from './_logger.js';
+import { createRuntimeLogger } from "./_utils.js";
 
-const logger = createLogger(process.env.NODE_ENV || 'development');
+// Use runtime logger factory to avoid module-level process.env reads
+// Base classes create their own logger instances via `this.logger`
 
 /**
  * API Response Types
  */
 export const RESPONSE_TYPES = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-  VALIDATION_ERROR: 'validation_error',
-  UNAUTHORIZED: 'unauthorized',
-  NOT_FOUND: 'not_found',
-  CONFLICT: 'conflict',
-  RATE_LIMIT: 'rate_limit'
+  SUCCESS: "success",
+  ERROR: "error",
+  VALIDATION_ERROR: "validation_error",
+  UNAUTHORIZED: "unauthorized",
+  NOT_FOUND: "not_found",
+  CONFLICT: "conflict",
+  RATE_LIMIT: "rate_limit",
 };
 
 /**
@@ -27,7 +28,7 @@ export class ResponseMetadata {
     this.timestamp = new Date().toISOString();
     this.requestId = null;
     this.processingTime = null;
-    this.version = '1.0';
+    this.version = "1.0";
   }
 
   setRequestId(id) {
@@ -50,8 +51,10 @@ export class ResponseMetadata {
  * Base Response Formatter
  */
 export class BaseResponseFormatter {
-  constructor() {
+  constructor(env) {
+    this.env = env || {};
     this.metadata = new ResponseMetadata();
+    this.logger = createRuntimeLogger(this.env);
   }
 
   /**
@@ -59,11 +62,11 @@ export class BaseResponseFormatter {
    */
   success(data, options = {}) {
     const {
-      message = 'Operation completed successfully',
+      message = "Operation completed successfully",
       status = 200,
-      code = 'SUCCESS',
+      code = "SUCCESS",
       pagination = null,
-      metadata = {}
+      metadata = {},
     } = options;
 
     const response = {
@@ -74,27 +77,27 @@ export class BaseResponseFormatter {
       data,
       metadata: {
         ...this.metadata,
-        ...metadata
-      }
+        ...metadata,
+      },
     };
 
     if (pagination) {
       response.pagination = pagination;
     }
 
-    logger.info('API Success Response', {
+    this.logger.info("API Success Response", {
       status,
       code,
       hasData: !!data,
-      hasPagination: !!pagination
+      hasPagination: !!pagination,
     });
 
     return new Response(JSON.stringify(response), {
       status,
       headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+      },
     });
   }
 
@@ -105,8 +108,8 @@ export class BaseResponseFormatter {
     return this.success(data, {
       ...options,
       status: 201,
-      code: 'CREATED',
-      message: options.message || 'Resource created successfully'
+      code: "CREATED",
+      message: options.message || "Resource created successfully",
     });
   }
 
@@ -115,24 +118,27 @@ export class BaseResponseFormatter {
    */
   noContent(options = {}) {
     const {
-      message = 'Operation completed successfully',
-      code = 'NO_CONTENT'
+      message = "Operation completed successfully",
+      code = "NO_CONTENT",
     } = options;
 
-    logger.info('API No Content Response', { code, message });
+    this.logger.info("API No Content Response", { code, message });
 
-    return new Response(JSON.stringify({
-      type: RESPONSE_TYPES.SUCCESS,
-      status: 204,
-      code,
-      message,
-      metadata: this.metadata
-    }), {
-      status: 204,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    return new Response(
+      JSON.stringify({
+        type: RESPONSE_TYPES.SUCCESS,
+        status: 204,
+        code,
+        message,
+        metadata: this.metadata,
+      }),
+      {
+        status: 204,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
   }
 
   /**
@@ -141,10 +147,10 @@ export class BaseResponseFormatter {
   error(error, options = {}) {
     const {
       status = 500,
-      code = 'INTERNAL_ERROR',
-      message = 'An error occurred',
+      code = "INTERNAL_ERROR",
+      message = "An error occurred",
       details = null,
-      userMessage = null
+      userMessage = null,
     } = options;
 
     const response = {
@@ -155,25 +161,25 @@ export class BaseResponseFormatter {
       error: {
         message: userMessage || message,
         details,
-        type: error.name || 'Error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        type: error.name || "Error",
+        stack: this.env?.NODE_ENV === "development" ? error.stack : undefined,
       },
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
-    logger.error('API Error Response', {
+    this.logger.error("API Error Response", {
       status,
       code,
       message,
       errorType: error.name,
-      hasDetails: !!details
+      hasDetails: !!details,
     });
 
     return new Response(JSON.stringify(response), {
       status,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -182,9 +188,9 @@ export class BaseResponseFormatter {
    */
   validationError(errors, options = {}) {
     const {
-      message = 'Validation failed',
-      code = 'VALIDATION_ERROR',
-      status = 400
+      message = "Validation failed",
+      code = "VALIDATION_ERROR",
+      status = 400,
     } = options;
 
     const response = {
@@ -193,23 +199,23 @@ export class BaseResponseFormatter {
       code,
       message,
       validation: {
-        errors
+        errors,
       },
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
-    logger.warn('API Validation Error Response', {
+    this.logger.warn("API Validation Error Response", {
       status,
       code,
       errorCount: Object.keys(errors).length,
-      errors
+      errors,
     });
 
     return new Response(JSON.stringify(response), {
       status,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -218,9 +224,9 @@ export class BaseResponseFormatter {
    */
   unauthorized(options = {}) {
     const {
-      message = 'Authentication required',
-      code = 'UNAUTHORIZED',
-      details = null
+      message = "Authentication required",
+      code = "UNAUTHORIZED",
+      details = null,
     } = options;
 
     const response = {
@@ -228,21 +234,21 @@ export class BaseResponseFormatter {
       status: 401,
       code,
       message,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
     if (details) {
       response.error = { details };
     }
 
-    logger.warn('API Unauthorized Response', { code, message });
+    this.logger.warn("API Unauthorized Response", { code, message });
 
     return new Response(JSON.stringify(response), {
       status: 401,
       headers: {
-        'Content-Type': 'application/json',
-        'WWW-Authenticate': 'Bearer'
-      }
+        "Content-Type": "application/json",
+        "WWW-Authenticate": "Bearer",
+      },
     });
   }
 
@@ -251,9 +257,9 @@ export class BaseResponseFormatter {
    */
   forbidden(options = {}) {
     const {
-      message = 'Insufficient permissions',
-      code = 'FORBIDDEN',
-      details = null
+      message = "Insufficient permissions",
+      code = "FORBIDDEN",
+      details = null,
     } = options;
 
     const response = {
@@ -261,20 +267,20 @@ export class BaseResponseFormatter {
       status: 403,
       code,
       message,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
     if (details) {
       response.error = { details };
     }
 
-    logger.warn('API Forbidden Response', { code, message, details });
+    this.logger.warn("API Forbidden Response", { code, message, details });
 
     return new Response(JSON.stringify(response), {
       status: 403,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -283,9 +289,9 @@ export class BaseResponseFormatter {
    */
   notFound(options = {}) {
     const {
-      message = 'Resource not found',
-      code = 'NOT_FOUND',
-      resource = null
+      message = "Resource not found",
+      code = "NOT_FOUND",
+      resource = null,
     } = options;
 
     const response = {
@@ -293,20 +299,20 @@ export class BaseResponseFormatter {
       status: 404,
       code,
       message,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
     if (resource) {
       response.resource = resource;
     }
 
-    logger.warn('API Not Found Response', { code, message, resource });
+    this.logger.warn("API Not Found Response", { code, message, resource });
 
     return new Response(JSON.stringify(response), {
       status: 404,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -315,10 +321,10 @@ export class BaseResponseFormatter {
    */
   conflict(options = {}) {
     const {
-      message = 'Resource conflict',
-      code = 'CONFLICT',
+      message = "Resource conflict",
+      code = "CONFLICT",
       details = null,
-      field = null
+      field = null,
     } = options;
 
     const response = {
@@ -326,7 +332,7 @@ export class BaseResponseFormatter {
       status: 409,
       code,
       message,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
     if (details) {
@@ -336,13 +342,18 @@ export class BaseResponseFormatter {
       response.field = field;
     }
 
-    logger.warn('API Conflict Response', { code, message, field, details });
+    this.logger.warn("API Conflict Response", {
+      code,
+      message,
+      field,
+      details,
+    });
 
     return new Response(JSON.stringify(response), {
       status: 409,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 
@@ -351,9 +362,9 @@ export class BaseResponseFormatter {
    */
   rateLimit(options = {}) {
     const {
-      message = 'Rate limit exceeded',
-      code = 'RATE_LIMIT',
-      retryAfter = 60
+      message = "Rate limit exceeded",
+      code = "RATE_LIMIT",
+      retryAfter = 60,
     } = options;
 
     const response = {
@@ -362,17 +373,17 @@ export class BaseResponseFormatter {
       code,
       message,
       retryAfter,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
-    logger.warn('API Rate Limit Response', { code, message, retryAfter });
+    this.logger.warn("API Rate Limit Response", { code, message, retryAfter });
 
     return new Response(JSON.stringify(response), {
       status: 429,
       headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': retryAfter.toString()
-      }
+        "Content-Type": "application/json",
+        "Retry-After": retryAfter.toString(),
+      },
     });
   }
 
@@ -381,9 +392,9 @@ export class BaseResponseFormatter {
    */
   methodNotAllowed(options = {}) {
     const {
-      message = 'Method not allowed',
-      code = 'METHOD_NOT_ALLOWED',
-      allowedMethods = []
+      message = "Method not allowed",
+      code = "METHOD_NOT_ALLOWED",
+      allowedMethods = [],
     } = options;
 
     const response = {
@@ -391,21 +402,25 @@ export class BaseResponseFormatter {
       status: 405,
       code,
       message,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
 
     if (allowedMethods.length > 0) {
       response.allowedMethods = allowedMethods;
     }
 
-    logger.warn('API Method Not Allowed Response', { code, message, allowedMethods });
+    this.logger.warn("API Method Not Allowed Response", {
+      code,
+      message,
+      allowedMethods,
+    });
 
     return new Response(JSON.stringify(response), {
       status: 405,
       headers: {
-        'Content-Type': 'application/json',
-        'Allow': allowedMethods.join(', ')
-      }
+        "Content-Type": "application/json",
+        Allow: allowedMethods.join(", "),
+      },
     });
   }
 
@@ -430,8 +445,8 @@ export class BaseResponseFormatter {
  * Specific Response Formatters
  */
 export class FarmResponseFormatter extends BaseResponseFormatter {
-  constructor() {
-    super();
+  constructor(env) {
+    super(env);
   }
 
   /**
@@ -440,7 +455,7 @@ export class FarmResponseFormatter extends BaseResponseFormatter {
   farmList(farms, options = {}) {
     return this.success(farms, {
       ...options,
-      message: options.message || `Retrieved ${farms.length} farms`
+      message: options.message || `Retrieved ${farms.length} farms`,
     });
   }
 
@@ -450,7 +465,7 @@ export class FarmResponseFormatter extends BaseResponseFormatter {
   farmDetails(farm, options = {}) {
     return this.success(farm, {
       ...options,
-      message: options.message || 'Farm details retrieved'
+      message: options.message || "Farm details retrieved",
     });
   }
 
@@ -460,7 +475,7 @@ export class FarmResponseFormatter extends BaseResponseFormatter {
   farmCreated(farm, options = {}) {
     return this.created(farm, {
       ...options,
-      message: options.message || 'Farm created successfully'
+      message: options.message || "Farm created successfully",
     });
   }
 
@@ -469,15 +484,15 @@ export class FarmResponseFormatter extends BaseResponseFormatter {
    */
   farmAccessDenied(farmId) {
     return this.forbidden({
-      message: 'Access denied to this farm',
-      details: { farmId }
+      message: "Access denied to this farm",
+      details: { farmId },
     });
   }
 }
 
 export class AnimalResponseFormatter extends BaseResponseFormatter {
-  constructor() {
-    super();
+  constructor(env) {
+    super(env);
   }
 
   /**
@@ -487,7 +502,7 @@ export class AnimalResponseFormatter extends BaseResponseFormatter {
     return this.success(animals, {
       ...options,
       message: options.message || `Retrieved ${animals.length} animals`,
-      pagination
+      pagination,
     });
   }
 
@@ -497,7 +512,7 @@ export class AnimalResponseFormatter extends BaseResponseFormatter {
   animalDetails(animal, options = {}) {
     return this.success(animal, {
       ...options,
-      message: options.message || 'Animal details retrieved'
+      message: options.message || "Animal details retrieved",
     });
   }
 
@@ -507,14 +522,14 @@ export class AnimalResponseFormatter extends BaseResponseFormatter {
   animalCreated(animal, options = {}) {
     return this.created(animal, {
       ...options,
-      message: options.message || 'Animal created successfully'
+      message: options.message || "Animal created successfully",
     });
   }
 }
 
 export class CropResponseFormatter extends BaseResponseFormatter {
-  constructor() {
-    super();
+  constructor(env) {
+    super(env);
   }
 
   /**
@@ -523,7 +538,7 @@ export class CropResponseFormatter extends BaseResponseFormatter {
   cropList(crops, options = {}) {
     return this.success(crops, {
       ...options,
-      message: options.message || `Retrieved ${crops.length} crops`
+      message: options.message || `Retrieved ${crops.length} crops`,
     });
   }
 
@@ -533,7 +548,7 @@ export class CropResponseFormatter extends BaseResponseFormatter {
   cropDetails(crop, options = {}) {
     return this.success(crop, {
       ...options,
-      message: options.message || 'Crop details retrieved'
+      message: options.message || "Crop details retrieved",
     });
   }
 
@@ -543,14 +558,14 @@ export class CropResponseFormatter extends BaseResponseFormatter {
   cropCreated(crop, options = {}) {
     return this.created(crop, {
       ...options,
-      message: options.message || 'Crop created successfully'
+      message: options.message || "Crop created successfully",
     });
   }
 }
 
 export class TaskResponseFormatter extends BaseResponseFormatter {
-  constructor() {
-    super();
+  constructor(env) {
+    super(env);
   }
 
   /**
@@ -560,7 +575,7 @@ export class TaskResponseFormatter extends BaseResponseFormatter {
     return this.success(tasks, {
       ...options,
       message: options.message || `Retrieved ${tasks.length} tasks`,
-      pagination
+      pagination,
     });
   }
 
@@ -570,7 +585,7 @@ export class TaskResponseFormatter extends BaseResponseFormatter {
   taskCreated(task, options = {}) {
     return this.created(task, {
       ...options,
-      message: options.message || 'Task created successfully'
+      message: options.message || "Task created successfully",
     });
   }
 }
@@ -584,7 +599,7 @@ export class ResponseUtils {
    */
   static createPagination(page, limit, total) {
     const totalPages = Math.ceil(total / limit);
-    
+
     return {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -593,7 +608,7 @@ export class ResponseUtils {
       hasNext: page < totalPages,
       hasPrev: page > 1,
       nextPage: page < totalPages ? parseInt(page) + 1 : null,
-      prevPage: page > 1 ? parseInt(page) - 1 : null
+      prevPage: page > 1 ? parseInt(page) - 1 : null,
     };
   }
 
@@ -603,8 +618,8 @@ export class ResponseUtils {
   static createSorting(sortBy, sortDirection) {
     return {
       sortBy,
-      sortDirection: sortDirection?.toUpperCase() || 'ASC',
-      isSorted: !!sortBy
+      sortDirection: sortDirection?.toUpperCase() || "ASC",
+      isSorted: !!sortBy,
     };
   }
 
@@ -613,12 +628,14 @@ export class ResponseUtils {
    */
   static createFiltering(filters) {
     const activeFilters = Object.entries(filters)
-      .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+      .filter(
+        ([_, value]) => value !== null && value !== undefined && value !== "",
+      )
       .map(([key, value]) => ({ key, value }));
-    
+
     return {
       totalFilters: activeFilters.length,
-      activeFilters
+      activeFilters,
     };
   }
 
@@ -629,7 +646,7 @@ export class ResponseUtils {
     return {
       search,
       hasQuery: !!search,
-      hasResults
+      hasResults,
     };
   }
 
@@ -642,10 +659,10 @@ export class ResponseUtils {
       limit = 20,
       total = items.length,
       sortBy = null,
-      sortDirection = 'ASC',
+      sortDirection = "ASC",
       filters = {},
       search = null,
-      message = 'Items retrieved successfully'
+      message = "Items retrieved successfully",
     } = options;
 
     const response = {
@@ -653,7 +670,7 @@ export class ResponseUtils {
       pagination: this.createPagination(page, limit, total),
       sorting: this.createSorting(sortBy, sortDirection),
       filtering: this.createFiltering(filters),
-      search: this.createSearch(search)
+      search: this.createSearch(search),
     };
 
     return {
@@ -661,8 +678,8 @@ export class ResponseUtils {
       metadata: {
         totalItems: total,
         returnedItems: items.length,
-        hasMore: page * limit < total
-      }
+        hasMore: page * limit < total,
+      },
     };
   }
 
@@ -672,35 +689,35 @@ export class ResponseUtils {
   static createErrorDetails(scenario) {
     const details = {
       database_connection: {
-        code: 'DB_CONNECTION_ERROR',
-        message: 'Database connection error',
-        retryable: true
+        code: "DB_CONNECTION_ERROR",
+        message: "Database connection error",
+        retryable: true,
       },
       validation_failed: {
-        code: 'VALIDATION_ERROR',
-        message: 'Data validation failed',
-        retryable: false
+        code: "VALIDATION_ERROR",
+        message: "Data validation failed",
+        retryable: false,
       },
       not_found: {
-        code: 'RESOURCE_NOT_FOUND',
-        message: 'Requested resource not found',
-        retryable: false
+        code: "RESOURCE_NOT_FOUND",
+        message: "Requested resource not found",
+        retryable: false,
       },
       unauthorized: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        retryable: false
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
+        retryable: false,
       },
       forbidden: {
-        code: 'FORBIDDEN',
-        message: 'Insufficient permissions',
-        retryable: false
+        code: "FORBIDDEN",
+        message: "Insufficient permissions",
+        retryable: false,
       },
       rate_limited: {
-        code: 'RATE_LIMITED',
-        message: 'Too many requests',
-        retryable: true
-      }
+        code: "RATE_LIMITED",
+        message: "Too many requests",
+        retryable: true,
+      },
     };
 
     return details[scenario] || details.database_connection;
@@ -715,13 +732,13 @@ export class ResponseBuilder {
     this.response = {
       type: RESPONSE_TYPES.SUCCESS,
       status: 200,
-      code: 'SUCCESS',
-      message: '',
+      code: "SUCCESS",
+      message: "",
       data: null,
       metadata: new ResponseMetadata(),
       includes: {},
       links: {},
-      errors: []
+      errors: [],
     };
   }
 
@@ -764,7 +781,7 @@ export class ResponseBuilder {
   /**
    * Add HATEOAS links
    */
-  addLink(rel, href, method = 'GET') {
+  addLink(rel, href, method = "GET") {
     if (!this.response.links[rel]) {
       this.response.links[rel] = [];
     }
@@ -794,8 +811,8 @@ export class ResponseBuilder {
     return new Response(JSON.stringify(this.response), {
       status: this.response.status,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 }
@@ -810,5 +827,5 @@ export default {
   CropResponseFormatter,
   TaskResponseFormatter,
   ResponseUtils,
-  ResponseBuilder
+  ResponseBuilder,
 };

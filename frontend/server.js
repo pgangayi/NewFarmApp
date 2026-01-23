@@ -8,12 +8,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const FRONTEND_PORT = process.env.FRONTEND_PORT || process.env.PORT || 3000;
+const BACKEND_PORT = process.env.BACKEND_PORT || 8787;
 
-// Proxy API requests to the local backend (Wrangler dev running on 8787)
+// Proxy API requests to the local backend (configurable via BACKEND_PORT)
 app.use(
   '/api',
-  createProxyMiddleware({ target: 'http://localhost:8787', changeOrigin: true, ws: false })
+  createProxyMiddleware({
+    target: `http://localhost:${BACKEND_PORT}`,
+    changeOrigin: true,
+    ws: false,
+  })
 );
 
 // Serve static files from dist
@@ -68,9 +73,10 @@ app.get(/.*/, (req, res) => {
   res.sendFile(indexPath);
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Preview server running at http://localhost:${PORT}`);
+app.listen(FRONTEND_PORT, () => {
+  console.log(`🚀 Preview server running at http://localhost:${FRONTEND_PORT}`);
   console.log(`📱 SPA routing enabled for all routes`);
+  console.log(`🔁 Proxying /api to http://localhost:${BACKEND_PORT}`);
 });
 
 // Graceful shutdown

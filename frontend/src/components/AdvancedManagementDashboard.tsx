@@ -33,7 +33,7 @@ import {
   Package,
   Truck,
   // Wrench,
-  Lightbulb,
+  // Lightbulb,
   Wifi,
   WifiOff,
 } from 'lucide-react';
