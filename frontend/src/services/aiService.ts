@@ -1,7 +1,7 @@
 // AI Service for Frontend
 // Handles communication with AI endpoints
 
-import { api } from '../api/config';
+import { API_CONFIG, STORAGE_KEYS } from '../api/config';
 
 export interface AIInsightRequest {
   prompt: string;
@@ -52,7 +52,7 @@ class AIService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = api.getUrl('/api/ai');
+    this.baseUrl = `${API_CONFIG.baseUrl}/ai`;
   }
 
   async generateInsights(request: AIInsightRequest): Promise<AIResponse> {
@@ -161,7 +161,7 @@ class AIService {
 
   private getAuthToken(): string {
     // Get token from localStorage or context
-    return localStorage.getItem('authToken') || '';
+    return localStorage.getItem(STORAGE_KEYS.authToken) || '';
   }
 
   // Helper method for common farm insights

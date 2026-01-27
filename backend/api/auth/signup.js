@@ -2,7 +2,11 @@
 // Maintains security while reducing complexity
 // Date: November 18, 2025
 
-import { SimpleAuth, createErrorResponse } from "../_auth.js";
+import {
+  SimpleAuth,
+  createErrorResponse,
+  generateSecureToken,
+} from "../_auth.js";
 import { CSRFProtection } from "../_csrf.js";
 import { EmailService } from "../_email.js";
 import {
@@ -79,7 +83,7 @@ export async function onRequest(context) {
 
     // Generate verification token
     console.log("Generating verification token");
-    const verificationToken = auth.generateSecureToken();
+    const verificationToken = generateSecureToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     console.log("Verification token generated");
 
@@ -115,30 +119,40 @@ export async function onRequest(context) {
       // Do not fail signup solely due to email issues during debugging
     }
 
-    // Create session/token
-    console.log("Generating access token");
+    // Generate tokens
+    console.log("Generating tokens");
     const accessToken = await auth.generateAccessToken(
       user.id,
       emailValidation.email,
     );
-    console.log("Access token generated");
+    const refreshToken = await auth.generateRefreshToken(
+      user.id,
+      emailValidation.email,
+    );
+    console.log("Tokens generated");
 
     // Build public user object
     const publicUser = buildPublicUser(user);
 
-    // Return response with user and token
-    return new Response(
-      JSON.stringify({
-        user: publicUser,
-        token: accessToken,
-        message:
-          "User created successfully. Please check your email to verify your account.",
-      }),
-      {
-        status: 201,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    // Use createSessionResponse to handle cookies and CSRF
+    console.log("Creating session response");
+    const sessionResult = await createSessionResponse({
+      user: publicUser,
+      userId: user.id,
+      accessToken,
+      refreshToken,
+      csrf: new CSRFProtection(env),
+      ipAddress: auth.getClientIP(request),
+      userAgent: request.headers.get("User-Agent") || "unknown",
+      status: 201,
+      env,
+    });
+
+    if (sessionResult.error) {
+      return sessionResult.error;
+    }
+
+    return sessionResult.response;
   } catch (error) {
     console.error("Signup error:", error);
     // Return stack and message when debug flag present in URL (local dev only)

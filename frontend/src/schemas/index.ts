@@ -25,7 +25,6 @@ export const create_user_schema = user_schema
   .pick({
     email: true,
     name: true,
-    password: true,
   })
   .extend({
     password: z.string().min(8).max(100),

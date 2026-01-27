@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/AuthContext';
 import { apiClient } from '../hooks';
 import { Breadcrumbs } from '../components/Breadcrumbs';
-import { Plus, MapPin, Activity, TrendingUp, Leaf, Droplets } from 'lucide-react';
+import { Plus, MapPin, TrendingUp, Droplets } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -189,6 +189,7 @@ export function FieldsPage() {
           <div className="flex flex-wrap gap-2">
             {farms && (
               <select
+                aria-label="Select Farm"
                 value={selectedFarmId}
                 onChange={e => setSelectedFarmId(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500"

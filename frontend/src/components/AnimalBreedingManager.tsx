@@ -219,15 +219,6 @@ export function AnimalBreedingManager({
     }
   };
 
-  const calculateGestationDays = (breedingDate: string, expectedCalvingDate?: string) => {
-    if (!expectedCalvingDate) return null;
-
-    const breeding = new Date(breedingDate);
-    const expectedCalving = new Date(expectedCalvingDate);
-    const diffTime = expectedCalving.getTime() - breeding.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
   const getDaysUntilCalving = (expectedCalvingDate?: string) => {
     if (!expectedCalvingDate) return null;
 
@@ -284,7 +275,7 @@ export function AnimalBreedingManager({
       {/* Breeding Summary */}
       {breedingRecords && breedingRecords.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg p-4">
+          <div className="bg-linear-to-r from-pink-50 to-pink-100 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-pink-700">Total Breedings</p>
@@ -294,14 +285,15 @@ export function AnimalBreedingManager({
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
+          <div className="bg-linear-to-r from-green-50 to-green-100 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-700">Successful</p>
                 <p className="text-2xl font-bold text-green-900">
                   {
-                    breedingRecords.filter((r: BreedingRecord) => r.breeding_result === RESULT_PREGNANT)
-                      .length
+                    breedingRecords.filter(
+                      (r: BreedingRecord) => r.breeding_result === RESULT_PREGNANT
+                    ).length
                   }
                 </p>
               </div>
@@ -309,7 +301,7 @@ export function AnimalBreedingManager({
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+          <div className="bg-linear-to-r from-blue-50 to-blue-100 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-700">Offspring</p>
@@ -585,9 +577,10 @@ function BreedingRecordModal({
       const breedingDate = new Date(formData.breeding_date);
       let gestationDays = 280; // Default for cattle
 
-      if (formData.breeding_type === BREEDING_TYPE_ARTIFICIAL) {
-        gestationDays = 280;
-      } else if (formData.breeding_type === BREEDING_TYPE_EMBRYO) {
+      if (
+        formData.breeding_type === BREEDING_TYPE_ARTIFICIAL ||
+        formData.breeding_type === BREEDING_TYPE_EMBRYO
+      ) {
         gestationDays = 280;
       }
 
@@ -855,8 +848,7 @@ function OffspringModal({ breedingRecord, onClose }: OffspringModalProps) {
             <div className="text-center">
               <Baby className="mx-auto h-16 w-16 text-blue-600 mb-4" />
               <p className="text-lg font-semibold text-gray-900">
-                {breedingRecord.offspring_count}{' '}
-                {breedingRecord.offspring_count === 1 ? 'Offspring' : 'Offspring'}
+                {breedingRecord.offspring_count} Offspring
               </p>
               <p className="text-sm text-gray-600">
                 From breeding on {new Date(breedingRecord.breeding_date).toLocaleDateString()}

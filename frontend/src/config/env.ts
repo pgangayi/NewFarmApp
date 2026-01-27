@@ -14,8 +14,8 @@ const envSchema = z.object({
   // API Configuration
   VITE_API_BASE_URL: z.string().default(''),
   VITE_API_URL: z.string().optional(),
-  VITE_API_TIMEOUT_MS: z.string().transform(Number).default('30000'),
-  VITE_API_RETRY_ATTEMPTS: z.string().transform(Number).default('3'),
+  VITE_API_TIMEOUT_MS: z.string().transform(Number).default(30000),
+  VITE_API_RETRY_ATTEMPTS: z.string().transform(Number).default(3),
 
   // Third-party Services (Optional)
   VITE_SENTRY_DSN: z.string().optional(),

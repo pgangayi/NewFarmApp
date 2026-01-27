@@ -3,6 +3,9 @@
 // Date: November 18, 2025
 //
 // PII Hygiene: Never log emails, passwords, or sensitive tokens in production.
+
+import { Buffer } from "buffer";
+globalThis.Buffer = Buffer;
 // Use user IDs or hashed identifiers for logging. Redact sensitive data from logs.
 
 import jwt from "@tsndr/cloudflare-worker-jwt";
@@ -41,10 +44,37 @@ export class SimpleAuth {
     // and let tests stub/mock DB methods explicitly.
   }
 
-  // Password hashing using bcrypt
+  // Password hashing using PBKDF2 (Web Crypto) to avoid bcryptjs issues
   async hashPassword(password) {
-    const saltRounds = 12;
-    return await bcrypt.hash(password, saltRounds);
+    const iterations = 100000;
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"],
+    );
+    const derivedKey = await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: iterations,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      256,
+    );
+
+    const hashHex = [...new Uint8Array(derivedKey)]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const saltHex = [...salt]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    return `pbkdf2:${iterations}:${saltHex}:${hashHex}`;
   }
 
   async verifyPassword(password, hash) {

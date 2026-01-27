@@ -266,7 +266,7 @@ export default function Dashboard() {
   // Loading spinner
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-700">Loading your farm dashboard...</p>
@@ -278,7 +278,7 @@ export default function Dashboard() {
   // Error state
   if (hasError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Data</h2>
@@ -308,7 +308,7 @@ export default function Dashboard() {
   // No farms available
   if (farms.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <Sprout className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -333,7 +333,7 @@ export default function Dashboard() {
   return (
     <ErrorBoundary>
       <div
-        className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 bg-cover bg-center bg-fixed relative"
+        className="min-h-screen bg-linear-to-br from-gray-50 via-green-50 to-blue-50 bg-cover bg-center bg-fixed relative"
         style={
           backgroundImageState.loaded
             ? {
@@ -375,7 +375,7 @@ export default function Dashboard() {
                     className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
                     aria-label="Select farm"
                     aria-expanded={farmSelectorOpen}
-                    aria-haspopup="listbox"
+                    aria-haspopup="menu"
                     tabIndex={0}
                   >
                     <Sprout className="h-5 w-5 text-green-600" />
@@ -392,52 +392,48 @@ export default function Dashboard() {
                         onClick={() => setFarmSelectorOpen(false)}
                         aria-hidden="true"
                       ></div>
-                      <div
-                        className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
-                        role="listbox"
-                        aria-label="Farm selection"
-                      >
-                        {farms.map(farm => (
-                          <button
-                            key={farm.id}
-                            onClick={() => handleFarmSelect(farm.id)}
-                            className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                              selectedFarm === farm.id ? 'bg-green-50' : ''
-                            }`}
-                            role="option"
-                            aria-selected={selectedFarm === farm.id}
-                            tabIndex={0}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div
-                                className={`p-2 rounded-lg ${
-                                  selectedFarm === farm.id ? 'bg-green-100' : 'bg-gray-100'
-                                }`}
-                              >
-                                <Sprout
-                                  className={`h-4 w-4 ${
-                                    selectedFarm === farm.id ? TEXT_GREEN_600 : TEXT_GRAY_600
-                                  }`}
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p
-                                  className={`text-sm font-medium truncate ${
-                                    selectedFarm === farm.id ? 'text-green-900' : 'text-gray-900'
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <div role="listbox" aria-label="Farm selection">
+                          {farms.map(farm => (
+                            <button
+                              key={farm.id}
+                              onClick={() => handleFarmSelect(farm.id)}
+                              className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                                selectedFarm === farm.id ? 'bg-green-50' : ''
+                              }`}
+                              role="option"
+                              aria-selected={selectedFarm === farm.id}
+                              tabIndex={0}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div
+                                  className={`p-2 rounded-lg ${
+                                    selectedFarm === farm.id ? 'bg-green-100' : 'bg-gray-100'
                                   }`}
                                 >
-                                  {farm.name}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate">{farm.location}</p>
+                                  <Sprout
+                                    className={`h-4 w-4 ${
+                                      selectedFarm === farm.id ? TEXT_GREEN_600 : TEXT_GRAY_600
+                                    }`}
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className={`text-sm font-medium truncate ${
+                                      selectedFarm === farm.id ? 'text-green-900' : 'text-gray-900'
+                                    }`}
+                                  >
+                                    {farm.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500 truncate">{farm.location}</p>
+                                </div>
+                                {selectedFarm === farm.id && (
+                                  <CheckCircle className={`h-4 w-4 ${TEXT_GREEN_600} shrink-0`} />
+                                )}
                               </div>
-                              {selectedFarm === farm.id && (
-                                <CheckCircle
-                                  className={`h-4 w-4 ${TEXT_GREEN_600} flex-shrink-0`}
-                                />
-                              )}
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          ))}
+                        </div>
                         <div className="border-t border-gray-200 mt-1 pt-1">
                           <button
                             onClick={() => {
@@ -455,11 +451,17 @@ export default function Dashboard() {
                     </>
                   )}
                 </div>
-                <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <button
+                  className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Notifications"
+                >
                   <Bell className="h-5 w-5 text-gray-700" />
                   <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <button
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Settings"
+                >
                   <Settings className="h-5 w-5 text-gray-700" />
                 </button>
               </div>
@@ -561,7 +563,7 @@ export default function Dashboard() {
               </div>
 
               {/* Finance Overview Card */}
-              <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-5 sm:p-6 shadow-lg text-white">
+              <div className="bg-linear-to-br from-emerald-500 to-green-600 rounded-xl p-5 sm:p-6 shadow-lg text-white">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg sm:text-xl font-semibold">Financial Overview</h3>
                   <DollarSign className="h-6 w-6 opacity-80" />
@@ -623,7 +625,7 @@ export default function Dashboard() {
                             </p>
                           </div>
                         </div>
-                        <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
+                        <ChevronRight className="h-5 w-5 text-gray-400 shrink-0 ml-2" />
                       </div>
                     </div>
                   ))}
@@ -788,7 +790,10 @@ export default function Dashboard() {
                       <button className="flex-1 bg-gray-50 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                         View Details
                       </button>
-                      <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
+                      <button
+                        className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                        aria-label="Activity Log"
+                      >
                         <Activity className="h-4 w-4" />
                       </button>
                     </div>
@@ -830,7 +835,10 @@ export default function Dashboard() {
 
               {/* Dynamic crop type selection */}
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <label htmlFor="crop-type-select" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="crop-type-select"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Crop Type for Analytics:
                 </label>
                 <select
@@ -975,7 +983,10 @@ export default function Dashboard() {
                       <button className="flex-1 bg-gray-50 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                         View Details
                       </button>
-                      <button className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
+                      <button
+                        className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
+                        aria-label="View History"
+                      >
                         <Clock className="h-4 w-4" />
                       </button>
                     </div>

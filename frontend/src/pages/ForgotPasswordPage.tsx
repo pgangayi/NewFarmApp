@@ -106,7 +106,6 @@ export function ForgotPasswordPage() {
                 label="Email Address"
                 name="email"
                 autoComplete="email"
-                autoFocus
                 value={email}
                 onChange={handleEmailChange}
                 disabled={loading}

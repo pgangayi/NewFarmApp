@@ -161,11 +161,14 @@ export function useOfflineSync(options: Partial<SyncOptions> = {}) {
 
       if (existingIndex >= 0) {
         // Update existing item
-        syncQueueRef.current[existingIndex] = {
-          ...syncQueueRef.current[existingIndex],
-          ...syncItem,
-          version: syncQueueRef.current[existingIndex].version + 1,
-        };
+        const existingItem = syncQueueRef.current[existingIndex];
+        if (existingItem) {
+          syncQueueRef.current[existingIndex] = {
+            ...existingItem,
+            ...syncItem,
+            version: existingItem.version + 1,
+          };
+        }
       } else {
         // Add new item
         syncQueueRef.current.push(syncItem);

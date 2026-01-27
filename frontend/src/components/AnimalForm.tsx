@@ -112,6 +112,7 @@ export function AnimalForm({ animal, onSubmit, onCancel, isLoading = false }: An
             <button
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close"
             >
               <X className="h-6 w-6" />
             </button>

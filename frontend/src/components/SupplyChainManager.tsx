@@ -123,8 +123,8 @@ export default function SupplyChainManager() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  // const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
-  // const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
+  const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
+  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -216,13 +216,13 @@ export default function SupplyChainManager() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-green-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <Package className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -240,7 +240,7 @@ export default function SupplyChainManager() {
             </Button>
             <Button
               onClick={() => setIsAddVendorOpen(true)}
-              className="bg-gradient-to-r from-blue-600 to-green-600"
+              className="bg-linear-to-r from-blue-600 to-green-600"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Vendor
@@ -279,7 +279,7 @@ export default function SupplyChainManager() {
           <div className="space-y-8">
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-blue-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-blue-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-600">
@@ -297,7 +297,7 @@ export default function SupplyChainManager() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-green-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-green-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-600">
@@ -317,7 +317,7 @@ export default function SupplyChainManager() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-orange-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-orange-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-600">
@@ -337,7 +337,7 @@ export default function SupplyChainManager() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-purple-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-emerald-50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-600">Performance</CardTitle>

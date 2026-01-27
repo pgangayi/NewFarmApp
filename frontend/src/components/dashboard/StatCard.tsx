@@ -14,6 +14,13 @@ const StatCard: React.FC<StatCardProps> = ({
     <div
       className={`bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
+      {...(onClick ? { role: 'button', tabIndex: 0 } : {})}
+      onKeyDown={e => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <div className={`inline-flex p-2 rounded-lg ${colorClasses[color].bg} mb-3`}>
         <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${colorClasses[color].icon}`} />

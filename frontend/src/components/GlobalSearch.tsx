@@ -4,16 +4,16 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import {
   Search,
   X,
-  // Clock,
-  // Filter,
-  // TrendingUp,
+  Clock,
+  Filter,
+  TrendingUp,
   Users,
   Sprout,
   Package,
   CheckSquare,
   DollarSign,
   MapPin,
-  // ArrowRight,
+  ArrowRight,
   Loader,
   AlertCircle,
 } from 'lucide-react';
@@ -113,6 +113,138 @@ export function GlobalSearch({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<number | null>(null);
 
+  const API_SEARCH = '/api/search';
+
+  // Get all results as flat array for navigation
+  const getAllResults = useCallback((): SearchResult[] => {
+    if (!results) return [];
+
+    return [
+      ...results.animals,
+      ...results.crops,
+      ...results.tasks,
+      ...results.inventory,
+      ...results.farms,
+      ...results.finance,
+    ];
+  }, [results]);
+
+  const handleResultSelect = useCallback(
+    (result: SearchResult) => {
+      onResultSelect?.(result);
+      onClose();
+    },
+    [onResultSelect, onClose]
+  );
+
+  const loadSuggestions = useCallback(async () => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const response = await fetch(API_SEARCH, {
+        method: POST_METHOD,
+        headers: {
+          'Content-Type': CONTENT_TYPE_JSON,
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({
+          action: 'get_suggestions',
+          data: { query },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestions(data.data.suggestions);
+      }
+    } catch (error) {
+      console.error('Failed to load suggestions:', error);
+    }
+  }, [getAuthHeaders, query, API_SEARCH]);
+
+  const loadRecentSearches = useCallback(async () => {
+    try {
+      const response = await fetch(API_SEARCH, {
+        method: POST_METHOD,
+        headers: {
+          'Content-Type': CONTENT_TYPE_JSON,
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({
+          action: 'get_recent_searches',
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRecentSearches(
+          data.data.recent.map((search: { query: string }) => ({
+            type: 'recent_search' as const,
+            text: search.query,
+            score: 0.5,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load recent searches:', error);
+    }
+  }, [getAuthHeaders, API_SEARCH]);
+
+  const performSearch = useCallback(
+    async (searchQuery: string, filter: string = FILTER_ALL) => {
+      if (!searchQuery.trim()) {
+        setResults(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({
+          q: searchQuery,
+          type: filter,
+          ...(currentFarmId ? { farm_id: currentFarmId.toString() } : {}),
+        });
+
+        const response = await fetch(`${API_SEARCH}?${params}`, {
+          method: GET_METHOD,
+          headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+          throw new Error('Search failed');
+        }
+
+        const searchResults = await response.json();
+        setResults(searchResults.data);
+
+        // Save search to history
+        await fetch(API_SEARCH, {
+          method: POST_METHOD,
+          headers: {
+            'Content-Type': CONTENT_TYPE_JSON,
+            ...getAuthHeaders(),
+          },
+          body: JSON.stringify({
+            action: 'save_search',
+            data: { query: searchQuery, type: filter },
+          }),
+        });
+      } catch (err) {
+        const ERR_MSG = 'Search failed. Please try again.';
+        setError(ERR_MSG);
+        console.error('Search error:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getAuthHeaders, currentFarmId, API_SEARCH]
+  );
+
   // Focus input when search opens
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -122,10 +254,9 @@ export function GlobalSearch({
 
   // Handle keyboard navigation
   useEffect(() => {
+    const allResults = getAllResults();
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
-
-      const allResults = getAllResults();
 
       switch (e.key) {
         case 'ArrowDown':
@@ -151,7 +282,7 @@ export function GlobalSearch({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, results]);
+  }, [isOpen, selectedIndex, getAllResults, onClose, handleResultSelect]);
 
   // WebSocket message handling for live search updates
   useEffect(() => {
@@ -167,73 +298,6 @@ export function GlobalSearch({
       setLoading(false);
     }
   }, [wsMessage, query]);
-
-  // Get all results as flat array for navigation
-  const getAllResults = (): SearchResult[] => {
-    if (!results) return [];
-
-    return [
-      ...results.animals,
-      ...results.crops,
-      ...results.tasks,
-      ...results.inventory,
-      ...results.farms,
-      ...results.finance,
-    ];
-  };
-
-  // Debounced search
-  const performSearch = useCallback(
-    async (searchQuery: string, filter: string = FILTER_ALL) => {
-      if (!searchQuery.trim()) {
-        setResults(null);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const params = new URLSearchParams({
-          q: searchQuery,
-          type: filter,
-          ...(currentFarmId ? { farm_id: currentFarmId.toString() } : {}),
-        });
-
-        const response = await fetch(`/api/search?${params}`, {
-          method: GET_METHOD,
-          headers: getAuthHeaders(),
-        });
-
-        if (!response.ok) {
-          throw new Error('Search failed');
-        }
-
-        const searchResults = await response.json();
-        setResults(searchResults.data);
-
-        // Save search to history
-        await fetch('/api/search', {
-          method: POST_METHOD,
-          headers: {
-            'Content-Type': CONTENT_TYPE_JSON,
-            ...getAuthHeaders(),
-          },
-          body: JSON.stringify({
-            action: 'save_search',
-            data: { query: searchQuery, type: filter },
-          }),
-        });
-      } catch (err) {
-        setError('Search failed. Please try again.');
-        console.error('Search error:', err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getAuthHeaders, currentFarmId]
-  );
 
   // Debounce search input
   useEffect(() => {
@@ -258,59 +322,7 @@ export function GlobalSearch({
       loadSuggestions();
       loadRecentSearches();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
-  const loadSuggestions = async () => {
-    try {
-      const response = await fetch('/api/search', {
-        method: POST_METHOD,
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({
-          action: 'get_suggestions',
-          data: { query },
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSuggestions(data.data.suggestions);
-      }
-    } catch (error) {
-      console.error('Failed to load suggestions:', error);
-    }
-  };
-
-  const loadRecentSearches = async () => {
-    try {
-      const response = await fetch('/api/search', {
-        method: POST_METHOD,
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({
-          action: 'get_recent_searches',
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRecentSearches(
-          data.data.recent.map((search: { query: string }) => ({
-            type: 'recent_search' as const,
-            text: search.query,
-            score: 0.5,
-          }))
-        );
-      }
-    } catch (error) {
-      console.error('Failed to load recent searches:', error);
-    }
-  };
+  }, [isOpen, loadSuggestions, loadRecentSearches]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -329,23 +341,21 @@ export function GlobalSearch({
     setSelectedIndex(-1);
   };
 
-  const handleResultSelect = (result: SearchResult) => {
-    onResultSelect?.(result);
-    onClose();
-  };
+  const handleSuggestionClick = useCallback(
+    (suggestion: SearchSuggestion) => {
+      setQuery(suggestion.text);
+      performSearch(suggestion.text, selectedFilter);
+    },
+    [performSearch, selectedFilter]
+  );
 
-  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
-    setQuery(suggestion.text);
-    performSearch(suggestion.text, selectedFilter);
-  };
-
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setQuery('');
     setResults(null);
     setSuggestions([]);
     setSelectedIndex(-1);
     searchInputRef.current?.focus();
-  };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -447,12 +457,20 @@ export function GlobalSearch({
                       {typeResults.map((result, _index) => (
                         <div
                           key={`${result.type}-${result.id}`}
+                          role="button"
+                          tabIndex={0}
                           className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                             selectedIndex === allResults.indexOf(result)
                               ? 'bg-blue-50 border-blue-200'
                               : 'hover:bg-gray-50 border-gray-200'
                           }`}
                           onClick={() => handleResultSelect(result)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleResultSelect(result);
+                            }
+                          }}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -519,8 +537,16 @@ export function GlobalSearch({
                     {recentSearches.slice(0, 5).map((search, index) => (
                       <div
                         key={index}
+                        role="button"
+                        tabIndex={0}
                         className="p-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50"
                         onClick={() => handleSuggestionClick(search)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleSuggestionClick(search);
+                          }
+                        }}
                       >
                         <div className="flex items-center gap-2">
                           <Clock className="h-3 w-3 text-gray-400" />
@@ -573,8 +599,16 @@ export function GlobalSearch({
                 {suggestions.slice(0, 5).map((suggestion, index) => (
                   <div
                     key={index}
+                    role="button"
+                    tabIndex={0}
                     className="p-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50"
                     onClick={() => handleSuggestionClick(suggestion)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSuggestionClick(suggestion);
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-2">
                       <Search className="h-3 w-3 text-gray-400" />

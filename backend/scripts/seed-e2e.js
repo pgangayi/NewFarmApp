@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import bcrypt from "bcryptjs";
 
-// Use bcryptjs from backend dependencies
-const bcrypt = require("bcryptjs");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function runSeed() {
   try {
@@ -62,7 +64,7 @@ PRAGMA foreign_keys = ON;
         ".wrangler",
         "state",
         "v3",
-        "d1"
+        "d1",
       );
       if (fs.existsSync(d1StateDir)) {
         fs.rmSync(d1StateDir, { recursive: true, force: true });
@@ -71,7 +73,7 @@ PRAGMA foreign_keys = ON;
     } catch (stateErr) {
       console.warn(
         "Warning: failed to reset local D1 state (continuing):",
-        stateErr && stateErr.message ? stateErr.message : stateErr
+        stateErr && stateErr.message ? stateErr.message : stateErr,
       );
     }
 
@@ -87,7 +89,7 @@ PRAGMA foreign_keys = ON;
 
     for (const relativePath of migrationFiles) {
       console.log("Applying D1 migration", relativePath);
-      const migrateCmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=${relativePath} --local`;
+      const migrateCmd = `cd backend && npx wrangler d1 execute farmers_boot --file=${relativePath} --local`;
       try {
         const migrateOut = execSync(migrateCmd, { encoding: "utf8" });
         console.log(migrateOut);
@@ -95,7 +97,7 @@ PRAGMA foreign_keys = ON;
         throw new Error(
           `Failed to apply migration ${relativePath}: ${
             mErr && mErr.message ? mErr.message : mErr
-          }`
+          }`,
         );
       }
     }
@@ -121,7 +123,7 @@ PRAGMA foreign_keys = ON;
             healthy = true;
             console.log(
               "Worker health reported healthy (attempt",
-              healthAttempt + ")"
+              healthAttempt + ")",
             );
             break;
           }
@@ -132,17 +134,17 @@ PRAGMA foreign_keys = ON;
       }
       if (!healthy) {
         console.warn(
-          "Warning: worker did not report healthy after polling; continuing with seed (this may be flaky)"
+          "Warning: worker did not report healthy after polling; continuing with seed (this may be flaky)",
         );
       }
     } catch (e) {
       console.warn(
         "Health check polling failed (continuing):",
-        e && e.message ? e.message : e
+        e && e.message ? e.message : e,
       );
     }
 
-    const cmd = `cd backend && npx wrangler d1 execute farmers-boot-local --file=${tmpSeedFileName} --local`;
+    const cmd = `cd backend && npx wrangler d1 execute farmers_boot --file=${tmpSeedFileName} --local`;
     // Use execSync to run the command and inherit output
     const out = execSync(cmd, { encoding: "utf8" });
     console.log(out);
@@ -178,7 +180,7 @@ PRAGMA foreign_keys = ON;
       attempt += 1;
       try {
         console.log(
-          `Attempting login to ${loginUrl} (attempt ${attempt}/${maxAttempts})`
+          `Attempting login to ${loginUrl} (attempt ${attempt}/${maxAttempts})`,
         );
         const response = await fetch(loginUrl, {
           method: "POST",
@@ -188,7 +190,7 @@ PRAGMA foreign_keys = ON;
         const bodyText = await response.text();
         if (!bodyText) {
           console.log(
-            `Login attempt returned empty body (status ${response.status})`
+            `Login attempt returned empty body (status ${response.status})`,
           );
         } else {
           try {
@@ -205,19 +207,19 @@ PRAGMA foreign_keys = ON;
             }
             console.log(
               "Login response JSON did not include a token. Raw:",
-              bodyText.slice(0, 200)
+              bodyText.slice(0, 200),
             );
           } catch (parseErr) {
             console.log(
               "Login response was not valid JSON:",
-              bodyText.slice(0, 200)
+              bodyText.slice(0, 200),
             );
           }
         }
       } catch (err) {
         console.log(
           "Login attempt failed (fetch error):",
-          err && err.message ? err.message : err
+          err && err.message ? err.message : err,
         );
       }
       // wait between attempts
@@ -226,7 +228,7 @@ PRAGMA foreign_keys = ON;
 
     if (!token) {
       console.warn(
-        "⚠️  Could not obtain login token from backend; E2E auto-auth may not work."
+        "⚠️  Could not obtain login token from backend; E2E auto-auth may not work.",
       );
     } else {
       // Persist a lightweight session file that the preview server will inject into index.html

@@ -138,56 +138,74 @@ export const API_ENDPOINTS = {
     validate: '/api/auth/validate',
     me: '/api/auth/me',
   },
-  farms: {
-    base: '/api/farms',
-    list: '/api/farms',
-    detail: (id: string) => `/api/farms/${id}`,
-    create: '/api/farms',
-    update: (id: string) => `/api/farms/${id}`,
-    delete: (id: string) => `/api/farms/${id}`,
-  },
-  animals: {
-    base: '/api/animals',
-    list: '/api/animals',
-    detail: (id: string) => `/api/animals/${id}`,
-    create: '/api/animals',
-    update: (id: string) => `/api/animals/${id}`,
-    delete: (id: string) => `/api/animals/${id}`,
-  },
-  crops: {
-    base: '/api/crops',
-    list: '/api/crops',
-    detail: (id: string) => `/api/crops/${id}`,
-    create: '/api/crops',
-    update: (id: string) => `/api/crops/${id}`,
-    delete: (id: string) => `/api/crops/${id}`,
-  },
-  tasks: {
-    base: '/api/tasks',
-    list: '/api/tasks',
-    detail: (id: string) => `/api/tasks/${id}`,
-    create: '/api/tasks',
-    update: (id: string) => `/api/tasks/${id}`,
-    delete: (id: string) => `/api/tasks/${id}`,
-  },
-  inventory: {
-    base: '/api/inventory',
-    list: '/api/inventory',
-    detail: (id: string) => `/api/inventory/${id}`,
-    create: '/api/inventory',
-    update: (id: string) => `/api/inventory/${id}`,
-    delete: (id: string) => `/api/inventory/${id}`,
-    lowStock: '/api/inventory/low-stock',
-    alerts: '/api/inventory/alerts',
-  },
-  locations: {
-    base: '/api/locations',
-    list: '/api/locations',
-    detail: (id: string) => `/api/locations/${id}`,
-    create: '/api/locations',
-    update: (id: string) => `/api/locations/${id}`,
-    delete: (id: string) => `/api/locations/${id}`,
-  },
+  farms: (() => {
+    const base = '/api/farms';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+    };
+  })(),
+  animals: (() => {
+    const base = '/api/animals';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+    };
+  })(),
+  crops: (() => {
+    const base = '/api/crops';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+    };
+  })(),
+  tasks: (() => {
+    const base = '/api/tasks';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+    };
+  })(),
+  inventory: (() => {
+    const base = '/api/inventory';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+      lowStock: `${base}/low-stock`,
+      alerts: `${base}/alerts`,
+    };
+  })(),
+  locations: (() => {
+    const base = '/api/locations';
+    return {
+      base,
+      list: base,
+      detail: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+    };
+  })(),
   finance: (() => {
     const base = '/api/finance-enhanced';
     return {

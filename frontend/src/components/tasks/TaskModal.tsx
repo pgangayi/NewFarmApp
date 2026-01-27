@@ -24,6 +24,72 @@ interface CostItem {
   currency: string;
 }
 
+interface CostFormProps {
+  costs: CostItem[];
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onChange: (index: number, field: keyof CostItem, value: any) => void;
+}
+
+const CostForm = ({ costs, onAdd, onRemove, onChange }: CostFormProps) => (
+  <div className="border-t pt-4">
+    <div className="flex items-center justify-between mb-4">
+      <Label className="text-base font-semibold flex items-center gap-2">
+        <DollarSign className="h-4 w-4" />
+        Cost Components
+      </Label>
+      <Button type="button" variant="outline" size="sm" onClick={onAdd}>
+        <Plus className="h-4 w-4 mr-1" />
+        Add Cost
+      </Button>
+    </div>
+
+    {costs.length === 0 && (
+      <p className="text-sm text-gray-500 italic">No cost components added.</p>
+    )}
+
+    <div className="space-y-3">
+      {costs.map((cost, index) => (
+        <div key={index} className="flex items-end gap-3 bg-gray-50 p-3 rounded-md">
+          <div className="flex-1 space-y-1">
+            <Label className="text-xs">Description</Label>
+            <Input
+              value={cost.description}
+              onChange={e => onChange(index, 'description', e.target.value)}
+              placeholder="e.g. Fertilizer, Labor"
+            />
+          </div>
+          <div className="w-32 space-y-1">
+            <Label className="text-xs">Amount</Label>
+            <Input
+              type="number"
+              value={cost.amount}
+              onChange={e => onChange(index, 'amount', parseFloat(e.target.value))}
+              min="0"
+              step="0.01"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            onClick={() => onRemove(index)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+
+    {costs.length > 0 && (
+      <div className="mt-4 text-right font-medium">
+        Total Estimated Cost: ${costs.reduce((sum, c) => sum + (c.amount || 0), 0).toFixed(2)}
+      </div>
+    )}
+  </div>
+);
+
 export function TaskModal({ task, farms, users, onSave, onClose, isLoading }: TaskModalProps) {
   const [formData, setFormData] = useState<any>({
     title: '',
@@ -205,63 +271,12 @@ export function TaskModal({ task, farms, users, onSave, onClose, isLoading }: Ta
             />
           </div>
 
-          <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <Label className="text-base font-semibold flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Cost Components
-              </Label>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddCost}>
-                <Plus className="h-4 w-4 mr-1" />
-                Add Cost
-              </Button>
-            </div>
-
-            {costs.length === 0 && (
-              <p className="text-sm text-gray-500 italic">No cost components added.</p>
-            )}
-
-            <div className="space-y-3">
-              {costs.map((cost, index) => (
-                <div key={index} className="flex items-end gap-3 bg-gray-50 p-3 rounded-md">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-xs">Description</Label>
-                    <Input
-                      value={cost.description}
-                      onChange={e => handleCostChange(index, 'description', e.target.value)}
-                      placeholder="e.g. Fertilizer, Labor"
-                    />
-                  </div>
-                  <div className="w-32 space-y-1">
-                    <Label className="text-xs">Amount</Label>
-                    <Input
-                      type="number"
-                      value={cost.amount}
-                      onChange={e => handleCostChange(index, 'amount', parseFloat(e.target.value))}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleRemoveCost(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {costs.length > 0 && (
-              <div className="mt-4 text-right font-medium">
-                Total Estimated Cost: $
-                {costs.reduce((sum, c) => sum + (c.amount || 0), 0).toFixed(2)}
-              </div>
-            )}
-          </div>
+          <CostForm
+            costs={costs}
+            onAdd={handleAddCost}
+            onRemove={handleRemoveCost}
+            onChange={handleCostChange}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

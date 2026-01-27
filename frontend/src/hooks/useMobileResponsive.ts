@@ -107,7 +107,7 @@ export function useMobileResponsive(config: Partial<ResponsiveConfig> = {}) {
       // Find the first breakpoint that has a value and is <= current breakpoint
       const currentIndex = breakpoints.indexOf(currentBreakpoint);
       for (let i = currentIndex; i >= 0; i--) {
-        const bp = breakpoints[i];
+        const bp = breakpoints[i] as Breakpoint;
         if (responsiveValues[bp] !== undefined) {
           return responsiveValues[bp]!;
         }
@@ -370,9 +370,9 @@ export function useResponsiveNavigation() {
 
   // Auto-collapse on mobile
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile()) {
       setIsCollapsed(true);
-    } else if (isTablet) {
+    } else if (isTablet()) {
       setIsCollapsed(false);
     }
   }, [isMobile, isTablet]);

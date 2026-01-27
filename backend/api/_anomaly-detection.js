@@ -23,7 +23,7 @@ export class AnomalyDetectionSystem {
       const riskFactors = await this.calculateRiskFactors(
         userId,
         currentContext,
-        historicalData
+        historicalData,
       );
       const anomalyScore = this.calculateAnomalyScore(riskFactors);
       const riskLevel = this.determineRiskLevel(anomalyScore);
@@ -64,7 +64,7 @@ export class AnomalyDetectionSystem {
       behavioralAnomaly: await this.analyzeBehavioralAnomaly(
         userId,
         context,
-        historicalData
+        historicalData,
       ),
     };
 
@@ -84,7 +84,7 @@ export class AnomalyDetectionSystem {
           COUNT(DISTINCT ip_address) as unique_ips
         FROM login_attempts 
         WHERE user_id = ? AND attempted_at > datetime('now', '-1 hour')
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -136,7 +136,7 @@ export class AnomalyDetectionSystem {
         WHERE user_id = ? AND created_at > datetime('now', '-30 days')
         GROUP BY device_fingerprint
         ORDER BY login_count DESC
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -149,7 +149,7 @@ export class AnomalyDetectionSystem {
 
       // Check if device is new
       const deviceKnown = knownDevices.some(
-        (device) => device.device_fingerprint === currentDevice
+        (device) => device.device_fingerprint === currentDevice,
       );
       if (!deviceKnown) {
         riskScore += this.riskThresholds.newDeviceRiskScore;
@@ -158,7 +158,7 @@ export class AnomalyDetectionSystem {
 
       // Check device login frequency
       const deviceStats = knownDevices.find(
-        (device) => device.device_fingerprint === currentDevice
+        (device) => device.device_fingerprint === currentDevice,
       );
       if (deviceStats && deviceStats.login_count === 1) {
         riskScore += 0.2;
@@ -194,7 +194,7 @@ export class AnomalyDetectionSystem {
           AND last_activity > datetime('now', '-90 days')
         GROUP BY country_code
         ORDER BY visits DESC
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -207,7 +207,7 @@ export class AnomalyDetectionSystem {
 
       // Check if country is new
       const locationKnown = knownLocations.some(
-        (loc) => loc.country_code === currentLocation.country
+        (loc) => loc.country_code === currentLocation.country,
       );
       if (!locationKnown && currentLocation.country) {
         riskScore += this.riskThresholds.unusualLocationRiskScore;
@@ -223,7 +223,7 @@ export class AnomalyDetectionSystem {
           AND last_activity > datetime('now', '-2 hours')
         ORDER BY last_activity DESC
         LIMIT 5
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -268,7 +268,7 @@ export class AnomalyDetectionSystem {
         FROM enhanced_sessions 
         WHERE user_id = ? AND created_at > datetime('now', '-30 days')
         GROUP BY login_hour, login_day
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -321,7 +321,7 @@ export class AnomalyDetectionSystem {
           AND last_activity > datetime('now', '-90 days')
         GROUP BY ip_address
         ORDER BY frequency DESC
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -352,7 +352,7 @@ export class AnomalyDetectionSystem {
         FROM enhanced_sessions 
         WHERE user_id = ? 
           AND last_activity > datetime('now', '-1 hour')
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -387,14 +387,14 @@ export class AnomalyDetectionSystem {
         SELECT 
           strftime('%H', created_at) as hour,
           strftime('%w', created_at) as day,
-          EXTRACT(EPOCH FROM (expires_at - created_at))/3600 as session_duration,
+          (julianday(expires_at) - julianday(created_at)) * 24 as session_duration,
           user_agent
         FROM enhanced_sessions 
         WHERE user_id = ? 
           AND created_at > datetime('now', '-30 days')
         ORDER BY created_at DESC
         LIMIT 20
-      `
+      `,
       )
         .bind(userId)
         .all();
@@ -414,7 +414,7 @@ export class AnomalyDetectionSystem {
         if (Math.abs(currentDuration - avgDuration) > avgDuration * 0.5) {
           riskScore += 0.2;
           reasons.push(
-            `Unusual session duration: ${currentDuration}h vs typical ${avgDuration}h`
+            `Unusual session duration: ${currentDuration}h vs typical ${avgDuration}h`,
           );
         }
       }
@@ -426,7 +426,7 @@ export class AnomalyDetectionSystem {
 
         // Simple deviation detection
         const userAgentChanged = !userAgentPattern.includes(
-          context.userAgent || ""
+          context.userAgent || "",
         );
         if (userAgentChanged && patterns.length > 10) {
           riskScore += 0.15;
@@ -553,7 +553,7 @@ export class AnomalyDetectionSystem {
           id, user_id, risk_score, risk_level, risk_factors, 
           current_context, recommended_actions, analyzed_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `
+      `,
       )
         .bind(
           logId,
@@ -562,7 +562,7 @@ export class AnomalyDetectionSystem {
           analysisResult.riskLevel,
           JSON.stringify(analysisResult.riskFactors),
           JSON.stringify(analysisResult.currentContext),
-          JSON.stringify(analysisResult.recommendedActions)
+          JSON.stringify(analysisResult.recommendedActions),
         )
         .run();
 
@@ -581,7 +581,7 @@ export class AnomalyDetectionSystem {
             primaryRiskFactors: Object.entries(analysisResult.riskFactors)
               .filter(([_, factor]) => factor.riskScore > 0.5)
               .map(([factor, _]) => factor),
-          }
+          },
         );
       }
     } catch (error) {
@@ -601,7 +601,7 @@ export class AnomalyDetectionSystem {
         INSERT INTO security_events (
           id, event_type, severity, user_id, ip_address, user_agent, event_data
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `
+      `,
       )
         .bind(
           eventId,
@@ -610,7 +610,7 @@ export class AnomalyDetectionSystem {
           userId,
           requestContext.ipAddress || "unknown",
           requestContext.userAgent || "unknown",
-          JSON.stringify(eventData)
+          JSON.stringify(eventData),
         )
         .run();
     } catch (error) {
@@ -632,7 +632,7 @@ export class AnomalyDetectionSystem {
         FROM anomaly_analysis_logs 
         WHERE analyzed_at > ${timeCondition}
         GROUP BY risk_level
-      `
+      `,
       ).all();
 
       return {

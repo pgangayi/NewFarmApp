@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import {
   Plus,
-  Settings,
   Trash2,
   BarChart3,
   PieChart,
@@ -22,7 +21,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useToast } from '../hooks/use-toast';
 
 interface DashboardWidget {
@@ -163,7 +162,7 @@ export function CustomDashboardBuilder({
   farmId,
   initialConfig,
   onSave,
-  onPreview,
+  onPreview: _onPreview,
 }: CustomDashboardBuilderProps) {
   const { toast } = useToast();
   const [dashboardName, setDashboardName] = useState(initialConfig?.name || 'My Custom Dashboard');
@@ -200,7 +199,9 @@ export function CustomDashboardBuilder({
 
     const items = Array.from(widgets);
     const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    if (reorderedItem) {
+      items.splice(result.destination.index, 0, reorderedItem);
+    }
 
     setWidgets(items);
   };
@@ -381,8 +382,8 @@ export function CustomDashboardBuilder({
                   <p className="text-gray-600 mb-4">
                     Start building your dashboard by adding widgets from the library.
                   </p>
-                  {!isPreviewMode && (
-                    <Button onClick={() => addWidget(WIDGET_TEMPLATES[0])}>
+                  {!isPreviewMode && WIDGET_TEMPLATES[0] && (
+                    <Button onClick={() => addWidget(WIDGET_TEMPLATES[0]!)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add First Widget
                     </Button>
@@ -453,8 +454,8 @@ export function CustomDashboardBuilder({
                 </label>
                 <Select
                   value={selectedWidget.size}
-                  onValueChange={(value: 'small' | 'medium' | 'large') =>
-                    updateWidget(selectedWidget.id, { size: value })
+                  onValueChange={(value: string) =>
+                    updateWidget(selectedWidget.id, { size: value as 'small' | 'medium' | 'large' })
                   }
                 >
                   <SelectTrigger id="widget-size">

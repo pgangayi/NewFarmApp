@@ -44,6 +44,7 @@ export function FieldMap({ fields, selectedFieldId, onSelectField }: FieldMapPro
                 selectedFieldId === field.id.toString() ? 'scale-125 z-20' : 'hover:scale-110 z-10'
               }`}
               style={{ top, left }}
+              aria-label={`Field: ${field.name}`}
             >
               <div className={`relative flex flex-col items-center`}>
                 <div
@@ -71,7 +72,10 @@ export function FieldMap({ fields, selectedFieldId, onSelectField }: FieldMapPro
           );
         })}
 
-        <button className="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors">
+        <button
+          className="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+          aria-label="Expand Map"
+        >
           <Maximize2 className="h-5 w-5 text-gray-600" />
         </button>
       </div>

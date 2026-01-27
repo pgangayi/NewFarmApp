@@ -241,7 +241,7 @@ export function useTheme() {
     const themes: Theme[] = ['light', 'dark', 'spring', 'summer', 'autumn', 'winter'];
     const currentIndex = themes.indexOf(theme);
     const nextTheme = themes[(currentIndex + 1) % themes.length];
-    setTheme(nextTheme);
+    setTheme(nextTheme!);
   }, [theme, setTheme]);
 
   const getThemeConfig = useCallback(() => {
@@ -276,6 +276,7 @@ export function useTheme() {
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [mode, theme, applyThemeToDocument]);
 
   return {

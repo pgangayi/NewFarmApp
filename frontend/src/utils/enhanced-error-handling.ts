@@ -32,7 +32,7 @@ const base_error_schema = z.object({
   category: z.nativeEnum(ERROR_CATEGORY),
   timestamp: z.string().datetime(),
   user_id: z.string().optional(),
-  context: z.record(z.any()).optional(),
+  context: z.record(z.string(), z.any()).optional(),
   stack_trace: z.string().optional(),
   retry_count: z.number().default(0),
   is_resolved: z.boolean().default(false),
@@ -196,7 +196,10 @@ export class EnhancedErrorHandler {
         message: 'Failed to parse API error response',
         severity: ERROR_SEVERITY.HIGH,
         category: ERROR_CATEGORY.NETWORK,
-        context: { response, parse_error: parse_error.message },
+        context: {
+          response,
+          parse_error: parse_error instanceof Error ? parse_error.message : String(parse_error),
+        },
       });
     }
   }

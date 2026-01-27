@@ -23,6 +23,52 @@ export interface ValidationContext {
   timestamp: Date;
 }
 
+const entityValidationRules: Record<string, (data: Record<string, unknown>) => ValidationError[]> =
+  {
+    farm: data => {
+      const errors: ValidationError[] = [];
+      if (!data['name'] || typeof data['name'] !== 'string') {
+        errors.push({ field: 'name', message: 'Farm name is required', code: 'REQUIRED_FIELD' });
+      }
+      return errors;
+    },
+    field: data => {
+      const errors: ValidationError[] = [];
+      if (!data['name'] || typeof data['name'] !== 'string') {
+        errors.push({ field: 'name', message: 'Field name is required', code: 'REQUIRED_FIELD' });
+      }
+      if (!data['farm_id']) {
+        errors.push({ field: 'farm_id', message: 'Farm ID is required', code: 'REQUIRED_FIELD' });
+      }
+      return errors;
+    },
+    task: data => {
+      const errors: ValidationError[] = [];
+      if (!data['title'] || typeof data['title'] !== 'string') {
+        errors.push({ field: 'title', message: 'Task title is required', code: 'REQUIRED_FIELD' });
+      }
+      return errors;
+    },
+    crop: data => {
+      const errors: ValidationError[] = [];
+      if (!data['name'] || typeof data['name'] !== 'string') {
+        errors.push({ field: 'name', message: 'Crop name is required', code: 'REQUIRED_FIELD' });
+      }
+      return errors;
+    },
+    inventory: data => {
+      const errors: ValidationError[] = [];
+      if (!data['name'] || typeof data['name'] !== 'string') {
+        errors.push({
+          field: 'name',
+          message: 'Inventory item name is required',
+          code: 'REQUIRED_FIELD',
+        });
+      }
+      return errors;
+    },
+  };
+
 export function useSmartDataValidation() {
   const validateData = useCallback(
     async (data: unknown, context: ValidationContext): Promise<ValidationResult> => {
@@ -34,72 +80,16 @@ export function useSmartDataValidation() {
         if (typeof data === 'object' && data !== null) {
           const dataObj = data as Record<string, unknown>;
 
-          // Check for required fields based on entity type
-          switch (context.entityType) {
-            case 'farm':
-              if (!dataObj['name'] || typeof dataObj['name'] !== 'string') {
-                errors.push({
-                  field: 'name',
-                  message: 'Farm name is required',
-                  code: 'REQUIRED_FIELD',
-                });
-              }
-              break;
-
-            case 'field':
-              if (!dataObj['name'] || typeof dataObj['name'] !== 'string') {
-                errors.push({
-                  field: 'name',
-                  message: 'Field name is required',
-                  code: 'REQUIRED_FIELD',
-                });
-              }
-              if (!dataObj['farm_id']) {
-                errors.push({
-                  field: 'farm_id',
-                  message: 'Farm ID is required',
-                  code: 'REQUIRED_FIELD',
-                });
-              }
-              break;
-
-            case 'task':
-              if (!dataObj['title'] || typeof dataObj['title'] !== 'string') {
-                errors.push({
-                  field: 'title',
-                  message: 'Task title is required',
-                  code: 'REQUIRED_FIELD',
-                });
-              }
-              break;
-
-            case 'crop':
-              if (!dataObj['name'] || typeof dataObj['name'] !== 'string') {
-                errors.push({
-                  field: 'name',
-                  message: 'Crop name is required',
-                  code: 'REQUIRED_FIELD',
-                });
-              }
-              break;
-
-            case 'inventory':
-              if (!dataObj['name'] || typeof dataObj['name'] !== 'string') {
-                errors.push({
-                  field: 'name',
-                  message: 'Inventory item name is required',
-                  code: 'REQUIRED_FIELD',
-                });
-              }
-              break;
-
-            default:
-              // Generic validation for unknown entity types
-              warnings.push({
-                field: 'general',
-                message: `No specific validation rules for ${context.entityType}`,
-                code: 'NO_VALIDATION_RULES',
-              });
+          const rules = entityValidationRules[context.entityType];
+          if (rules) {
+            errors.push(...rules(dataObj));
+          } else {
+            // Generic validation for unknown entity types
+            warnings.push({
+              field: 'general',
+              message: `No specific validation rules for ${context.entityType}`,
+              code: 'NO_VALIDATION_RULES',
+            });
           }
 
           // Check for suspicious patterns

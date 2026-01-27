@@ -148,8 +148,20 @@ export function SelectField({
 
       <div className="relative">
         <div
+          role="combobox"
+          title={label}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-controls={`${name}-options`}
+          tabIndex={0}
           className={`${baseSelectClasses} ${isOpen ? 'ring-2 ring-blue-500' : ''} flex items-center justify-between`}
           onClick={() => !loading && setIsOpen(!isOpen)}
+          onKeyDown={e => {
+            if (!loading && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              setIsOpen(!isOpen);
+            }
+          }}
         >
           <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
             {loading ? 'Loading...' : selectedOption?.label || placeholder}
@@ -176,19 +188,33 @@ export function SelectField({
               </div>
             )}
 
-            <div className="max-h-48 overflow-y-auto">
+            <div id={`${name}-options`} role="listbox" className="max-h-48 overflow-y-auto">
               {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-gray-500 text-sm">
+                <div
+                  role="option"
+                  aria-selected="false"
+                  className="px-3 py-2 text-gray-500 text-sm"
+                >
                   {searchable ? 'No options found' : 'No options available'}
                 </div>
               ) : (
                 filteredOptions.map(option => (
                   <div
                     key={option.value}
+                    role="option"
+                    aria-selected={value === option.value}
+                    aria-disabled={option.disabled}
+                    tabIndex={option.disabled ? -1 : 0}
                     className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
                       option.disabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-900'
                     } ${value === option.value ? 'bg-blue-50 text-blue-700' : ''}`}
                     onClick={() => !option.disabled && handleSelect(option.value)}
+                    onKeyDown={e => {
+                      if (!option.disabled && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        handleSelect(option.value);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <span>{option.label}</span>
@@ -474,6 +500,7 @@ export function CheckboxField({
         <input
           id={name}
           type="checkbox"
+          title={label}
           checked={checked}
           onChange={e => onChange?.(e.target.checked)}
           className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${

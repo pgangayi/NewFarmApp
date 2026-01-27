@@ -511,7 +511,7 @@ export function useDashboardCustomization(farmId: number) {
       resetToDefault();
     } else if (layouts && layouts.length > 0 && !currentLayout) {
       const defaultLayout = layouts.find(l => l.isDefault) || layouts[0];
-      setCurrentLayout(defaultLayout);
+      setCurrentLayout(defaultLayout || null);
     }
   }, [layouts, layoutsLoading, currentLayout, resetToDefault]);
 

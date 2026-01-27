@@ -108,19 +108,24 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'low-stock',
     name: 'Low Stock Alert',
     type: 'inventory',
-    condition: (data: InventoryNotificationData) =>
-      data.quantity <= data.minStock && data.quantity > 0,
-    action: (context: InventoryNotificationData) => ({
-      type: 'inventory',
-      title: 'Low Stock Warning',
-      message: `${context.name} is running low (${context.quantity} remaining)`,
-      priority: 'medium',
-      category: 'inventory',
-      data: context,
-      actionable: true,
-      actionUrl: `/inventory/${context.id}`,
-      actionLabel: 'Restock',
-    }),
+    condition: (data: unknown) => {
+      const d = data as InventoryNotificationData;
+      return d.quantity <= d.minStock && d.quantity > 0;
+    },
+    action: (context: unknown) => {
+      const c = context as InventoryNotificationData;
+      return {
+        type: 'inventory',
+        title: 'Low Stock Warning',
+        message: `${c.name} is running low (${c.quantity} remaining)`,
+        priority: 'medium',
+        category: 'inventory',
+        data: c,
+        actionable: true,
+        actionUrl: `/inventory/${c.id}`,
+        actionLabel: 'Restock',
+      };
+    },
     enabled: true,
     priority: 'medium',
     cooldown: 60,
@@ -129,19 +134,24 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'overdue-task',
     name: 'Overdue Task',
     type: 'task',
-    condition: (data: TaskNotificationData) =>
-      new Date(data.dueDate) < new Date() && data.status !== 'completed',
-    action: (context: TaskNotificationData) => ({
-      type: 'task',
-      title: 'Overdue Task',
-      message: `Task "${context.title}" is overdue`,
-      priority: 'high',
-      category: 'task',
-      data: context,
-      actionable: true,
-      actionUrl: `/tasks/${context.id}`,
-      actionLabel: 'View Task',
-    }),
+    condition: (data: unknown) => {
+      const d = data as TaskNotificationData;
+      return new Date(d.dueDate) < new Date() && d.status !== 'completed';
+    },
+    action: (context: unknown) => {
+      const c = context as TaskNotificationData;
+      return {
+        type: 'task',
+        title: 'Overdue Task',
+        message: `Task "${c.title}" is overdue`,
+        priority: 'high',
+        category: 'task',
+        data: c,
+        actionable: true,
+        actionUrl: `/tasks/${c.id}`,
+        actionLabel: 'View Task',
+      };
+    },
     enabled: true,
     priority: 'high',
     cooldown: 30,
@@ -150,18 +160,24 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'animal-health',
     name: 'Animal Health Alert',
     type: 'animal',
-    condition: (data: AnimalNotificationData) => data.healthStatus === 'sick',
-    action: (context: AnimalNotificationData) => ({
-      type: 'animal',
-      title: 'Health Alert',
-      message: `${context.name} needs medical attention`,
-      priority: 'high',
-      category: 'health',
-      data: context,
-      actionable: true,
-      actionUrl: `/animals/${context.id}`,
-      actionLabel: 'View Animal',
-    }),
+    condition: (data: unknown) => {
+      const d = data as AnimalNotificationData;
+      return d.healthStatus === 'sick';
+    },
+    action: (context: unknown) => {
+      const c = context as AnimalNotificationData;
+      return {
+        type: 'animal',
+        title: 'Health Alert',
+        message: `${c.name} needs medical attention`,
+        priority: 'high',
+        category: 'health',
+        data: c,
+        actionable: true,
+        actionUrl: `/animals/${c.id}`,
+        actionLabel: 'View Animal',
+      };
+    },
     enabled: true,
     priority: 'high',
     cooldown: 120,
@@ -170,16 +186,22 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'temperature-extreme',
     name: 'Temperature Extreme',
     type: 'weather',
-    condition: (data: WeatherNotificationData) => data.temperature > 40 || data.temperature < 0,
-    action: (context: WeatherNotificationData) => ({
-      type: 'weather',
-      title: 'Temperature Alert',
-      message: `Temperature extreme: ${context.temperature}°C`,
-      priority: 'urgent',
-      category: 'weather',
-      data: context,
-      actionable: false,
-    }),
+    condition: (data: unknown) => {
+      const d = data as WeatherNotificationData;
+      return d.temperature > 40 || d.temperature < 0;
+    },
+    action: (context: unknown) => {
+      const c = context as WeatherNotificationData;
+      return {
+        type: 'weather',
+        title: 'Temperature Alert',
+        message: `Temperature extreme: ${c.temperature}°C`,
+        priority: 'urgent',
+        category: 'weather',
+        data: c,
+        actionable: false,
+      };
+    },
     enabled: true,
     priority: 'urgent',
     cooldown: 180,
@@ -188,18 +210,24 @@ const NOTIFICATION_RULES: NotificationRule[] = [
     id: 'harvest-ready',
     name: 'Harvest Ready',
     type: 'crop',
-    condition: (data: CropNotificationData) => data.daysToHarvest <= 7 && data.daysToHarvest >= 0,
-    action: (context: CropNotificationData) => ({
-      type: 'crop',
-      title: 'Harvest Ready',
-      message: `${context.name} will be ready for harvest in ${context.daysToHarvest} days`,
-      priority: 'medium',
-      category: 'crop',
-      data: context,
-      actionable: true,
-      actionUrl: `/crops/${context.id}`,
-      actionLabel: 'View Crop',
-    }),
+    condition: (data: unknown) => {
+      const d = data as CropNotificationData;
+      return d.daysToHarvest <= 7 && d.daysToHarvest >= 0;
+    },
+    action: (context: unknown) => {
+      const c = context as CropNotificationData;
+      return {
+        type: 'crop',
+        title: 'Harvest Ready',
+        message: `${c.name} will be ready for harvest in ${c.daysToHarvest} days`,
+        priority: 'medium',
+        category: 'crop',
+        data: c,
+        actionable: true,
+        actionUrl: `/crops/${c.id}`,
+        actionLabel: 'View Crop',
+      };
+    },
     enabled: true,
     priority: 'medium',
     cooldown: 240,

@@ -1,4 +1,4 @@
-import React from 'react';
+// App entry point with routing and providers
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FarmThemeProvider } from './components/mui/theme';

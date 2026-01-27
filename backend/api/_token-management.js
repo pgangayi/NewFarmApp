@@ -2,6 +2,9 @@
 // Supports token revocation, validation, and security monitoring
 // Date: November 12, 2025
 
+import { Buffer } from "buffer";
+globalThis.Buffer = Buffer;
+
 export class TokenManager {
   constructor(env) {
     this.env = env;
@@ -13,7 +16,7 @@ export class TokenManager {
     const data = encoder.encode(token);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
   // Check if token is revoked
@@ -26,7 +29,7 @@ export class TokenManager {
         SELECT revoked_at, reason, expires_at 
         FROM revoked_tokens 
         WHERE token_hash = ? AND token_type = ?
-      `
+      `,
       )
         .bind(tokenHash, tokenType)
         .all();
@@ -62,7 +65,7 @@ export class TokenManager {
     reason,
     tokenType = "access",
     initiatedBy = null,
-    requestContext = {}
+    requestContext = {},
   ) {
     try {
       const tokenHash = await this.hashToken(token);
@@ -73,7 +76,7 @@ export class TokenManager {
         const base64Payload = token.split(".")[1];
         if (base64Payload) {
           const payload = JSON.parse(
-            Buffer.from(base64Payload, "base64").toString()
+            Buffer.from(base64Payload, "base64").toString(),
           );
           if (payload.exp) {
             expiresAt = new Date(payload.exp * 1000);
@@ -89,7 +92,7 @@ export class TokenManager {
       const existing = await this.env.DB.prepare(
         `
         SELECT id FROM revoked_tokens WHERE token_hash = ? AND token_type = ?
-      `
+      `,
       )
         .bind(tokenHash, tokenType)
         .all();
@@ -112,7 +115,7 @@ export class TokenManager {
           id, token_hash, user_id, token_type, reason, revoked_by, 
           ip_address, user_agent, expires_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
+      `,
       )
         .bind(
           revocationId,
@@ -123,7 +126,7 @@ export class TokenManager {
           initiatedBy,
           requestContext.ipAddress || "unknown",
           requestContext.userAgent || "unknown",
-          expiresAt.toISOString()
+          expiresAt.toISOString(),
         )
         .run();
 
@@ -136,7 +139,7 @@ export class TokenManager {
       });
 
       console.log(
-        `Token revoked: ${tokenType} token for user ${userId}, reason: ${reason}`
+        `Token revoked: ${tokenType} token for user ${userId}, reason: ${reason}`,
       );
 
       return {
@@ -159,7 +162,7 @@ export class TokenManager {
     reason,
     tokenTypes = ["access", "refresh"],
     initiatedBy = null,
-    requestContext = {}
+    requestContext = {},
   ) {
     const results = {
       success: true,
@@ -180,7 +183,7 @@ export class TokenManager {
             tokenType,
             initiatedBy,
             batchOperation: true,
-          }
+          },
         );
 
         results.revoked.push(tokenType);
@@ -204,7 +207,7 @@ export class TokenManager {
         `
         DELETE FROM revoked_tokens 
         WHERE expires_at < datetime('now')
-      `
+      `,
       ).run();
 
       console.log(`Cleaned up ${changes} expired token revocations`);
@@ -221,7 +224,7 @@ export class TokenManager {
     ipAddress,
     userAgent,
     success,
-    failureReason = null
+    failureReason = null,
   ) {
     try {
       const attemptId = `attempt_${Date.now()}_${crypto
@@ -238,7 +241,7 @@ export class TokenManager {
         INSERT INTO login_attempts (
           id, email, ip_address, user_agent, attempt_type, success, failure_reason
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `
+      `,
       )
         .bind(
           attemptId,
@@ -247,7 +250,7 @@ export class TokenManager {
           userAgent,
           "login",
           success,
-          failureReason
+          failureReason,
         )
         .run();
 
@@ -274,7 +277,7 @@ export class TokenManager {
         WHERE ip_address = ? 
           AND success = FALSE 
           AND attempted_at > ?
-      `
+      `,
       )
         .bind(ipAddress, windowStart.toISOString())
         .all();
@@ -291,7 +294,7 @@ export class TokenManager {
             failureCount,
             timeWindow: "15 minutes",
             severity: failureCount >= 10 ? "high" : "medium",
-          }
+          },
         );
 
         // Temporarily block IP
@@ -304,7 +307,7 @@ export class TokenManager {
           WHERE ip_address = ? 
             AND blocked_until IS NULL
             AND attempted_at > ?
-        `
+        `,
         )
           .bind(blockUntil.toISOString(), ipAddress, windowStart.toISOString())
           .run();
@@ -318,7 +321,7 @@ export class TokenManager {
           { ipAddress, userAgent },
           {
             reason: "Unusual user agent pattern detected",
-          }
+          },
         );
       }
     } catch (error) {
@@ -336,7 +339,7 @@ export class TokenManager {
         WHERE ip_address = ? 
           AND blocked_until IS NOT NULL
           AND blocked_until > datetime('now')
-      `
+      `,
       )
         .bind(ipAddress)
         .all();
@@ -382,7 +385,7 @@ export class TokenManager {
           id, user_id, event_type, ip_address,
           user_agent, success, details
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `
+      `,
       )
         .bind(
           eventId,
@@ -391,7 +394,7 @@ export class TokenManager {
           requestContext.ipAddress || "unknown",
           requestContext.userAgent || "unknown",
           severity === "low" ? 1 : 0, // success: 1 for low severity, 0 for others
-          JSON.stringify({ severity, ...eventData })
+          JSON.stringify({ severity, ...eventData }),
         )
         .run();
 
@@ -423,7 +426,7 @@ export class TokenManager {
           SELECT COUNT(*) as count 
           FROM revoked_tokens 
           WHERE revoked_at > ${timeCondition}
-        `
+        `,
           ).all(),
 
           // Active IP blocks
@@ -432,7 +435,7 @@ export class TokenManager {
           SELECT COUNT(DISTINCT ip_address) as count 
           FROM login_attempts 
           WHERE blocked_until > datetime('now')
-        `
+        `,
           ).all(),
 
           // Security events by severity
@@ -442,7 +445,7 @@ export class TokenManager {
           FROM security_events 
           WHERE detected_at > ${timeCondition}
           GROUP BY severity
-        `
+        `,
           ).all(),
 
           // Login statistics
@@ -454,7 +457,7 @@ export class TokenManager {
             COUNT(DISTINCT ip_address) as unique_ips
           FROM login_attempts 
           WHERE attempted_at > ${timeCondition}
-        `
+        `,
           ).all(),
         ]);
 
@@ -552,7 +555,7 @@ export class TokenManager {
         `
         DELETE FROM login_attempts 
         WHERE attempted_at < datetime('now', '-30 days')
-      `
+      `,
       ).run();
       results.oldLoginAttempts = loginChanges;
 
@@ -562,7 +565,7 @@ export class TokenManager {
         DELETE FROM security_events 
         WHERE resolved_at IS NOT NULL 
           AND resolved_at < datetime('now', '-90 days')
-      `
+      `,
       ).run();
       results.resolvedSecurityEvents = eventChanges;
 

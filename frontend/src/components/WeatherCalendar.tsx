@@ -69,7 +69,7 @@ export function WeatherCalendar({
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-700">Loading weather calendar...</p>
@@ -81,7 +81,7 @@ export function WeatherCalendar({
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Weather Calendar Unavailable</h2>
@@ -127,7 +127,7 @@ export function WeatherCalendar({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-cyan-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-lg rounded-xl shadow-sm border border-white/20 p-6 mb-8">
@@ -178,8 +178,8 @@ export function WeatherCalendar({
                           key={dayIndex}
                           className={`rounded-xl p-4 min-h-[140px] border transition-all hover:shadow-md ${
                             date.getDay() === 0 || date.getDay() === 6
-                              ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-                              : 'bg-gradient-to-br from-white to-blue-50 border-gray-200'
+                              ? 'bg-linear-to-br from-gray-50 to-gray-100 border-gray-200'
+                              : 'bg-linear-to-br from-white to-blue-50 border-gray-200'
                           }`}
                         >
                           <div className="text-center mb-3">
@@ -212,8 +212,16 @@ export function WeatherCalendar({
                               {dayOperations.map((op: any) => (
                                 <div
                                   key={op.id}
+                                  role="button"
+                                  tabIndex={0}
                                   className={`${getOperationTypeColor(op.type)} text-white text-xs p-2 rounded-lg cursor-pointer hover:opacity-80 transition-opacity`}
                                   onClick={() => onOperationClick?.(op.id)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      onOperationClick?.(op.id);
+                                    }
+                                  }}
                                 >
                                   <div className="truncate font-medium">{op.title}</div>
                                   <div className="text-xs opacity-90">{op.status}</div>
@@ -236,19 +244,19 @@ export function WeatherCalendar({
                 </h4>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
+                  <div className="flex items-center gap-3 p-3 bg-linear-to-r from-yellow-50 to-orange-50 rounded-lg">
                     <Sun className="h-5 w-5 text-yellow-500" />
                     <span className="text-sm font-medium text-gray-700">Sunny</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg">
+                  <div className="flex items-center gap-3 p-3 bg-linear-to-r from-gray-50 to-blue-50 rounded-lg">
                     <Cloud className="h-5 w-5 text-gray-500" />
                     <span className="text-sm font-medium text-gray-700">Cloudy</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg">
+                  <div className="flex items-center gap-3 p-3 bg-linear-to-r from-blue-50 to-cyan-50 rounded-lg">
                     <CloudRain className="h-5 w-5 text-blue-500" />
                     <span className="text-sm font-medium text-gray-700">Rainy</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                  <div className="flex items-center gap-3 p-3 bg-linear-to-r from-green-50 to-emerald-50 rounded-lg">
                     <Wind className="h-5 w-5 text-green-500" />
                     <span className="text-sm font-medium text-gray-700">Windy</span>
                   </div>

@@ -46,12 +46,16 @@ const CATEGORY_CUSTOM = 'custom';
 const TYPE_PDF = 'pdf';
 const TYPE_EXCEL = 'excel';
 const TYPE_CSV = 'csv';
+const TYPE_JSON = 'json';
 
 const FREQ_MONTHLY = 'monthly';
 const FREQ_WEEKLY = 'weekly';
 const FREQ_QUARTERLY = 'quarterly';
 const FREQ_ON_DEMAND = 'on_demand';
+const FREQ_DAILY = 'daily';
+const FREQ_YEARLY = 'yearly';
 
+const VAL_PERFORMANCE = 'performance';
 
 interface ReportTemplate {
   id: string;
@@ -203,9 +207,9 @@ export default function AdvancedReportingSystem() {
       name: 'Yield Prediction Report',
       description:
         'AI-powered yield forecasting with historical analysis and improvement recommendations',
-      category: 'performance',
-      type: 'pdf',
-      frequency: 'monthly',
+      category: VAL_PERFORMANCE,
+      type: TYPE_PDF,
+      frequency: FREQ_MONTHLY,
       estimated_time: '4-6 minutes',
       sections: [
         'Yield Forecasts',
@@ -268,7 +272,7 @@ export default function AdvancedReportingSystem() {
         return DollarSign;
       case CATEGORY_OPERATIONAL:
         return Activity;
-      case 'performance':
+      case CATEGORY_PERFORMANCE:
         return TrendingUp;
       case 'compliance':
         return CheckCircle;
@@ -285,7 +289,7 @@ export default function AdvancedReportingSystem() {
         return 'text-green-600 bg-green-100';
       case CATEGORY_OPERATIONAL:
         return 'text-blue-600 bg-blue-100';
-      case 'performance':
+      case CATEGORY_PERFORMANCE:
         return 'text-purple-600 bg-purple-100';
       case 'compliance':
         return 'text-orange-600 bg-orange-100';
@@ -332,13 +336,13 @@ export default function AdvancedReportingSystem() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -354,7 +358,7 @@ export default function AdvancedReportingSystem() {
             </Button>
             <Button
               onClick={() => setActiveTab('generate')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600"
+              className="bg-linear-to-r from-blue-600 to-purple-600"
             >
               <FileText className="h-4 w-4 mr-2" />
               Generate Report
@@ -403,7 +407,7 @@ export default function AdvancedReportingSystem() {
                     <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="financial">Financial</SelectItem>
                     <SelectItem value="operational">Operational</SelectItem>
-                    <SelectItem value="performance">Performance</SelectItem>
+                    <SelectItem value={CATEGORY_PERFORMANCE}>Performance</SelectItem>
                     <SelectItem value="compliance">Compliance</SelectItem>
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
@@ -423,7 +427,7 @@ export default function AdvancedReportingSystem() {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 bg-linear-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
                             <IconComponent className="h-5 w-5 text-blue-600" />
                           </div>
                           <div>
@@ -633,12 +637,7 @@ export default function AdvancedReportingSystem() {
                           </label>
                         </div>
                         <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="add-summary"
-                            className="mr-2"
-                            defaultChecked
-                          />
+                          <input type="checkbox" id="add-summary" className="mr-2" defaultChecked />
                           <label htmlFor="add-summary" className="text-sm">
                             Add executive summary
                           </label>
@@ -660,7 +659,7 @@ export default function AdvancedReportingSystem() {
 
                     <div className="pt-4">
                       <Button
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                        className="w-full bg-linear-to-r from-blue-600 to-purple-600"
                         onClick={() => selectedTemplate && generateReport(selectedTemplate)}
                         disabled={!selectedTemplate || loading}
                       >
@@ -819,7 +818,7 @@ export default function AdvancedReportingSystem() {
         {activeTab === 'analytics' && reportData && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-green-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-green-50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-gray-600">
                     Report Generation
@@ -831,7 +830,7 @@ export default function AdvancedReportingSystem() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-blue-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-blue-50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-gray-600">Download Rate</CardTitle>
                 </CardHeader>
@@ -841,7 +840,7 @@ export default function AdvancedReportingSystem() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-purple-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-purple-50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-gray-600">Average Time</CardTitle>
                 </CardHeader>
@@ -851,7 +850,7 @@ export default function AdvancedReportingSystem() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-orange-50">
+              <Card className="border-0 shadow-lg bg-linear-to-br from-white to-orange-50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-gray-600">
                     Popular Format

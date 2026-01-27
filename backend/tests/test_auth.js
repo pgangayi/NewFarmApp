@@ -20,11 +20,6 @@ jest.mock("@tsndr/cloudflare-worker-jwt", () => ({
   decode: jest.fn(),
 }));
 
-jest.mock("bcryptjs", () => ({
-  hash: jest.fn(),
-  compare: jest.fn(),
-}));
-
 jest.mock("../api/_token-management.js", () => ({
   TokenManager: jest.fn().mockImplementation(() => ({
     isTokenRevoked: jest.fn(),
@@ -56,28 +51,31 @@ describe("SimpleAuth", () => {
   });
 
   describe("password hashing", () => {
-    it("should hash password with bcrypt", async () => {
+    it("should hash password with PBKDF2", async () => {
       const password = "testPassword123!";
-      const hashedPassword = "hashed_password";
-
-      require("bcryptjs").hash.mockResolvedValue(hashedPassword);
 
       const result = await auth.hashPassword(password);
 
-      expect(require("bcryptjs").hash).toHaveBeenCalledWith(password, 12);
-      expect(result).toBe(hashedPassword);
+      expect(result).toMatch(/^pbkdf2:100000:[a-f0-9]{32}:[a-f0-9]{64}$/);
     });
 
     it("should verify password correctly", async () => {
       const password = "testPassword123!";
-      const hash = "hashed_password";
-
-      require("bcryptjs").compare.mockResolvedValue(true);
+      // Generate a real hash to verify against
+      const hash = await auth.hashPassword(password);
 
       const result = await auth.verifyPassword(password, hash);
 
-      expect(require("bcryptjs").compare).toHaveBeenCalledWith(password, hash);
       expect(result).toBe(true);
+    });
+
+    it("should fail verification with wrong password", async () => {
+      const password = "testPassword123!";
+      const hash = await auth.hashPassword(password);
+
+      const result = await auth.verifyPassword("wrongPassword", hash);
+
+      expect(result).toBe(false);
     });
   });
 

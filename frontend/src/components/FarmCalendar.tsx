@@ -268,6 +268,7 @@ export default function FarmCalendarView({
               <button
                 onClick={() => navigateMonth('prev')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Previous Month"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -277,6 +278,7 @@ export default function FarmCalendarView({
               <button
                 onClick={() => navigateMonth('next')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Next Month"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -303,6 +305,7 @@ export default function FarmCalendarView({
 
             {/* Event Filter */}
             <select
+              aria-label="Filter Events"
               value={eventFilter}
               onChange={e => setEventFilter(e.target.value)}
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -350,7 +353,15 @@ export default function FarmCalendarView({
               return (
                 <div
                   key={index}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedDate(day)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedDate(day);
+                    }
+                  }}
                   className={`min-h-24 p-1 border border-gray-100 rounded-lg cursor-pointer transition-colors ${
                     isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50'
                   } ${isToday ? 'ring-2 ring-green-500' : ''} ${isSelected ? 'bg-green-50' : ''}`}
@@ -370,9 +381,18 @@ export default function FarmCalendarView({
                       return (
                         <div
                           key={eventIndex}
+                          role="button"
+                          tabIndex={0}
                           onClick={e => {
                             e.stopPropagation();
                             onEventClick && onEventClick(event);
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onEventClick && onEventClick(event);
+                            }
                           }}
                           className={`text-xs p-1 rounded truncate flex items-center space-x-1 ${
                             event.priority === 'urgent'
@@ -382,7 +402,7 @@ export default function FarmCalendarView({
                                 : 'bg-blue-100 text-blue-700'
                           }`}
                         >
-                          <IconComponent className="h-3 w-3 flex-shrink-0" />
+                          <IconComponent className="h-3 w-3 shrink-0" />
                           <span className="truncate">{event.title}</span>
                         </div>
                       );
@@ -410,7 +430,15 @@ export default function FarmCalendarView({
               return (
                 <div
                   key={event.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onEventClick && onEventClick(event)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onEventClick && onEventClick(event);
+                    }
+                  }}
                   className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                 >
                   <div className={`p-2 rounded-lg ${event.color || 'blue'}-50`}>

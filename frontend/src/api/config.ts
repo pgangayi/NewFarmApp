@@ -57,83 +57,105 @@ export const ENDPOINTS = {
     resetPassword: '/auth/reset-password',
     verifyEmail: '/auth/verify-email',
   },
-  farms: {
-    list: '/farms',
-    details: (id: string) => `/farms/${id}`,
-    create: '/farms',
-    update: (id: string) => `/farms/${id}`,
-    delete: (id: string) => `/farms/${id}`,
-  },
-  fields: {
-    list: '/fields',
-    details: (id: string) => `/fields/${id}`,
-    create: '/fields',
-    update: (id: string) => `/fields/${id}`,
-    delete: (id: string) => `/fields/${id}`,
-    soilAnalysis: '/fields/soil-analysis',
-  },
+  farms: (() => {
+    const base = '/farms';
+    return {
+      list: base,
+      details: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+    };
+  })(),
+  fields: (() => {
+    const base = '/fields';
+    return {
+      list: base,
+      details: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+      soilAnalysis: `${base}/soil-analysis`,
+    };
+  })(),
   weather: {
     farm: '/weather/farm',
     impact: '/weather/impact-analysis',
     recommendations: '/weather/recommendations',
   },
-  crops: {
-    list: '/crops',
-    details: (id: string) => `/crops/${id}`,
-    create: '/crops',
-    update: (id: string) => `/crops/${id}`,
-    delete: (id: string) => `/crops/${id}`,
-    history: '/crops/history',
-    planning: '/crops/planning',
-  },
-  livestock: {
-    list: '/livestock',
-    create: '/livestock',
-    update: '/livestock',
-    delete: (id: string) => `/livestock/${id}`,
-    history: '/livestock/history',
-  },
-  tasks: {
-    list: '/tasks',
-    create: '/tasks',
-    update: '/tasks',
-    delete: (id: string) => `/tasks/${id}`,
-    complete: (id: string) => `/tasks/${id}/complete`,
-  },
-  inventory: {
-    list: '/inventory',
-    details: (id: string) => `/inventory/${id}`,
-    create: '/inventory',
-    update: (id: string) => `/inventory/${id}`,
-    delete: (id: string) => `/inventory/${id}`,
-    alerts: '/inventory/alerts',
-  },
-  finance: {
-    list: '/finance',
-    create: '/finance',
-    update: '/finance',
-    delete: (id: string) => `/finance/${id}`,
-    report: '/finance/report',
-    stats: '/finance/stats',
-  },
-  animals: {
-    list: '/livestock',
-    details: (id: string) => `/livestock/${id}`,
-    create: '/livestock',
-    update: (id: string) => `/livestock/${id}`,
-    delete: (id: string) => `/livestock/${id}`,
-    analytics: '/livestock/stats',
-    healthRecords: (animalId: string, recordId?: string) =>
-      recordId
-        ? `/livestock/${animalId}/health-records/${recordId}`
-        : `/livestock/${animalId}/health-records`,
-    production: (animalId: string, recordId?: string) =>
-      recordId
-        ? `/livestock/${animalId}/production/${recordId}`
-        : `/livestock/${animalId}/production`,
-    breeding: (animalId: string, recordId?: string) =>
-      recordId ? `/livestock/${animalId}/breeding/${recordId}` : `/livestock/${animalId}/breeding`,
-  },
+  crops: (() => {
+    const base = '/crops';
+    return {
+      list: base,
+      details: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+      history: `${base}/history`,
+      planning: `${base}/planning`,
+    };
+  })(),
+  livestock: (() => {
+    const base = '/livestock';
+    return {
+      list: base,
+      create: base,
+      update: base,
+      delete: (id: string) => `${base}/${id}`,
+      history: `${base}/history`,
+    };
+  })(),
+  tasks: (() => {
+    const base = '/tasks';
+    return {
+      list: base,
+      create: base,
+      update: base,
+      delete: (id: string) => `${base}/${id}`,
+      complete: (id: string) => `${base}/${id}/complete`,
+    };
+  })(),
+  inventory: (() => {
+    const base = '/inventory';
+    return {
+      list: base,
+      details: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+      alerts: `${base}/alerts`,
+    };
+  })(),
+  finance: (() => {
+    const base = '/finance';
+    return {
+      list: base,
+      create: base,
+      update: base,
+      delete: (id: string) => `${base}/${id}`,
+      report: `${base}/report`,
+      stats: `${base}/stats`,
+    };
+  })(),
+  animals: (() => {
+    const base = '/livestock';
+    return {
+      list: base,
+      details: (id: string) => `${base}/${id}`,
+      create: base,
+      update: (id: string) => `${base}/${id}`,
+      delete: (id: string) => `${base}/${id}`,
+      analytics: `${base}/stats`,
+      healthRecords: (animalId: string, recordId?: string) =>
+        recordId
+          ? `${base}/${animalId}/health-records/${recordId}`
+          : `${base}/${animalId}/health-records`,
+      production: (animalId: string, recordId?: string) =>
+        recordId ? `${base}/${animalId}/production/${recordId}` : `${base}/${animalId}/production`,
+      breeding: (animalId: string, recordId?: string) =>
+        recordId ? `${base}/${animalId}/breeding/${recordId}` : `${base}/${animalId}/breeding`,
+    };
+  })(),
 };
 
 export const CACHE_CONFIG = {

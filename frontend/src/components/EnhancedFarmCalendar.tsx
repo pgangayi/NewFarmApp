@@ -4,37 +4,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  // Filter,
   Bell,
-  // Clock,
-  // MapPin,
-  // Users,
   Sprout,
   Activity,
   AlertTriangle,
   Sun,
   Cloud,
   CloudRain,
-  // Zap,
   Target,
   Brain,
-  // Lightbulb,
-  // Download,
-  // Share,
   Edit,
   Trash2,
-  // CheckCircle,
-  // X,
-  // Settings,
   TrendingUp,
   CalendarDays,
-  // Timer,
   Bot,
-  // TrendingDown,
-  // User,
-  // Briefcase,
-  // Home,
-  // Plane,
   BookOpen,
   Wrench,
   Users,
@@ -453,6 +436,7 @@ export default function EnhancedFarmCalendar({
               <button
                 onClick={() => navigateMonth('prev')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Previous Month"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -462,6 +446,7 @@ export default function EnhancedFarmCalendar({
               <button
                 onClick={() => navigateMonth('next')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Next Month"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -501,6 +486,7 @@ export default function EnhancedFarmCalendar({
 
             {/* Enhanced Event Filter */}
             <select
+              aria-label="Filter Events"
               value={eventFilter}
               onChange={e => setEventFilter(e.target.value)}
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -521,7 +507,7 @@ export default function EnhancedFarmCalendar({
             {/* Smart Event Creation */}
             <Dialog open={isCreatingEvent} onOpenChange={setIsCreatingEvent}>
               <DialogTrigger asChild>
-                <button className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-3 py-2 rounded-lg hover:from-green-700 hover:to-blue-700 transition-colors flex items-center space-x-2">
+                <button className="bg-linear-to-r from-green-600 to-blue-600 text-white px-3 py-2 rounded-lg hover:from-green-700 hover:to-blue-700 transition-colors flex items-center space-x-2">
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Smart Add</span>
                 </button>
@@ -590,7 +576,7 @@ export default function EnhancedFarmCalendar({
             {aiSuggestions.map((suggestion, index) => (
               <div key={index} className="bg-white p-3 rounded-lg border border-purple-200">
                 <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 shrink-0"></div>
                   <div className="flex-1">
                     <div className="font-medium text-sm text-purple-900">{suggestion.title}</div>
                     <div className="text-xs text-purple-700 mt-1">{suggestion.description}</div>
@@ -719,7 +705,15 @@ export default function EnhancedFarmCalendar({
               return (
                 <div
                   key={index}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedDate(day)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedDate(day);
+                    }
+                  }}
                   className={`min-h-24 p-1 border border-gray-100 rounded-lg cursor-pointer transition-colors relative ${
                     isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50'
                   } ${isToday ? 'ring-2 ring-green-500' : ''} ${isSelected ? 'bg-green-50' : ''}`}
@@ -739,9 +733,18 @@ export default function EnhancedFarmCalendar({
                       return (
                         <div
                           key={eventIndex}
+                          role="button"
+                          tabIndex={0}
                           onClick={e => {
                             e.stopPropagation();
                             setSelectedEvent(event);
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedEvent(event);
+                            }
                           }}
                           className={`text-xs p-1 rounded truncate flex items-center space-x-1 ${
                             event.priority === 'urgent'
@@ -751,7 +754,7 @@ export default function EnhancedFarmCalendar({
                                 : 'bg-blue-100 text-blue-700'
                           }`}
                         >
-                          <IconComponent className="h-3 w-3 flex-shrink-0" />
+                          <IconComponent className="h-3 w-3 shrink-0" />
                           <span className="truncate">{event.title}</span>
                           {event.conflictRisk === 'high' && (
                             <AlertTriangle className="h-3 w-3 text-red-500" />
@@ -793,7 +796,15 @@ export default function EnhancedFarmCalendar({
               return (
                 <div
                   key={event.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedEvent(event)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedEvent(event);
+                    }
+                  }}
                   className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border-l-4 ${getConflictColor(event.conflictRisk!)}`}
                 >
                   <div className={`p-2 rounded-lg ${event.color || 'blue'}-50`}>

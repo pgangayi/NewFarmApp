@@ -58,15 +58,15 @@ export default function FarmInvites() {
 
   useEffect(() => {
     loadFarms();
-  }, []);
+  }, [loadFarms]);
 
   useEffect(() => {
     if (selectedFarm) {
       loadInvites();
     }
-  }, [selectedFarm]);
+  }, [selectedFarm, loadInvites]);
 
-  const loadFarms = async () => {
+  const loadFarms = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch('/api/farms', {
@@ -87,9 +87,9 @@ export default function FarmInvites() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const loadInvites = async () => {
+  const loadInvites = useCallback(async () => {
     if (!selectedFarm) return;
 
     try {
@@ -107,7 +107,7 @@ export default function FarmInvites() {
     } catch (error) {
       console.error('Failed to load invites:', error);
     }
-  };
+  }, [selectedFarm]);
 
   const handleSendInvite = async () => {
     if (!selectedFarm || !inviteForm.email) {

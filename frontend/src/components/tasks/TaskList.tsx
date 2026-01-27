@@ -1,7 +1,7 @@
-import { ColumnConfig, UnifiedList } from '../ui/UnifiedList';
+import { ActionConfig, ColumnConfig, UnifiedList } from '../ui/UnifiedList';
 import type { ExtendedTask } from './types';
 import { Badge } from '../ui/badge';
-import { Edit } from 'lucide-react';
+import { Edit, Play, Square, Eye } from 'lucide-react';
 
 const COL_SPAN_1 = 'col-span-1';
 
@@ -19,10 +19,10 @@ interface TaskListProps {
 export function TaskList({
   tasks,
   onEditTask,
-  onViewTask: _onViewTask,
-  onStartTimer: _onStartTimer,
-  onStopTimer: _onStopTimer,
-  timerActive: _timerActive,
+  onViewTask,
+  onStartTimer,
+  onStopTimer,
+  timerActive,
   isTimerLoading: _isTimerLoading,
   onCreate,
 }: TaskListProps) {
@@ -108,14 +108,7 @@ export function TaskList({
       title="Tasks"
       items={tasks}
       columns={columns}
-      actions={[
-        {
-          key: 'edit',
-          label: 'Edit',
-          icon: Edit,
-          onClick: item => onEditTask(item as unknown as ExtendedTask),
-        },
-      ]}
+      actions={actions}
       onAdd={onCreate}
       addButtonLabel="Create Task"
       emptyState={{

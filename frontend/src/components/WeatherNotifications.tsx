@@ -156,20 +156,20 @@ export function WeatherNotifications({
   const getSeverityColor = (severity?: string) => {
     switch (severity) {
       case 'critical':
-        return 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50';
+        return 'border-red-500 bg-linear-to-r from-red-50 to-pink-50';
       case 'high':
-        return 'border-orange-500 bg-gradient-to-r from-orange-50 to-yellow-50';
+        return 'border-orange-500 bg-linear-to-r from-orange-50 to-yellow-50';
       case 'medium':
-        return 'border-yellow-500 bg-gradient-to-r from-yellow-50 to-amber-50';
+        return 'border-yellow-500 bg-linear-to-r from-yellow-50 to-amber-50';
       default:
-        return 'border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50';
+        return 'border-gray-200 bg-linear-to-r from-gray-50 to-blue-50';
     }
   };
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-700">Loading notifications...</p>
@@ -181,7 +181,7 @@ export function WeatherNotifications({
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Notifications Unavailable</h2>
@@ -234,7 +234,7 @@ export function WeatherNotifications({
         </div>
 
         {/* Notifications Content */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm shrink-0 border border-gray-100 p-6">
           {displayedNotifications.length === 0 ? (
             <div className="text-center py-16">
               <div className="p-4 bg-green-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
@@ -248,11 +248,19 @@ export function WeatherNotifications({
               {displayedNotifications.map(notification => (
                 <div
                   key={notification.id}
+                  role="button"
+                  tabIndex={0}
                   className={`border rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg ${getSeverityColor(notification.severity)}`}
                   onClick={() => handleNotificationClick(notification)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleNotificationClick(notification);
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 mt-1 p-2 bg-white rounded-lg shadow-sm">
+                    <div className="shrink-0 mt-1 p-2 bg-white rounded-lg shadow-sm">
                       {getNotificationIcon(notification.type, notification.severity)}
                     </div>
 
@@ -340,7 +348,7 @@ export function WeatherNotifications({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <label
                 htmlFor="weather-alerts"
-                className="flex items-center p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100"
+                className="flex items-center p-3 bg-linear-to-r from-red-50 to-pink-50 rounded-lg border border-red-100"
               >
                 <input
                   id="weather-alerts"
@@ -348,6 +356,7 @@ export function WeatherNotifications({
                   defaultChecked
                   className="mr-3 text-red-500"
                 />
+                <span className="sr-only">Enable Weather Alerts</span>
                 <div>
                   <span className="text-sm font-medium text-gray-900">Weather alerts</span>
                   <p className="text-xs text-gray-600">Critical & high priority alerts</p>
@@ -355,7 +364,7 @@ export function WeatherNotifications({
               </label>
               <label
                 htmlFor="farming-recommendations"
-                className="flex items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100"
+                className="flex items-center p-3 bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100"
               >
                 <input
                   id="farming-recommendations"
@@ -363,6 +372,7 @@ export function WeatherNotifications({
                   defaultChecked
                   className="mr-3 text-blue-500"
                 />
+                <span className="sr-only">Enable Farming Recommendations</span>
                 <div>
                   <span className="text-sm font-medium text-gray-900">Farming recommendations</span>
                   <p className="text-xs text-gray-600">Weather-based farming tips</p>
@@ -370,13 +380,10 @@ export function WeatherNotifications({
               </label>
               <label
                 htmlFor="daily-summary"
-                className="flex items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100"
+                className="flex items-center p-3 bg-linear-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100"
               >
-                <input
-                  id="daily-summary"
-                  type="checkbox"
-                  className="mr-3 text-green-500"
-                />
+                <input id="daily-summary" type="checkbox" className="mr-3 text-green-500" />
+                <span className="sr-only">Enable Daily Summary</span>
                 <div>
                   <span className="text-sm font-medium text-gray-900">Daily summary</span>
                   <p className="text-xs text-gray-600">Daily weather summary</p>

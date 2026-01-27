@@ -100,7 +100,7 @@ export function InteractiveChart({
       const range = maxValue - minValue || 1;
       const stepX = width / (data.length - 1 || 1);
 
-      ctx.strokeStyle = colors[0];
+      ctx.strokeStyle = colors[0] || theme.primary;
       ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -123,7 +123,7 @@ export function InteractiveChart({
         const x = index * stepX;
         const y = height - ((point.value - minValue) / range) * height * progress;
 
-        ctx.fillStyle = colors[0];
+        ctx.fillStyle = colors[0] || theme.primary;
         ctx.beginPath();
         ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -137,7 +137,7 @@ export function InteractiveChart({
         }
       });
     },
-    [data, width, height, colors, selectedPoint, theme.text]
+    [data, width, height, colors, selectedPoint, theme.text, theme.primary]
   );
 
   const drawBarChart = useCallback(
@@ -153,7 +153,7 @@ export function InteractiveChart({
         const barHeight = (point.value / maxValue) * height * progress;
         const y = height - barHeight;
 
-        ctx.fillStyle = colors[index % colors.length];
+        ctx.fillStyle = colors[index % colors.length] || theme.primary;
         ctx.fillRect(x, y, barWidth, barHeight);
 
         if (selectedPoint?.index === index) {
@@ -163,7 +163,7 @@ export function InteractiveChart({
         }
       });
     },
-    [data, width, height, colors, selectedPoint, theme.text]
+    [data, width, height, colors, selectedPoint, theme.text, theme.primary]
   );
 
   const drawPieChart = useCallback(
@@ -179,7 +179,7 @@ export function InteractiveChart({
       data.forEach((point, index) => {
         const sliceAngle = (point.value / total) * Math.PI * 2 * progress;
 
-        ctx.fillStyle = colors[index % colors.length];
+        ctx.fillStyle = colors[index % colors.length] || theme.primary;
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
@@ -199,7 +199,7 @@ export function InteractiveChart({
         currentAngle += sliceAngle;
       });
     },
-    [data, width, height, colors, selectedPoint, theme.text]
+    [data, width, height, colors, selectedPoint, theme.text, theme.primary]
   );
 
   const drawAreaChart = useCallback(
@@ -213,8 +213,8 @@ export function InteractiveChart({
 
       // Create gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, colors[0] + '80');
-      gradient.addColorStop(1, colors[0] + '10');
+      gradient.addColorStop(0, (colors[0] || theme.primary) + '80');
+      gradient.addColorStop(1, (colors[0] || theme.primary) + '10');
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -233,7 +233,7 @@ export function InteractiveChart({
       // Draw line on top
       drawLineChart(ctx, progress);
     },
-    [data, width, height, colors, drawLineChart]
+    [data, width, height, colors, drawLineChart, theme.primary]
   );
 
   const drawScatterChart = useCallback(
@@ -248,7 +248,7 @@ export function InteractiveChart({
         const x = (index / (data.length - 1)) * width;
         const y = height - ((point.value - minValue) / range) * height * progress;
 
-        ctx.fillStyle = colors[index % colors.length];
+        ctx.fillStyle = colors[index % colors.length] || theme.primary;
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, Math.PI * 2);
         ctx.fill();
@@ -262,7 +262,7 @@ export function InteractiveChart({
         }
       });
     },
-    [data, width, height, colors, selectedPoint, theme.text]
+    [data, width, height, colors, selectedPoint, theme.text, theme.primary]
   );
 
   const draw = useCallback(
@@ -315,7 +315,7 @@ export function InteractiveChart({
           const legendX = 10;
           const legendY = height - 20 - (data.length - index - 1) * 20;
 
-          ctx.fillStyle = colors[index % colors.length];
+          ctx.fillStyle = colors[index % colors.length] || theme.primary;
           ctx.fillRect(legendX, legendY - 8, 12, 12);
 
           ctx.fillStyle = theme.text;
@@ -338,6 +338,7 @@ export function InteractiveChart({
       data,
       colors,
       theme.text,
+      theme.primary,
     ]
   );
 
@@ -356,9 +357,9 @@ export function InteractiveChart({
       const stepX = width / (data.length - 1 || 1);
       const clickedIndex = Math.round(x / stepX);
 
-      if (clickedIndex >= 0 && clickedIndex < data.length) {
-        setSelectedPoint({ data: data[clickedIndex], index: clickedIndex });
-        onDataPointClick(data[clickedIndex], clickedIndex);
+      if (clickedIndex >= 0 && clickedIndex < data.length && data[clickedIndex]) {
+        setSelectedPoint({ data: data[clickedIndex]!, index: clickedIndex });
+        onDataPointClick(data[clickedIndex]!, clickedIndex);
       }
     },
     [interactive, onDataPointClick, data, width]
@@ -379,16 +380,16 @@ export function InteractiveChart({
       const stepX = width / (data.length - 1 || 1);
       const hoveredIndex = Math.round(x / stepX);
 
-      if (hoveredIndex >= 0 && hoveredIndex < data.length) {
-        setHoveredPoint({ x, y, data: data[hoveredIndex], index: hoveredIndex });
+      if (hoveredIndex >= 0 && hoveredIndex < data.length && data[hoveredIndex]) {
+        setHoveredPoint({ x, y, data: data[hoveredIndex]!, index: hoveredIndex });
       } else {
         setHoveredPoint(null);
       }
     },
     [interactive, data, width]
   );
-
-  // Animation
+  const getMaxValue = () => (data.length > 0 ? Math.max(...data.map(d => d.value)) : 1);
+  const getMinValue = () => (data.length > 0 ? Math.min(...data.map(d => d.value)) : 0);
   useEffect(() => {
     if (animated && animationProgress < 1) {
       const animate = () => {
@@ -409,7 +410,8 @@ export function InteractiveChart({
         }
       };
     }
-  }, [animated]);
+    return undefined;
+  }, [animated, animationProgress]);
 
   // Redraw when data or progress changes
   useEffect(() => {

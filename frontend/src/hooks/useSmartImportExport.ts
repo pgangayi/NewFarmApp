@@ -131,6 +131,32 @@ const DEFAULT_FIELD_MAPPINGS: Record<string, Record<string, SmartMapping>> = {
   },
 };
 
+const getErrorSuggestion = (errorType: string): string => {
+  const suggestions: Record<string, string> = {
+    required_field_missing: 'Check that all required fields are provided',
+    schema_validation_error: 'Verify data format matches expected types',
+    date_parsing_error: 'Use ISO date format (YYYY-MM-DD) or specify custom format',
+    number_parsing_error: 'Remove currency symbols and use decimal numbers only',
+  };
+  return suggestions[errorType] || 'Review the data and try again';
+};
+
+const calculateCompleteness = (data: Record<string, unknown>[]): number => {
+  if (data.length === 0) return 0;
+
+  const totalFields = Object.keys(data[0] as Record<string, unknown>).length;
+  const totalCells = data.length * totalFields;
+  const filledCells = data.reduce((count: number, row: Record<string, unknown>) => {
+    return (
+      count +
+      Object.values(row).filter(value => value !== null && value !== undefined && value !== '')
+        .length
+    );
+  }, 0);
+
+  return Math.round((filledCells / totalCells) * 100);
+};
+
 export function useSmartImportExport() {
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
@@ -529,46 +555,10 @@ export function useSmartImportExport() {
         progress.isComplete = true;
         setImportProgress({ ...progress });
 
-        // Calculate statistics
-        const totalProcessed = mappedData.length;
-        const successRate = totalProcessed > 0 ? (success / totalProcessed) * 100 : 0;
-
-        // Analyze common errors
-        const errorTypes: Record<string, number> = {};
-        errors.forEach(({ errors: rowErrors }) => {
-          rowErrors.forEach(error => {
-            const errorCode = error.code || 'unknown';
-            errorTypes[errorCode] = (errorTypes[errorCode] || 0) + 1;
-          });
-        });
-
-        const commonErrors = Object.entries(errorTypes)
-          .map(([type, count]) => ({
-            type,
-            count,
-            suggestion: getErrorSuggestion(type),
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-
-        return {
-          success: true,
-          data: mappedData.slice(0, success), // Only successful items
-          errors,
-          statistics: {
-            totalProcessed,
-            successRate,
-            commonErrors,
-            dataQuality: {
-              completeness: calculateCompleteness(mappedData as Record<string, unknown>[]),
-              accuracy: 95, // Placeholder
-              consistency: 90, // Placeholder
-            },
-          },
-          mappings,
-          preview: mappedData.slice(0, Math.min(5, mappedData.length)),
-        };
+        // Calculate and return result
+        return calculateImportResult(mappedData, success, errors, mappings);
       } catch (error) {
+        // ... same catch logic ...
         const progress = importProgress;
         if (progress) {
           progress.endTime = new Date();
@@ -593,7 +583,63 @@ export function useSmartImportExport() {
         setIsImporting(false);
       }
     },
-    [parseCSV, detectFieldMappings, applyMappings, fieldMappings]
+    [
+      parseCSV,
+      detectFieldMappings,
+      applyMappings,
+      fieldMappings,
+      importProgress,
+      validateData,
+      generateId,
+    ]
+  );
+
+  const calculateImportResult = useCallback(
+    (
+      mappedData: unknown[],
+      success: number,
+      errors: ImportProgress['errors'],
+      mappings: SmartMapping[]
+    ): ImportResult => {
+      const totalProcessed = mappedData.length;
+      const successRate = totalProcessed > 0 ? (success / totalProcessed) * 100 : 0;
+
+      const errorTypes: Record<string, number> = {};
+      errors.forEach(({ errors: rowErrors }) => {
+        rowErrors.forEach(error => {
+          const errorCode = error.code || 'unknown';
+          errorTypes[errorCode] = (errorTypes[errorCode] || 0) + 1;
+        });
+      });
+
+      const commonErrors = Object.entries(errorTypes)
+        .map(([type, count]) => ({
+          type,
+          count,
+          suggestion: getErrorSuggestion(type),
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      return {
+        success: true,
+        data: mappedData.slice(0, success),
+        errors,
+        statistics: {
+          totalProcessed,
+          successRate,
+          commonErrors,
+          dataQuality: {
+            completeness: calculateCompleteness(mappedData as Record<string, unknown>[]),
+            accuracy: 95,
+            consistency: 90,
+          },
+        },
+        mappings,
+        preview: mappedData.slice(0, Math.min(5, mappedData.length)),
+      };
+    },
+    []
   );
 
   // Export data to file

@@ -7,7 +7,6 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  // Clock,
   DollarSign,
   Users,
   Settings,
@@ -16,24 +15,16 @@ import {
   Target,
   Brain,
   ArrowUpRight,
-  // ArrowDownRight,
   RefreshCw,
   Play,
   Pause,
-  // Filter,
-  // Download,
-  // Upload,
   Bell,
-  // Eye,
   AlertTriangle,
   Info,
-  // Calendar,
-  // Map,
   Sprout,
   Package,
   Truck,
-  // Wrench,
-  // Lightbulb,
+  Lightbulb,
   Wifi,
   WifiOff,
 } from 'lucide-react';
@@ -135,6 +126,335 @@ interface WorkflowData {
 }
 
 type ViewMode = 'dashboard' | 'integrations' | 'workflows' | 'optimization' | 'insights';
+
+const StatusOverviewCards = ({ data }: { data: SystemDashboard }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Farm Performance</CardTitle>
+        <TrendingUp className="h-4 w-4 text-green-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-green-600">
+          {data.farm?.animal_count || 0} Animals
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {data.fields?.total_fields || 0} fields managed
+        </p>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Task Efficiency</CardTitle>
+        <CheckCircle className="h-4 w-4 text-blue-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-blue-600">
+          {Math.round(((data.tasks?.completed_tasks || 0) / (data.tasks?.total_tasks || 1)) * 100)}%
+        </div>
+        <p className="text-xs text-muted-foreground">Completion rate</p>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Financial Health</CardTitle>
+        <DollarSign className="h-4 w-4 text-purple-500" />
+      </CardHeader>
+      <CardContent>
+        <div
+          className={`text-2xl font-bold ${(data.finance?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}
+        >
+          ${(data.finance?.net_profit || 0).toLocaleString()}
+        </div>
+        <p className="text-xs text-muted-foreground">30-day net profit</p>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Inventory Status</CardTitle>
+        <Package className="h-4 w-4 text-orange-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-orange-600">
+          {data.inventory?.low_stock_items || 0}
+        </div>
+        <p className="text-xs text-muted-foreground">Low stock alerts</p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const ModulePerformanceCards = ({ data }: { data: SystemDashboard }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Sprout className="h-5 w-5 text-green-500" />
+          Crop Performance
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Active Crops:</span>
+            <span className="text-sm font-medium">{data.crops?.length || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Mature Plants:</span>
+            <span className="text-sm font-medium">
+              {data.crops?.reduce((sum, crop) => sum + (crop.mature_count || 0), 0) || 0}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Avg Yield:</span>
+            <span className="text-sm font-medium">
+              {Math.round(
+                (data.crops?.reduce((sum, crop) => sum + (crop.avg_yield || 0), 0) || 0) /
+                  (data.crops?.length || 1)
+              )}{' '}
+              units
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-blue-500" />
+          Animal Management
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Total Animals:</span>
+            <span className="text-sm font-medium">
+              {data.animals?.reduce((sum, animal) => sum + animal.count, 0) || 0}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Healthy:</span>
+            <span className="text-sm font-medium">
+              {data.animals?.reduce((sum, animal) => sum + animal.healthy_count, 0) || 0}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Avg Weight:</span>
+            <span className="text-sm font-medium">
+              {Math.round(
+                (data.animals?.reduce((sum, animal) => sum + (animal.avg_weight || 0), 0) || 0) /
+                  (data.animals?.length || 1)
+              )}{' '}
+              kg
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Truck className="h-5 w-5 text-purple-500" />
+          Logistics & Supply
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Total Items:</span>
+            <span className="text-sm font-medium">{data.inventory?.total_items || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Stock Value:</span>
+            <span className="text-sm font-medium">
+              ${(data.inventory?.total_value || 0).toLocaleString()}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Utilization:</span>
+            <span className="text-sm font-medium">
+              {Math.round(
+                (1 - (data.inventory?.low_stock_items || 0) / (data.inventory?.total_items || 1)) *
+                  100
+              )}
+              %
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const AlertsAndInsights = ({
+  data,
+  realtime,
+  getAlertIcon,
+  getInsightIcon,
+}: {
+  data: SystemDashboard;
+  realtime: boolean;
+  getAlertIcon: (t: string) => JSX.Element;
+  getInsightIcon: (t: string) => JSX.Element;
+}) => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5 text-red-500" />
+          System Alerts
+          {realtime && (
+            <Badge variant="outline" className="ml-2 text-xs">
+              LIVE
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {data.alerts && data.alerts.length > 0 ? (
+            data.alerts.map((alert, index) => (
+              <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                {getAlertIcon(alert.type)}
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{alert.message}</p>
+                  <p className="text-xs text-gray-600 capitalize">{alert.category}</p>
+                </div>
+                <Badge variant={alert.type === 'error' ? 'destructive' : 'secondary'}>
+                  {alert.count}
+                </Badge>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4">
+              <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">All systems running smoothly</p>
+              {realtime && (
+                <p className="text-xs text-green-600 mt-1">Real-time monitoring active</p>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Brain className="h-5 w-5 text-purple-500" />
+          AI Insights & Recommendations
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {data.insights && data.insights.length > 0 ? (
+            data.insights.map((insight, index) => (
+              <Badge
+                key={index}
+                className="p-3 bg-linear-to-r from-purple-100 to-blue-100 text-purple-800 border-purple-200"
+              >
+                <div className="flex items-start gap-3">
+                  {getInsightIcon(insight.type)}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-sm font-medium">{insight.title}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {insight.impact} impact
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-2">{insight.description}</p>
+                    <p className="text-xs text-blue-600 font-medium">💡 {insight.suggestion}</p>
+                  </div>
+                </div>
+              </Badge>
+            ))
+          ) : (
+            <div className="text-center py-4">
+              <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">No insights available yet</p>
+              <p className="text-xs text-gray-500">System is analyzing your data...</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const QuickActionsSection = ({
+  onTrigger,
+  pending,
+}: {
+  onTrigger: (a: string) => void;
+  pending: boolean;
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Zap className="h-5 w-5 text-yellow-500" />
+        Quick Actions & Automation
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            id: 'sync_inventory',
+            label: 'Sync Inventory',
+            sub: 'Update stock levels',
+            icon: Package,
+            color: 'text-blue-500',
+          },
+          {
+            id: 'auto_task_creation',
+            label: 'Auto Tasks',
+            sub: 'Generate routine tasks',
+            icon: CheckCircle,
+            color: 'text-green-500',
+          },
+          {
+            id: 'financial_insights',
+            label: 'Financial AI',
+            sub: 'Analyze finances',
+            icon: DollarSign,
+            color: 'text-purple-500',
+          },
+          {
+            id: 'resource_optimization',
+            label: 'Optimize',
+            sub: 'Resource allocation',
+            icon: Brain,
+            color: 'text-orange-500',
+          },
+        ].map(action => (
+          <Button
+            key={action.id}
+            variant="outline"
+            onClick={() => onTrigger(action.id)}
+            disabled={pending}
+            className="h-auto p-4 flex flex-col gap-2"
+          >
+            <action.icon className={`h-6 w-6 ${action.color}`} />
+            <span className="text-sm font-medium">{action.label}</span>
+            <span className="text-xs text-gray-500">{action.sub}</span>
+          </Button>
+        ))}
+      </div>
+      {pending && (
+        <div className="flex items-center justify-center mt-4 p-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-sm text-gray-600">Processing automation...</span>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
 
 export function AdvancedManagementDashboard() {
   const { getAuthHeaders, isAuthenticated } = useAuth();
@@ -459,6 +779,7 @@ export function AdvancedManagementDashboard() {
           </div>
           <div className="flex items-center space-x-4">
             <select
+              title="Select Farm"
               value={selectedFarm}
               onChange={e => setSelectedFarm(parseInt(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -501,341 +822,18 @@ export function AdvancedManagementDashboard() {
         {/* Dashboard Tab */}
         {viewMode === 'dashboard' && currentData && (
           <div className="space-y-8">
-            {/* System Status Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Farm Performance</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
-                    {currentData.farm?.animal_count || 0} Animals
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {currentData.fields?.total_fields || 0} fields managed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Task Efficiency</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {Math.round(
-                      ((currentData.tasks?.completed_tasks || 0) /
-                        (currentData.tasks?.total_tasks || 1)) *
-                        100
-                    )}
-                    %
-                  </div>
-                  <p className="text-xs text-muted-foreground">Completion rate</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Financial Health</CardTitle>
-                  <DollarSign className="h-4 w-4 text-purple-500" />
-                </CardHeader>
-                <CardContent>
-                  <div
-                    className={`text-2xl font-bold ${
-                      (currentData.finance?.net_profit || 0) >= 0
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}
-                  >
-                    ${(currentData.finance?.net_profit || 0).toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground">30-day net profit</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Inventory Status</CardTitle>
-                  <Package className="h-4 w-4 text-orange-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {currentData.inventory?.low_stock_items || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Low stock alerts</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Cross-Module Integration Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sprout className="h-5 w-5 text-green-500" />
-                    Crop Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Active Crops:</span>
-                      <span className="text-sm font-medium">{currentData.crops?.length || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Mature Plants:</span>
-                      <span className="text-sm font-medium">
-                        {currentData.crops?.reduce(
-                          (sum, crop) => sum + (crop.mature_count || 0),
-                          0
-                        ) || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Avg Yield:</span>
-                      <span className="text-sm font-medium">
-                        {Math.round(
-                          currentData.crops?.reduce((sum, crop) => sum + (crop.avg_yield || 0), 0) /
-                            (currentData.crops?.length || 1) || 0
-                        )}{' '}
-                        units
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-blue-500" />
-                    Animal Management
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Total Animals:</span>
-                      <span className="text-sm font-medium">
-                        {currentData.animals?.reduce((sum, animal) => sum + animal.count, 0) || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Healthy:</span>
-                      <span className="text-sm font-medium">
-                        {currentData.animals?.reduce(
-                          (sum, animal) => sum + animal.healthy_count,
-                          0
-                        ) || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Avg Weight:</span>
-                      <span className="text-sm font-medium">
-                        {Math.round(
-                          currentData.animals?.reduce(
-                            (sum, animal) => sum + (animal.avg_weight || 0),
-                            0
-                          ) / (currentData.animals?.length || 1) || 0
-                        )}{' '}
-                        kg
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-purple-500" />
-                    Logistics & Supply
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Total Items:</span>
-                      <span className="text-sm font-medium">
-                        {currentData.inventory?.total_items || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Stock Value:</span>
-                      <span className="text-sm font-medium">
-                        ${(currentData.inventory?.total_value || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Utilization:</span>
-                      <span className="text-sm font-medium">
-                        {Math.round(
-                          (1 -
-                            (currentData.inventory?.low_stock_items || 0) /
-                              (currentData.inventory?.total_items || 1)) *
-                            100
-                        )}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Alerts and Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-red-500" />
-                    System Alerts
-                    {realtimeData && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        LIVE
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.alerts && currentData.alerts.length > 0 ? (
-                      currentData.alerts.map((alert, index) => (
-                        <div
-                          key={index}
-                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-                        >
-                          {getAlertIcon(alert.type)}
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{alert.message}</p>
-                            <p className="text-xs text-gray-600 capitalize">{alert.category}</p>
-                          </div>
-                          <Badge variant={alert.type === 'error' ? 'destructive' : 'secondary'}>
-                            {alert.count}
-                          </Badge>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4">
-                        <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">All systems running smoothly</p>
-                        {realtimeData && (
-                          <p className="text-xs text-green-600 mt-1">Real-time monitoring active</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-purple-500" />
-                    AI Insights & Recommendations
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.insights && currentData.insights.length > 0 ? (
-                      currentData.insights.map((insight, index) => (
-                        <div
-                          key={index}
-                          className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100"
-                        >
-                          <div className="flex items-start gap-3">
-                            {getInsightIcon(insight.type)}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="text-sm font-medium">{insight.title}</h4>
-                                <Badge variant="outline" className="text-xs">
-                                  {insight.impact} impact
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-600 mb-2">{insight.description}</p>
-                              <p className="text-xs text-blue-600 font-medium">
-                                💡 {insight.suggestion}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4">
-                        <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">No insights available yet</p>
-                        <p className="text-xs text-gray-500">System is analyzing your data...</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-yellow-500" />
-                  Quick Actions & Automation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => triggerWorkflowMutation.mutate('sync_inventory')}
-                    disabled={triggerWorkflowMutation.isPending}
-                    className="h-auto p-4 flex flex-col gap-2"
-                  >
-                    <Package className="h-6 w-6 text-blue-500" />
-                    <span className="text-sm font-medium">Sync Inventory</span>
-                    <span className="text-xs text-gray-500">Update stock levels</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => triggerWorkflowMutation.mutate('auto_task_creation')}
-                    disabled={triggerWorkflowMutation.isPending}
-                    className="h-auto p-4 flex flex-col gap-2"
-                  >
-                    <CheckCircle className="h-6 w-6 text-green-500" />
-                    <span className="text-sm font-medium">Auto Tasks</span>
-                    <span className="text-xs text-gray-500">Generate routine tasks</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => triggerWorkflowMutation.mutate('financial_insights')}
-                    disabled={triggerWorkflowMutation.isPending}
-                    className="h-auto p-4 flex flex-col gap-2"
-                  >
-                    <DollarSign className="h-6 w-6 text-purple-500" />
-                    <span className="text-sm font-medium">Financial AI</span>
-                    <span className="text-xs text-gray-500">Analyze finances</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => triggerWorkflowMutation.mutate('resource_optimization')}
-                    disabled={triggerWorkflowMutation.isPending}
-                    className="h-auto p-4 flex flex-col gap-2"
-                  >
-                    <Brain className="h-6 w-6 text-orange-500" />
-                    <span className="text-sm font-medium">Optimize</span>
-                    <span className="text-xs text-gray-500">Resource allocation</span>
-                  </Button>
-                </div>
-                {triggerWorkflowMutation.isPending && (
-                  <div className="flex items-center justify-center mt-4 p-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-sm text-gray-600">Processing automation...</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <StatusOverviewCards data={currentData} />
+            <ModulePerformanceCards data={currentData} />
+            <AlertsAndInsights
+              data={currentData}
+              realtime={!!realtimeData}
+              getAlertIcon={getAlertIcon}
+              getInsightIcon={getInsightIcon}
+            />
+            <QuickActionsSection
+              onTrigger={a => triggerWorkflowMutation.mutate(a)}
+              pending={triggerWorkflowMutation.isPending}
+            />
           </div>
         )}
 

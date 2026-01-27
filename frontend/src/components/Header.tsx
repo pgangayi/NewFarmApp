@@ -210,9 +210,18 @@ export function Header({ farms = [], currentFarm, onFarmChange, onAddCrop }: Hea
       {(showFarmDropdown || showUserMenu) && (
         <div
           className="fixed inset-0 z-40"
+          role="button"
+          tabIndex={-1}
+          aria-label="Close menus"
           onClick={() => {
             setShowFarmDropdown(false);
             setShowUserMenu(false);
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Escape') {
+              setShowFarmDropdown(false);
+              setShowUserMenu(false);
+            }
           }}
         />
       )}

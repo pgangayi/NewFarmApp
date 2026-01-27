@@ -46,7 +46,15 @@ export class APIUtils {
         });
 
         // Log successful operation
-        this.logger.logPerformance(`${method} ${url.pathname}`, startTime);
+        if (this.logger.logRequest) {
+          this.logger.logRequest(
+            method,
+            url.pathname,
+            200,
+            Date.now() - startTime,
+            user?.id,
+          );
+        }
         await this.audit.logOperation("API_REQUEST", {
           userId: user?.id,
           resourceType: "api",
@@ -261,8 +269,8 @@ export class APIUtils {
     try {
       await this.audit.logOperation(operation, {
         ...context,
-        request: context.request,
-        duration: context.duration,
+        request: context?.request,
+        duration: context?.duration,
       });
     } catch (error) {
       this.logger.warn("Audit logging failed", {

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/AuthContext';
-import { apiEndpoints } from '../config/env';
 import { AnimalService } from '../services/domains/AnimalService';
 import { BarChart, TrendingUp, DollarSign, Heart, Baby, Activity } from 'lucide-react';
 
@@ -46,7 +45,6 @@ interface AnimalAnalyticsDashboardProps {
 }
 
 export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardProps) {
-  const { getAuthHeaders } = useAuth();
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('production');
 
@@ -64,7 +62,31 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
     queryKey: ['animal-analytics', queryParams.toString()],
     queryFn: async () => {
       const params = Object.fromEntries(queryParams);
-      return AnimalService.getAnalytics(params);
+      const rawData = await AnimalService.getAnalytics(params);
+
+      // Map snake_case from service to camelCase for component
+      const mappedData: AnalyticsData = {
+        totalAnimals: rawData.total_animals || 0,
+        healthyAnimals: rawData.healthy_animals || 0,
+        sickAnimals: rawData.sick_animals || 0,
+        totalProduction: rawData.production_stats?.total_production || 0,
+        totalRevenue: 0, // Default for missing fields
+        avgProductionPerAnimal: rawData.production_stats?.average_production || 0,
+        breedingSuccessRate: 0,
+        vaccinationCompliance: 0,
+        topPerformingAnimals: [],
+        productionTrends: [],
+        healthOverview: {},
+        speciesBreakdown: Object.entries(rawData.breed_distribution || {}).map(
+          ([species, count]) => ({
+            species,
+            count,
+          })
+        ),
+        upcomingEvents: [],
+      };
+
+      return mappedData;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -106,9 +128,10 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
         </div>
         <div className="flex items-center gap-4">
           <select
+            title="Time Range"
             value={timeRange}
             onChange={e => setTimeRange(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -116,9 +139,10 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
             <option value="1y">Last year</option>
           </select>
           <select
+            title="Metric"
             value={selectedMetric}
             onChange={e => setSelectedMetric(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="production">Production</option>
             <option value="health">Health</option>
@@ -130,7 +154,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6">
+        <div className="bg-linear-to-r from-blue-50 to-blue-100 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-blue-700">Total Animals</p>
@@ -143,7 +167,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-6">
+        <div className="bg-linear-to-r from-green-50 to-green-100 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-green-700">Total Production</p>
@@ -159,7 +183,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-6">
+        <div className="bg-linear-to-r from-purple-50 to-purple-100 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-purple-700">Revenue</p>
@@ -172,7 +196,7 @@ export function AnimalAnalyticsDashboard({ farmId }: AnimalAnalyticsDashboardPro
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg p-6">
+        <div className="bg-linear-to-r from-pink-50 to-pink-100 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-pink-700">Breeding Success</p>

@@ -39,35 +39,10 @@ export function validatePassword(password) {
     return { valid: false, error: "Password is required" };
   }
 
-  if (password.length < 12) {
+  if (password.length < 6) {
     return {
       valid: false,
-      error: "Password must be at least 12 characters long",
-    };
-  }
-
-  if (!PASSWORD_REGEX.uppercase.test(password)) {
-    return {
-      valid: false,
-      error: "Password must contain at least one uppercase letter",
-    };
-  }
-
-  if (!PASSWORD_REGEX.lowercase.test(password)) {
-    return {
-      valid: false,
-      error: "Password must contain at least one lowercase letter",
-    };
-  }
-
-  if (!PASSWORD_REGEX.number.test(password)) {
-    return { valid: false, error: "Password must contain at least one number" };
-  }
-
-  if (!PASSWORD_REGEX.special.test(password)) {
-    return {
-      valid: false,
-      error: "Password must contain at least one special character",
+      error: "Password must be at least 6 characters long",
     };
   }
 

@@ -6,12 +6,22 @@ type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface Toast {
   id: string;
-  message: string;
+  message?: string;
+  title?: string;
+  description?: string;
   type: ToastType;
 }
 
+interface ToastOptions {
+  title?: string;
+  description?: string;
+  message?: string;
+  variant?: 'default' | 'destructive' | 'success' | 'warning' | 'info';
+  type?: ToastType;
+}
+
 interface ToastContextType {
-  toast: (message: string, type?: ToastType) => void;
+  toast: (options: string | ToastOptions, type?: ToastType) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -19,9 +29,34 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = useCallback((message: string, type: ToastType = 'info') => {
+  const toast = useCallback((options: string | ToastOptions, type: ToastType = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { id, message, type }]);
+
+    if (typeof options === 'string') {
+      setToasts(prev => [...prev, { id, message: options, type }]);
+    } else {
+      const variantToType: Record<string, ToastType> = {
+        destructive: 'error',
+        success: 'success',
+        warning: 'warning',
+        info: 'info',
+        default: 'info',
+      };
+
+      const toastType = options.type || (options.variant ? variantToType[options.variant] : type);
+
+      setToasts(prev => [
+        ...prev,
+        {
+          id,
+          message: options.message,
+          title: options.title,
+          description: options.description,
+          type: toastType || 'info',
+        },
+      ]);
+    }
+
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3000);
@@ -38,7 +73,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`flex items-center justify-between p-4 rounded-md shadow-lg min-w-75 text-white ${
+            className={`flex flex-col p-4 rounded-md shadow-lg min-w-75 text-white ${
               t.type === 'success'
                 ? 'bg-green-600'
                 : t.type === 'error'
@@ -48,10 +83,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     : 'bg-blue-600'
             }`}
           >
-            <span>{t.message}</span>
-            <button onClick={() => removeToast(t.id)} className="ml-4">
-              <X size={16} />
-            </button>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                {t.title && <span className="font-bold">{t.title}</span>}
+                {t.message && <span>{t.message}</span>}
+                {t.description && <span className="text-sm opacity-90">{t.description}</span>}
+              </div>
+              <button
+                onClick={() => removeToast(t.id)}
+                className="ml-4 self-start"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

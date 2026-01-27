@@ -144,6 +144,7 @@ export function UnifiedModal({
       case 'text':
         return (
           <input
+            id={field.name}
             type="text"
             value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
@@ -155,6 +156,7 @@ export function UnifiedModal({
       case 'number':
         return (
           <input
+            id={field.name}
             type="number"
             value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
@@ -168,6 +170,7 @@ export function UnifiedModal({
       case 'date':
         return (
           <input
+            id={field.name}
             type="date"
             value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
@@ -179,6 +182,7 @@ export function UnifiedModal({
         return (
           <div className="flex gap-2">
             <select
+              id={field.name}
               value={(value as string) || ''}
               onChange={e => handleFieldChange(field.name, e.target.value)}
               className={baseInputClasses}
@@ -196,6 +200,7 @@ export function UnifiedModal({
                 onClick={field.onAdd}
                 className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center"
                 title={`Add new ${field.label}`}
+                aria-label={`Add new ${field.label}`}
               >
                 <Plus className="h-4 w-4 text-gray-600" />
               </button>
@@ -206,6 +211,7 @@ export function UnifiedModal({
       case 'textarea':
         return (
           <textarea
+            id={field.name}
             value={(value as string) || ''}
             onChange={e => handleFieldChange(field.name, e.target.value)}
             placeholder={field.placeholder}
@@ -218,12 +224,13 @@ export function UnifiedModal({
         return (
           <div className="flex items-center">
             <input
+              id={field.name}
               type="checkbox"
               checked={(value as boolean) || false}
               onChange={e => handleFieldChange(field.name, e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label className="ml-2 block text-sm text-gray-900">
+            <label htmlFor={field.name} className="ml-2 block text-sm text-gray-900">
               {field.placeholder || field.label}
             </label>
           </div>
@@ -252,6 +259,7 @@ export function UnifiedModal({
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
               disabled={isLoading}
+              aria-label="Close modal"
             >
               <X className="h-5 w-5" />
             </button>
@@ -264,7 +272,10 @@ export function UnifiedModal({
                 .filter(field => field.type !== 'checkbox')
                 .map(field => (
                   <div key={field.name}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={field.name}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       {field.label}
                       {field.required && <span className="text-red-500 ml-1">*</span>}
                     </label>

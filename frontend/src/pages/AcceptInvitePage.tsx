@@ -24,7 +24,7 @@ export default function AcceptInvitePage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
-  const { user, login } = useAuth();
+  const { user, signIn } = useAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -151,26 +151,13 @@ export default function AcceptInvitePage() {
       }
 
       // Login the user
-      const loginResponse = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const { error: loginError } = await signIn(email, password);
 
-      const loginData = await loginResponse.json();
-
-      if (!loginResponse.ok) {
+      if (loginError) {
         setMessage('Account created but login failed. Please try logging in manually.');
         setIsAccepting(false);
         return;
       }
-
-      // Store tokens and update auth context
-      localStorage.setItem('access_token', loginData.access_token);
-      localStorage.setItem('refresh_token', loginData.refresh_token);
-      await login(loginData.user);
 
       // Now accept the invite
       await handleAcceptInvite();

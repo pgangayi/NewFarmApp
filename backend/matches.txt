@@ -1,0 +1,49 @@
+
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:89:      duration: 0,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:121:      get duration() {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:129:          duration: this.duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:142:      get duration() {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:4322:          duration_hours REAL,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:29828:      logDatabase(operation, table3, duration, success, context2 = {}) {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:29839:            duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:29848:            `[DB ${status}] ${operation} on ${table3} (${duration}ms)`,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30625:            const duration = Date.now() - startTime;
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30626:            this.updateMetrics(operation, table3, duration, true);
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30627:            if (this.shouldLogQuery(duration)) {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30628:              this.logger.logDatabase(operation, table3, duration, true, {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30634:            if (duration > 1e3) {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30635:              this.trackSlowQuery(query, duration, table3, operation);
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30636:              performanceMonitor.recordSlowQuery(query, duration, table3, operation);
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30643:              duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30649:            const duration = Date.now() - startTime;
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30650:            this.updateMetrics(operation, table3, duration, false);
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30767:          const duration = Date.now() - startTime;
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30768:          this.updateMetrics("transaction", "multi-table", duration, true);
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30769:          this.logger.logDatabase("transaction", "multi-table", duration, true, {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30785:            duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30789:          const duration = Date.now() - startTime;
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:30790:          this.updateMetrics("transaction", "multi-table", duration, false);
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31216:       * @param {number} duration - Query duration in ms
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31219:      updateMetrics(operation, table3, duration, success) {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31224:        const totalTime = this.metrics.avgQueryTime * (this.metrics.totalQueries - 1) + duration;
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31230:       * @param {number} duration - Query duration in ms
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31233:      shouldLogQuery(duration) {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31234:        return !this.isProduction || duration > 1e3;
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31240:       * @param {number} duration - Query duration in ms
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31244:      trackSlowQuery(query, duration, table3, operation) {
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31247:          duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:31256:          duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:34300:          estimated_duration: taskData.estimated_duration || null,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:34301:          actual_duration: taskData.actual_duration || null,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:34316:            created_by, priority_score, estimated_duration, actual_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:34590:        AVG(CASE WHEN t.estimated_duration IS NOT NULL AND t.actual_duration IS NOT NULL
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:34591:             THEN (t.actual_duration / t.estimated_duration) * 100 ELSE NULL END) as avg_completion_ratio,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:34670:          estimated_duration: customData.estimated_duration || template.estimated_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39007:        estimated_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39008:        actual_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39030:        estimated_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39031:        actual_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39152:        estimated_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39170:          farm_id, template_name, category, description, estimated_duration,
+C:\Users\MunyaradziGangayi\Documents\Coder\Retry\.wrangler\tmp\dev-SFmdk5\index.js:39179:        estimated_duration || null,
+

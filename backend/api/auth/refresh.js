@@ -3,7 +3,11 @@ import { TokenManager } from "../_token-management.js";
 import { CSRFProtection } from "../_csrf.js";
 import { DatabaseOperations } from "../_database.js";
 import { UserRepository } from "../repositories/index.js";
-import { buildPublicUser, createSessionResponse } from "./_session-response.js";
+import {
+  buildPublicUser,
+  createSessionResponse,
+  SimpleUserRepository,
+} from "./_session-response.js";
 
 export async function onRequest(context) {
   const { request } = context;
@@ -55,32 +59,30 @@ async function handleRefreshRequest(context) {
 
     const revocationStatus = await tokenManager.isTokenRevoked(
       refreshToken,
-      "refresh"
+      "refresh",
     );
     if (revocationStatus.revoked) {
       return createErrorResponse("Refresh token revoked", 401);
     }
 
-    const user = await userRepo.findById(payload.userId, {
-      userId: "system",
-    });
+    const user = await userRepo.findByEmail(payload.email);
     if (!user) {
       return createErrorResponse("User not found", 401);
     }
 
-    const newAccessToken = auth.generateAccessToken(user.id, user.email);
+    const newAccessToken = await auth.generateAccessToken(user.id, user.email);
     const shouldRotateRefreshToken = env.REFRESH_TOKEN_ROTATION !== "false";
     let newRefreshToken = refreshToken;
 
     if (shouldRotateRefreshToken) {
-      newRefreshToken = auth.generateRefreshToken(user.id, user.email);
+      newRefreshToken = await auth.generateRefreshToken(user.id, user.email);
       await tokenManager.revokeToken(
         refreshToken,
         user.id,
         "refresh_token_rotated",
         "refresh",
         null,
-        { ipAddress, userAgent }
+        { ipAddress, userAgent },
       );
     }
 
@@ -129,6 +131,6 @@ async function handleRefreshHealthCheck(context) {
     {
       status: hasRefreshToken ? 200 : 404,
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
 }

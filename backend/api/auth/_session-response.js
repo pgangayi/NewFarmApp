@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { createErrorResponse } from "../_auth.js";
 
 const ACCESS_TOKEN_EXPIRES_IN = 60 * 60; // 1 hour
@@ -49,14 +48,14 @@ export class SimpleUserRepository {
         `
         INSERT INTO users (id, email, name, password_hash, created_at)
         VALUES (?, ?, ?, ?, ?)
-      `
+      `,
       )
       .bind(
         id,
         email.toLowerCase().trim(),
         name.trim(),
         password_hash,
-        timestamp
+        timestamp,
       )
       .run();
 
@@ -81,7 +80,7 @@ export function createBaseResponseHeaders(rateLimitHeaders = {}) {
 export function buildRefreshCookie(
   refreshToken,
   maxAge = REFRESH_TOKEN_EXPIRES_IN,
-  isDev = false
+  isDev = false,
 ) {
   const cookieParts = [
     `refresh_token=${refreshToken}`,
@@ -158,7 +157,7 @@ export async function createSessionResponse({
 
   responseHeaders.append(
     "Set-Cookie",
-    buildRefreshCookie(refreshToken, refreshMaxAge, isDev)
+    buildRefreshCookie(refreshToken, refreshMaxAge, isDev),
   );
 
   const payload = buildAuthPayload({

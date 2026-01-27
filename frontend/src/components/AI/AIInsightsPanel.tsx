@@ -1,7 +1,7 @@
 // AI Insights Panel Component
 // Displays AI-powered farm recommendations
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { aiService, AIResponse } from '../../services/aiService';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -23,13 +23,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ farmData }) =>
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (farmData) {
-      loadGeneralAdvice();
-    }
-  }, [farmData]);
-
-  const loadGeneralAdvice = async () => {
+  const loadGeneralAdvice = useCallback(async () => {
     if (!farmData) return;
 
     setIsLoading(true);
@@ -43,7 +37,13 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ farmData }) =>
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [farmData]);
+
+  useEffect(() => {
+    if (farmData) {
+      loadGeneralAdvice();
+    }
+  }, [farmData, loadGeneralAdvice]);
 
   const handleCustomPrompt = async () => {
     if (!customPrompt.trim()) return;
@@ -82,8 +82,11 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ farmData }) =>
       <CardContent className="space-y-4">
         {/* Custom Prompt Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Ask for specific advice:</label>
+          <label htmlFor="custom-advice-input" className="text-sm font-medium">
+            Ask for specific advice:
+          </label>
           <Textarea
+            id="custom-advice-input"
             placeholder="e.g., What's the best approach to pest control for my tomato plants this season?"
             value={customPrompt}
             onChange={e => setCustomPrompt(e.target.value)}

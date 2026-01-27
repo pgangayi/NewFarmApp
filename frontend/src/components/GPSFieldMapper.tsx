@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '../hooks/use-toast';
 import { MapPin, Navigation, Target, Save, RotateCcw, AlertTriangle } from 'lucide-react';
 
@@ -31,7 +31,7 @@ interface GPSFieldMapperProps {
 }
 
 export function GPSFieldMapper({
-  farmId,
+  farmId: _farmId,
   existingFields = [],
   onFieldSave,
   onFieldUpdate,
@@ -44,7 +44,7 @@ export function GPSFieldMapper({
   const [currentPosition, setCurrentPosition] = useState<GPSCoordinate | null>(null);
   const [fieldName, setFieldName] = useState('');
   const [selectedField, setSelectedField] = useState<FieldBoundary | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  // const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<GPSCoordinate[]>([]);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<
@@ -200,15 +200,15 @@ export function GPSFieldMapper({
 
     for (let i = 0; i < coordinates.length; i++) {
       const j = (i + 1) % coordinates.length;
-      const xi = coordinates[i].longitude;
-      const yi = coordinates[i].latitude;
-      const xj = coordinates[j].longitude;
-      const yj = coordinates[j].latitude;
+      const xi = coordinates[i]!.longitude;
+      const yi = coordinates[i]!.latitude;
+      const xj = coordinates[j]!.longitude;
+      const yj = coordinates[j]!.latitude;
 
       area += xi * yj - xj * yi;
 
       // Calculate distance between points for perimeter
-      const distance = getDistance(coordinates[i], coordinates[j]);
+      const distance = getDistance(coordinates[i]!, coordinates[j]!);
       perimeter += distance;
     }
 
@@ -548,7 +548,7 @@ export function GPSFieldMapper({
                       GPS Position Required
                     </div>
                     <div className="text-sm text-gray-500">
-                      Click "Get Current Position" to start mapping your fields
+                      Click &quot;Get Current Position&quot; to start mapping your fields
                     </div>
                   </div>
                 )}

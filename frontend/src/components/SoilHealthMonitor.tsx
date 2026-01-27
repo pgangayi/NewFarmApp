@@ -37,7 +37,6 @@ const STATUS_DEFICIENT = 'deficient';
 const STATUS_STABLE = 'stable';
 const STATUS_IMPROVING = 'improving';
 
-
 interface SoilHealthMonitorProps {
   farmId: string;
 }

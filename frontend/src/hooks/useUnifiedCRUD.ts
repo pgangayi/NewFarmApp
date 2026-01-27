@@ -229,7 +229,9 @@ export function useUnifiedCRUD<T extends { id: string; created_at?: Date; update
           config.validationSchema.parse(itemData);
         } catch (error) {
           if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors.map(e => e.message).join(', ')}`);
+            throw new Error(
+              `Validation failed: ${error.issues.map(issue => issue.message).join(', ')}`
+            );
           }
           throw error;
         }

@@ -639,7 +639,10 @@ export function IrrigationOptimizer({ farmId }: IrrigationOptimizerProps) {
                   </div>
 
                   <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="status"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Status
                     </label>
                     <select

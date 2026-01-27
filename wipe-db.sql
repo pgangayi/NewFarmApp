@@ -1,0 +1,27 @@
+PRAGMA foreign_keys = OFF;
+-- Drop all tables
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS user_sessions;
+DROP TABLE IF EXISTS revoked_tokens;
+DROP TABLE IF EXISTS login_attempts;
+DROP TABLE IF EXISTS security_events;
+DROP TABLE IF EXISTS email_verification_tokens;
+DROP TABLE IF EXISTS password_reset_tokens;
+DROP TABLE IF EXISTS farms;
+DROP TABLE IF EXISTS farm_members;
+DROP TABLE IF EXISTS farm_invites;
+DROP TABLE IF EXISTS fields;
+DROP TABLE IF EXISTS equipment;
+DROP TABLE IF EXISTS crops;
+DROP TABLE IF EXISTS crop_activities;
+DROP TABLE IF EXISTS animals;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS inventory_transactions;
+DROP TABLE IF EXISTS finance_entries;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS weather_data;
+DROP TABLE IF EXISTS operations;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS d1_migrations;
+PRAGMA foreign_keys = ON;
