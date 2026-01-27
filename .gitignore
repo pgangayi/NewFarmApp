@@ -187,3 +187,20 @@ playwright/.cache/
 *.tmp
 *.temp
 .cache/
+
+# Cleanup artifacts
+# Debug & build logs
+debug_output*.txt
+debug_output*.json
+build_log*.txt
+wrangler-dev.log
+# Lint / tool outputs
+lint-output*.json
+lint-results*.json
+lint-*.txt
+# Temp SQLs and tmp files
+temp-*.sql
+tmp_*.sql
+# Archived node_modules backups
+node_modules._bak_*/
+*.bak
